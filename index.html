@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S'installer au Luxembourg</title>
+<link rel="stylesheet" href="app/styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="mark" aria-hidden="true"></span>S'installer au Luxembourg</div>
+    <nav class="tabs" id="tabs" role="tablist">
+      <button role="tab" data-panel="accueil" aria-selected="true">Accueil</button>
+      <button role="tab" data-panel="fiches" aria-selected="false">Fiches</button>
+      <button role="tab" data-panel="parcours" aria-selected="false">Parcours</button>
+      <button role="tab" data-panel="simulateur" aria-selected="false">Simulateur</button>
+      <button role="tab" data-panel="assistant" aria-selected="false">Assistant</button>
+      <button role="tab" data-panel="admin" aria-selected="false">Administration</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- Accueil -->
+  <section class="panel" id="panel-accueil">
+
+    <div class="hero">
+      <div class="hero-img">
+        <img src="assets/hero.jpg" alt="Vue de la vieille ville de Luxembourg, du Grund et du plateau de Kirchberg" loading="eager">
+      </div>
+      <div class="hero-in">
+        <span class="kicker"><span class="pt"></span>Verifie en aout 2026</span>
+        <h1>Arriver au Luxembourg, <em>sans rien oublier</em></h1>
+        <p>
+          Des huit jours pour se declarer a la commune au calcul de votre salaire net,
+          chaque demarche expliquee, dans le bon ordre, avec sa source officielle.
+        </p>
+        <div class="hero-cta">
+          <button class="btn clair" data-go="assistant">Demarrer avec l'assistant</button>
+          <button class="btn contour" data-go="parcours">Voir le parcours complet</button>
+        </div>
+        <div class="hero-stats">
+          <div class="s"><div class="n" id="stat-fiches">—</div><div class="l">fiches pratiques</div></div>
+          <div class="s"><div class="n">8</div><div class="l">jours pour se declarer</div></div>
+          <div class="s"><div class="n">11,55 %</div><div class="l">de cotisations salariales</div></div>
+          <div class="s"><div class="n">0 €</div><div class="l">les transports publics</div></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Par theme</h2>
+    <div class="grid" id="accueil-cats"></div>
+
+    <h2>Les questions les plus posees</h2>
+    <div class="grid serre" id="accueil-faq"></div>
+
+    <div class="notice small">
+      <strong>Fiabilite.</strong> Informations verifiees en aout 2026 aupres des administrations
+      luxembourgeoises. La reglementation evolue, en particulier les baremes et les plafonds :
+      chaque fiche renvoie a sa source, qui fait foi avant toute demarche engageante.
+    </div>
+
+    <div class="credits" id="credits-photos"></div>
+  </section>
+
+  <!-- Fiches -->
+  <section class="panel" id="panel-fiches" hidden>
+    <div id="fiches-liste">
+      <h1>Fiches pratiques</h1>
+      <p class="lead">Chaque fiche est autonome, avec ses points cles et ses sources officielles.</p>
+      <div class="search-bar">
+        <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatries, creche, permis...">
+      </div>
+      <div class="grid" id="fiches-grid"></div>
+    </div>
+    <div id="fiche-detail" class="detail" hidden></div>
+  </section>
+
+  <!-- Parcours -->
+  <section class="panel" id="panel-parcours" hidden>
+    <h1>Parcours d'installation</h1>
+    <p class="lead">L'ordre compte : certaines demarches en conditionnent d'autres.</p>
+    <div class="notice">
+      <strong>La chaine a ne pas casser.</strong>
+      Declaration a la commune, puis certificat de residence et matricule, puis securite sociale,
+      banque, cheque-service et impots. Tout part de la commune, dans les 8 jours.
+    </div>
+    <div class="tl" id="timeline"></div>
+  </section>
+
+  <!-- Simulateur -->
+  <section class="panel" id="panel-simulateur" hidden>
+    <h1>Simulateur de salaire net</h1>
+    <p class="lead">
+      Bareme officiel de l'Administration des contributions directes et parametres sociaux en vigueur.
+      Resultat indicatif : il ne remplace ni une fiche de paie, ni un calcul de l'administration.
+    </p>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="s-brut">Brut annuel (EUR)</label>
+          <input type="number" id="s-brut" value="80000" min="0" step="1000">
+        </div>
+        <div>
+          <label for="s-classe">Classe d'impot</label>
+          <select id="s-classe">
+            <option value="classe1">Classe 1</option>
+            <option value="classe1a">Classe 1a</option>
+            <option value="classe2" selected>Classe 2</option>
+          </select>
+        </div>
+        <div>
+          <label for="s-mois">Reparti sur</label>
+          <select id="s-mois">
+            <option value="12" selected>12 mois</option>
+            <option value="13">13 mois</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="check">
+          <input type="checkbox" id="s-impatrie">
+          <label for="s-impatrie">Regime des impatries (50 % exonere)</label>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="s-forfaits" checked>
+          <label for="s-forfaits">Forfaits frais et depenses speciales</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpis" id="s-kpis"></div>
+    <div id="s-detail"></div>
+
+    <h2>Comparaison des situations</h2>
+    <div class="table-wrap"><table id="s-comp"></table></div>
+
+    <h2>Capacite d'emprunt indicative</h2>
+    <p class="lead small">
+      Les banques raisonnent en taux d'effort : la somme des mensualites rapportee aux revenus nets.
+      Les credits en cours viennent en deduction.
+    </p>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="e-net">Revenus nets du menage (EUR/mois)</label>
+          <input type="number" id="e-net" value="5000" min="0" step="100">
+        </div>
+        <div>
+          <label for="e-charges">Credits en cours (EUR/mois)</label>
+          <input type="number" id="e-charges" value="0" min="0" step="50">
+        </div>
+        <div>
+          <label for="e-taux">Taux annuel (%)</label>
+          <input type="number" id="e-taux" value="4.3" min="0" step="0.1">
+        </div>
+        <div>
+          <label for="e-duree">Duree (annees)</label>
+          <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
+        </div>
+      </div>
+    </div>
+    <div class="kpis" id="e-kpis"></div>
+    <p class="hint">
+      Quotites maximales au Luxembourg : 100 % du prix pour un primo-accedant en residence principale,
+      90 % pour une autre residence principale, 80 % pour un investissement locatif. Les frais d'acte
+      restent a financer sur fonds propres.
+    </p>
+  </section>
+
+  <!-- Assistant -->
+  <section class="panel" id="panel-assistant" hidden>
+    <h1>Assistant</h1>
+    <p class="lead">
+      Il construit votre profil au fil des reponses, puis cible ce qui vous concerne.
+      <span class="badge" id="mode-badge">mode local</span>
+    </p>
+    <div class="card chat-wrap">
+      <div class="chat-log" id="chat-log"></div>
+      <div class="chat-bar">
+        <input type="text" id="chat-input" placeholder="Posez votre question..." autocomplete="off">
+        <button class="btn" id="chat-send">Envoyer</button>
+        <button class="btn ghost" id="chat-reset" title="Reinitialiser le profil">Reinitialiser</button>
+      </div>
+    </div>
+    <p class="hint">
+      Les reponses proviennent de la base de connaissances de ce guide, avec leurs sources.
+      Quand une information n'y figure pas, l'assistant le dit plutot que d'inventer.
+    </p>
+  </section>
+
+  <!-- Administration -->
+  <section class="panel" id="panel-admin" hidden>
+    <h1>Administration</h1>
+    <p class="lead">Modifier le contenu des fiches, les questions frequentes et les parametres du simulateur.</p>
+
+    <div class="notice small">
+      Les modifications sont enregistrees dans ce navigateur. Utilisez <strong>Exporter</strong> pour
+      produire un fichier a replacer dans <code>app/kb.js</code>, afin de les rendre permanentes pour tous.
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Fiches</h3>
+      <div class="row">
+        <div>
+          <label for="a-fiche">Fiche a modifier</label>
+          <select id="a-fiche"></select>
+        </div>
+        <div>
+          <label for="a-cat">Categorie</label>
+          <input type="text" id="a-cat">
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-titre">Titre</label>
+        <input type="text" id="a-titre">
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-resume">Resume</label>
+        <input type="text" id="a-resume">
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-corps">Corps du texte (un paragraphe par ligne)</label>
+        <textarea id="a-corps" style="min-height:190px"></textarea>
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-retenir">A retenir (une puce par ligne)</label>
+        <textarea id="a-retenir"></textarea>
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-tags">Mots-cles, separes par des virgules (utilises par l'assistant)</label>
+        <input type="text" id="a-tags">
+      </div>
+      <div style="margin-top:12px">
+        <label for="a-sources">Sources, une par ligne, au format : intitule | url</label>
+        <textarea id="a-sources"></textarea>
+      </div>
+      <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn" id="a-save">Enregistrer la fiche</button>
+        <button class="btn ghost" id="a-new">Nouvelle fiche</button>
+        <button class="btn danger" id="a-del">Supprimer</button>
+      </div>
+      <p class="hint" id="a-status"></p>
+    </div>
+
+    <h2>Parametres du simulateur</h2>
+    <div class="card">
+      <div class="row" id="a-params"></div>
+      <div style="margin-top:14px">
+        <button class="btn" id="p-save">Enregistrer les parametres</button>
+        <span class="hint" id="p-status"></span>
+      </div>
+    </div>
+
+    <h2>Sauvegarde</h2>
+    <div class="card">
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn" id="x-export">Exporter kb.js</button>
+        <button class="btn ghost" id="x-import">Importer un fichier</button>
+        <button class="btn danger" id="x-reset">Revenir au contenu d'origine</button>
+        <input type="file" id="x-file" accept=".js,.json" hidden>
+      </div>
+      <p class="hint">
+        L'export produit un <code>kb.js</code> complet. Remplacez le fichier du meme nom dans
+        <code>app/</code> et rechargez : les modifications deviennent la version de reference.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<script src="app/bareme.js"></script>
+<script src="app/kb.js"></script>
+<script src="app/simulateur.js"></script>
+<script src="app/chat.js"></script>
+<script src="app/ui.js"></script>
+</body>
+</html>

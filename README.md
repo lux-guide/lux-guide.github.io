@@ -1,0 +1,85 @@
+# S'installer au Luxembourg
+
+Site statique : un guide d'information structuré, un simulateur de salaire net et un assistant local. Démo en ligne : https://lux-guide.github.io
+
+Le contenu est entièrement générique et anonyme. Aucune donnée personnelle n'y figure, ni dans le code, ni dans la base de connaissances.
+
+Tout fonctionne dans le navigateur, sans serveur : il suffit d'ouvrir `index.html`.
+
+## Ce que contient le site
+
+| Onglet | Contenu |
+|---|---|
+| Accueil | Entrée par catégorie et questions les plus posées |
+| Fiches | 25 fiches thématiques illustrées, avec recherche plein texte |
+| Parcours | Frise chronologique, d'avant le départ à la première année |
+| Simulateur | Salaire net par classe d'impôt, et capacité d'emprunt |
+| Assistant | Questionnaire de profil puis recherche ciblée dans le guide |
+| Administration | Édition du contenu et des paramètres de calcul |
+
+Navigation directe possible par ancre : `index.html#simulateur`, `#assistant`, etc.
+
+## Le simulateur
+
+Il applique le barème officiel de l'Administration des contributions directes (fichier `bareme-2025-format-excel.xlsx` publié sur [impotsdirects.public.lu](https://impotsdirects.public.lu/fr/baremes.html)), pour les classes 1, 1a et 2.
+
+Chaîne de calcul :
+
+1. Cotisations sociales sur le brut plafonné à cinq fois le salaire social minimum.
+2. Contribution dépendance, sans plafond, après abattement d'un quart de salaire social minimum.
+3. Exonération de 50 % au titre du régime des impatriés, si l'option est cochée.
+4. Forfaits de frais d'obtention et de dépenses spéciales, optionnels.
+5. Impôt selon le barème, puis contribution au fonds pour l'emploi.
+
+Limite à connaître. Le résultat correspond à la retenue sur un seul salaire. En classe 2, la déclaration retient un taux moyen mondial qui intègre les revenus étrangers exonérés : le net réel peut être inférieur. Le simulateur donne donc un plafond, pas un net définitif.
+
+## L'assistant
+
+Il fonctionne sans réseau. Il pose six questions pour construire un profil (situation familiale, enfants, statut, logement, véhicule, avancement), puis recherche dans la base de connaissances embarquée. Un seuil de pertinence l'empêche de répondre à côté : sous ce seuil, il dit qu'il ne sait pas plutôt que de produire une réponse plausible mais fausse.
+
+## Modifier le contenu
+
+Onglet Administration. On peut y éditer le titre, la catégorie, le résumé, le corps, les points à retenir, les mots-clés et les sources de chaque fiche, en créer, en supprimer, et ajuster les paramètres du simulateur (taux de cotisation, plafonds, seuils).
+
+Les modifications sont d'abord enregistrées dans le navigateur. Pour les rendre permanentes pour tout le monde :
+
+1. Cliquer sur **Exporter kb.js**.
+2. Remplacer `app/kb.js` par le fichier téléchargé.
+3. Recharger la page.
+
+Le bouton **Revenir au contenu d'origine** annule les modifications locales.
+
+## Structure
+
+```
+index.html            page unique
+assets/               photographies sous licence libre, et CREDITS.json
+app/
+  bareme.js           barème officiel ACD, extrait de la source
+  kb.js               base de connaissances, fiches et questions
+  simulateur.js       calcul du net et de la capacité d'emprunt
+  chat.js             profil et recherche dans le guide
+  ui.js               rendu et administration
+  styles.css          thème clair et sombre
+```
+
+## Fiabilité du contenu
+
+Chaque fiche porte ses sources officielles, consultables en un clic. Les informations ont été vérifiées en août 2026 auprès des administrations luxembourgeoises : Guichet.lu, ACD, CCSS, CNS, IGSS, ministère du Logement, Caisse pour l'avenir des enfants, ITM, ADEM, ILR, SNCA.
+
+La réglementation évolue, en particulier les barèmes, les plafonds et les taux de cotisation. Avant toute démarche engageante, la source citée fait foi, pas ce site.
+
+## Paramètres de calcul
+
+Les valeurs du simulateur suivent les paramètres sociaux publiés par l'IGSS, applicables au 1er juin 2026 (indice 992,24) :
+
+1. Salaire social minimum non qualifié : 2 771,33 € par mois, soit 33 255,96 € par an.
+2. Maximum cotisable : 13 856,63 € par mois, soit cinq fois le salaire social minimum.
+3. Abattement pour la contribution dépendance : 692,83 € par mois.
+4. Cotisations salariales : pension 8,50 % depuis le 1er janvier 2026 (loi du 18 décembre 2025 portant réforme des pensions), maladie 3,05 %, soit 11,55 %, plus 1,40 % de dépendance.
+
+Ces paramètres sont modifiables dans l'onglet Administration, sans toucher au code.
+
+## Photographies
+
+Les visuels proviennent de Wikimedia Commons, sous licence Creative Commons. Les auteurs, titres et licences exacts sont listés dans `assets/CREDITS.json`, et rappelés en bas de la page d'accueil. Toute réutilisation doit conserver ces attributions.
