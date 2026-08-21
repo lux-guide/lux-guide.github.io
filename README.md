@@ -10,14 +10,16 @@ Tout fonctionne dans le navigateur, sans serveur : il suffit d'ouvrir `index.htm
 
 | Onglet | Contenu |
 |---|---|
-| Accueil | Entrée par catégorie et questions les plus posées |
-| Fiches | 25 fiches thématiques illustrées, avec recherche plein texte |
-| Parcours | Frise chronologique, d'avant le départ à la première année |
-| Simulateur | Salaire net par classe d'impôt, et capacité d'emprunt |
-| Assistant | Questionnaire de profil puis recherche ciblée dans le guide |
+| Accueil | Barre de question en tête de page, recherche instantanée, entrée par catégorie et questions fréquentes |
+| Fiches | Fiches thématiques illustrées, recherche plein texte, filtrage selon le profil, astuces de la communauté |
+| Parcours | Frise chronologique personnalisée, étapes cochables (avancement conservé dans le navigateur) |
+| Simulateur | Deux sous-onglets : salaire net par classe d'impôt, capacité d'emprunt |
+| Comparateur | Quatre contrats habitation du marché luxembourgeois, sinistre par sinistre, clause citée, assureurs anonymisés |
+| Carte | Écoles, crèches et arrêts de bus, tram, train autour d'une adresse (données OpenStreetMap, réseau requis) |
+| Assistant | Questionnaire de profil puis recherche ciblée dans le guide, aussi en widget flottant |
 | Administration | Édition du contenu et des paramètres de calcul |
 
-Navigation directe possible par ancre : `index.html#simulateur`, `#assistant`, etc.
+Navigation directe possible par ancre : `index.html#simulateur`, `#assistant`, `#fiche/banque`, etc.
 
 ## Le simulateur
 
@@ -57,11 +59,20 @@ assets/               photographies sous licence libre, et CREDITS.json
 app/
   bareme.js           barème officiel ACD, extrait de la source
   kb.js               base de connaissances, fiches et questions
+  communaute.js       astuces de la communauté, présentées comme telles
   simulateur.js       calcul du net et de la capacité d'emprunt
   chat.js             profil et recherche dans le guide
-  ui.js               rendu et administration
+  ui.js               rendu, comparateur, carte, widget, administration
   styles.css          thème clair et sombre
+comparateur/
+  contrats_kb.js      verdicts par sinistre, quatre contrats anonymisés
+  sinistres.html      analyse complète, sinistre par sinistre
+  reco.html           classement pondéré par un profil d'exemple
 ```
+
+## Le comparateur de contrats
+
+Treize sinistres concrets posés à quatre conditions générales publiques du marché luxembourgeois (éditions 2017 à 2023), avec pour chaque contrat un verdict typé et la clause citée avec sa page. Les assureurs sont anonymisés (A à D). Analyse documentaire : elle ne remplace ni un devis ni un conseil, le contrat en vigueur fait foi.
 
 ## Fiabilité du contenu
 
