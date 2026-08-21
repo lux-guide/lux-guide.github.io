@@ -43,6 +43,43 @@
     catch (e) { return false; }
   }
 
+  // ---------- Theme ----------
+  // Trois etats : systeme (defaut), clair, sombre. Le choix est conserve.
+
+  var STORAGE_THEME = "luxguide.theme.v1";
+  var THEMES = ["systeme", "clair", "sombre"];
+  var LIBELLE_THEME = { systeme: "Thème du système", clair: "Thème clair", sombre: "Thème sombre" };
+  var ICONE_THEME = { systeme: "◐", clair: "☀", sombre: "☾" };
+
+  function appliquerTheme(t) {
+    var r = document.documentElement;
+    if (t === "clair") r.setAttribute("data-theme", "light");
+    else if (t === "sombre") r.setAttribute("data-theme", "dark");
+    else r.removeAttribute("data-theme");
+    var b = $("#theme-btn");
+    if (b) {
+      b.textContent = ICONE_THEME[t];
+      b.title = LIBELLE_THEME[t] + " (cliquer pour changer)";
+      b.setAttribute("aria-label", LIBELLE_THEME[t]);
+    }
+  }
+
+  function initTheme() {
+    var t = "systeme";
+    try {
+      var v = localStorage.getItem(STORAGE_THEME);
+      if (THEMES.indexOf(v) !== -1) t = v;
+    } catch (e) { /* stockage indisponible */ }
+    appliquerTheme(t);
+    var b = $("#theme-btn");
+    if (!b) return;
+    b.addEventListener("click", function () {
+      t = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length];
+      appliquerTheme(t);
+      try { localStorage.setItem(STORAGE_THEME, t); } catch (e) {}
+    });
+  }
+
   // ---------- Navigation ----------
 
   function initOnglets() {
@@ -340,39 +377,92 @@
     window.scrollTo(0, 0);
   }
 
+  // Une seule regle de recherche pour tout le site :
+  //   1. la frappe donne des resultats instantanes, fiches et questions de la FAQ ;
+  //   2. l'assistant est l'etage au-dessus, propose de la meme facon depuis
+  //      chaque barre : un bouton, et la touche Entree.
+  // Toute barre du site passe par ces deux fonctions.
+
+  function boutonAssistant(q, libelle) {
+    var c = el("div", "chips");
+    var b = el("button", "chip", libelle || "Poser la question à l'assistant");
+    b.addEventListener("click", function () { demanderAssistant(q); });
+    c.appendChild(b);
+    return c;
+  }
+
+  function demanderAssistant(q) {
+    montrerWidget();
+    if (q && q.trim().length >= 2) envoyer(q.trim());
+  }
+
+  // Questions de la FAQ correspondant a une saisie, les mieux notees d'abord.
+  function chercherFaqListe(q, limite) {
+    var termes = normaliserFaq(q).split(" ").filter(function (t) { return t.length > 2; });
+    if (!termes.length) return [];
+    return window.KB.faq.map(function (item) {
+      var hayQ = normaliserFaq(item.q), hayA = normaliserFaq(item.a);
+      var s = 0;
+      termes.forEach(function (t) {
+        if (hayQ.indexOf(t) !== -1) s += 3;
+        else if (hayA.indexOf(t) !== -1) s += 1;
+      });
+      return { item: item, score: s };
+    }).filter(function (x) { return x.score >= 3; })
+      .sort(function (a, b) { return b.score - a.score; })
+      .slice(0, limite || 3)
+      .map(function (x) { return x.item; });
+  }
+
+  function chipsFaq(liste, classe) {
+    var c = el("div", "chips " + (classe || ""));
+    liste.forEach(function (item) {
+      var lbl = item.q.length > 62 ? item.q.slice(0, 60).trim() + "…" : item.q;
+      var b = el("button", "chip", "Question : " + lbl);
+      b.title = item.q;
+      b.addEventListener("click", function () { demanderAssistant(item.q); });
+      c.appendChild(b);
+    });
+    return c;
+  }
+
   function initRecherche() {
-    $("#q-fiches").addEventListener("input", function (e) {
+    // Barre des fiches : filtre la liste, et propose l'assistant quand la
+    // recherche par mots ne rend rien.
+    var qf = $("#q-fiches");
+    qf.addEventListener("input", function (e) {
       var q = e.target.value.trim();
       if (!q) return rendreFiches();
       var hits = window.CHAT.rechercher(q, 50);
       rendreFiches(hits.map(function (h) { return h.fiche; }));
+      if (!hits.length) {
+        var g = $("#fiches-grid");
+        g.appendChild(boutonAssistant(q, "Poser cette question à l'assistant"));
+      }
+    });
+    qf.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && qf.value.trim().length >= 2 &&
+          !window.CHAT.rechercher(qf.value.trim(), 1).length) {
+        demanderAssistant(qf.value.trim());
+      }
     });
 
-    // Recherche de la page d'accueil : resultats affiches sur place.
-    // Reconnaissance simple : des fiches correspondent, on les montre ; sinon,
-    // ou si la question depasse la recherche par mots, on propose l'assistant.
-    function boutonAssistant(q, libelle) {
-      var c = el("div", "chips");
-      var b = el("button", "chip", libelle);
-      b.addEventListener("click", function () {
-        montrerWidget();
-        envoyer(q);
-      });
-      c.appendChild(b);
-      return c;
-    }
-
+    // Barre de l'accueil : fiches et questions de la FAQ, puis l'assistant.
     var qa = $("#q-accueil");
     if (qa) qa.addEventListener("input", function (e) {
       var q = e.target.value.trim();
       var g = $("#accueil-resultats");
       g.innerHTML = "";
       if (q.length < 2) return;
-      var hits = window.CHAT.rechercher(q, 8);
-      if (!hits.length) {
+
+      var hits = window.CHAT.rechercher(q, 6);
+      var qfaq = chercherFaqListe(q, 3);
+
+      if (!hits.length && !qfaq.length) {
         g.appendChild(el("p", "muted",
-          "Aucune fiche ne correspond à ces mots. L'assistant peut chercher autrement, ou dire qu'il ne sait pas."));
-        g.appendChild(boutonAssistant(q, "Poser la question à l'assistant"));
+          "Aucune fiche ni question enregistrée ne correspond à ces mots. " +
+          "L'assistant peut chercher autrement, ou dire qu'il ne sait pas."));
+        g.appendChild(boutonAssistant(q));
         return;
       }
       hits.forEach(function (h) {
@@ -382,6 +472,7 @@
           montrerFiche(f.id);
         }));
       });
+      if (qfaq.length) g.appendChild(chipsFaq(qfaq, "ask-faq"));
       // Une vraie question (phrase, point d'interrogation) merite mieux qu'une
       // liste de fiches : proposer aussi l'assistant.
       if (/\?/.test(q) || q.split(/\s+/).length >= 4) {
@@ -390,21 +481,21 @@
       activerApparition(g);
     });
     qa.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && qa.value.trim().length >= 2 &&
-          !window.CHAT.rechercher(qa.value.trim(), 1).length) {
-        montrerWidget();
-        envoyer(qa.value.trim());
-      }
+      if (e.key !== "Enter") return;
+      var q = qa.value.trim();
+      if (q.length < 2) return;
+      // Entree = je veux une reponse : l'assistant prend la main.
+      demanderAssistant(q);
+      qa.value = "";
+      $("#accueil-resultats").innerHTML = "";
     });
 
-    // Bouton Demander : la question part a l'assistant, la grille de
-    // resultats se range pour ne pas concurrencer la conversation
+    // Bouton Demander : meme comportement que la touche Entree.
     var qb = $("#q-accueil-btn");
     if (qb) qb.addEventListener("click", function () {
       var q = qa.value.trim();
-      montrerWidget();
+      demanderAssistant(q);
       if (q.length >= 2) {
-        envoyer(q);
         qa.value = "";
         $("#accueil-resultats").innerHTML = "";
       }
@@ -416,10 +507,7 @@
       var lbl = item.q.length > 46 ? item.q.slice(0, 44).trim() + "…" : item.q;
       var b = el("button", "chip", lbl);
       b.title = item.q;
-      b.addEventListener("click", function () {
-        montrerWidget();
-        envoyer(item.q);
-      });
+      b.addEventListener("click", function () { demanderAssistant(item.q); });
       ac.appendChild(b);
     });
   }
@@ -457,14 +545,19 @@
     if (!visibles.length) {
       liste.appendChild(el("p", "muted",
         "Aucune question enregistrée ne correspond. L'assistant peut chercher dans le corps des fiches."));
-      var c = el("div", "chips");
-      var b = el("button", "chip", "Poser cette question à l'assistant");
-      b.addEventListener("click", function () {
-        montrerWidget();
-        envoyer(filtre);
-      });
-      c.appendChild(b);
-      liste.appendChild(c);
+      liste.appendChild(boutonAssistant(filtre, "Poser cette question à l'assistant"));
+      // Fiches qui parlent quand meme du sujet : la recherche ne rend jamais rien de vide.
+      var hits = window.CHAT.rechercher(filtre, 4);
+      if (hits.length) {
+        liste.appendChild(el("p", "muted", "Fiches qui traitent de ce sujet :"));
+        var cf = el("div", "chips");
+        hits.forEach(function (h) {
+          var b2 = el("button", "chip", h.fiche.titre);
+          b2.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(h.fiche.id); });
+          cf.appendChild(b2);
+        });
+        liste.appendChild(cf);
+      }
       return;
     }
 
@@ -511,13 +604,16 @@
   function initFaq() {
     if (!$("#faq-liste")) return;
     rendreFaq();
-    $("#q-faq").addEventListener("input", function (e) {
+    var qf = $("#q-faq");
+    qf.addEventListener("input", function (e) {
       rendreFaq(e.target.value.trim());
     });
+    // Meme regle que les autres barres : Entree passe la main a l'assistant.
+    qf.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && qf.value.trim().length >= 2) demanderAssistant(qf.value.trim());
+    });
     $("#faq-assistant").addEventListener("click", function () {
-      var q = $("#q-faq").value.trim();
-      montrerWidget();
-      if (q.length >= 2) envoyer(q);
+      demanderAssistant(qf.value.trim());
     });
   }
 
@@ -1549,8 +1645,42 @@
       });
   }
 
+  // Les applications et sites officiels, que cette carte ne remplace pas.
+  var OUTILS_CARTE = [
+    { titre: "mobiliteit.lu", u: "https://www.mobiliteit.lu/",
+      d: "Le planificateur officiel de tous les transports : horaires en temps réel, itinéraires porte à porte, bus, train, tram, transport scolaire, vélos en libre-service. Application mobile sur les deux magasins." },
+    { titre: "CFL go", u: "https://www.cfl.lu/fr-fr/app/cflgo",
+      d: "L'application des chemins de fer luxembourgeois : horaires en temps réel, alertes sur vos lignes favorites, information trafic, titres pour les trajets payants." },
+    { titre: "Guichet.lu", u: "https://guichet.public.lu/fr/citoyens.html",
+      d: "Le guide administratif officiel : chaque démarche, les pièces à fournir et les formulaires. C'est la source citée par les fiches de ce guide." },
+    { titre: "Géoportail national", u: "https://map.geoportail.lu/",
+      d: "La carte officielle du Luxembourg : cadastre, plans d'aménagement, zones inondables, photos aériennes. Utile avant d'acheter." },
+    { titre: "Ministère de l'Éducation nationale", u: "https://men.public.lu/fr.html",
+      d: "L'offre scolaire et le fonctionnement de l'enseignement. L'inscription elle-même passe par la commune de résidence." },
+    { titre: "Observatoire de l'habitat", u: "https://logement.public.lu/fr/observatoire-habitat.html",
+      d: "Les prix réels de vente et de location par commune, publiés par l'État. Le bon repère avant de juger une annonce." }
+  ];
+
+  function rendreOutilsCarte() {
+    var g = $("#carte-outils");
+    if (!g || g.children.length) return;
+    OUTILS_CARTE.forEach(function (o) {
+      var c = el("div", "qcard");
+      c.appendChild(el("h3", null, o.titre));
+      c.appendChild(el("p", null, o.d));
+      var a = el("a", "outil-lien", "Ouvrir " + o.titre + " →");
+      a.href = o.u; a.target = "_blank"; a.rel = "noopener";
+      c.appendChild(a);
+      c.addEventListener("click", function (e) {
+        if (e.target.tagName !== "A") window.open(o.u, "_blank", "noopener");
+      });
+      g.appendChild(c);
+    });
+  }
+
   // Appelee a l'ouverture de l'onglet : la bibliotheque de carte n'est chargee qu'a ce moment.
   function initCarte() {
+    rendreOutilsCarte();
     if (carteDemarree) return;
     carteDemarree = true;
     chargerLeaflet(function () {
@@ -1759,6 +1889,7 @@
   // ---------- Demarrage ----------
 
   chargerKB();
+  initTheme();
   initOnglets();
   rendreAccueil();
   rendreFiches();

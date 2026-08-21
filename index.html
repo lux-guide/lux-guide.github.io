@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=6">
+<link rel="stylesheet" href="app/styles.css?v=7">
 </head>
 <body>
 
@@ -22,6 +22,7 @@
       <button role="tab" data-panel="assistant" aria-selected="false">Assistant</button>
       <button role="tab" data-panel="admin" aria-selected="false" class="tab-admin" title="Administration du contenu">Administration</button>
     </nav>
+    <button id="theme-btn" class="theme-btn" title="Changer de thème" aria-label="Changer de thème"></button>
   </div>
 </header>
 
@@ -34,7 +35,7 @@
       <h2 class="ask-titre">Une question sur votre installation&nbsp;?</h2>
       <p class="ask-sous">Cherchez une fiche ou posez votre question : l'assistant répond depuis le guide, sources à l'appui.</p>
       <div class="ask-bar">
-        <input type="search" id="q-accueil" placeholder="Ex : combien de jours pour me déclarer à la commune ?" autocomplete="off">
+        <input type="search" id="q-accueil" placeholder="Cherchez un mot, ou posez votre question puis Entrée" autocomplete="off">
         <button class="btn" id="q-accueil-btn">Demander</button>
       </div>
       <div class="chips" id="ask-chips"></div>
@@ -86,7 +87,7 @@
       <h1>Fiches pratiques</h1>
       <p class="lead">Chaque fiche est autonome, avec ses points clés et ses sources officielles.</p>
       <div class="search-bar">
-        <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatriés, crèche, permis...">
+        <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatriés, crèche, permis. Entrée pour demander à l'assistant.">
       </div>
       <div id="fiches-perso"></div>
       <div class="grid" id="fiches-grid"></div>
@@ -115,7 +116,7 @@
       <span class="badge" id="faq-compte"></span>
     </p>
     <div class="search-bar">
-      <input type="search" id="q-faq" placeholder="Filtrer : classe d'impôt, caution, crèche, permis..." autocomplete="off">
+      <input type="search" id="q-faq" placeholder="Filtrer : classe d'impôt, caution, crèche, permis. Entrée pour demander à l'assistant." autocomplete="off">
     </div>
     <div id="faq-liste"></div>
     <div class="notice small" style="margin-top:26px">
@@ -327,6 +328,13 @@
       l'exhaustivité n'est pas garantie. Pour l'inscription scolaire, la commune fait foi,
       voir la fiche Scolariser ses enfants.
     </p>
+
+    <h2>Les outils officiels, pour aller plus loin</h2>
+    <p class="lead small">
+      Cette carte sert à repérer un quartier avant de le visiter. Pour les horaires réels,
+      les itinéraires et les démarches, ce sont les applications officielles qui font foi.
+    </p>
+    <div class="grid serre" id="carte-outils"></div>
   </section>
 
   <!-- Assistant -->
@@ -444,14 +452,14 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=6"></script>
-<script src="app/kb.js?v=6"></script>
-<script src="app/simulateur.js?v=6"></script>
-<script src="comparateur/contrats_kb.js?v=6"></script>
-<script src="comparateur/offres_kb.js?v=6"></script>
-<script src="app/chat.js?v=6"></script>
-<script src="app/ui.js?v=6"></script>
-<script src="app/communaute.js?v=6"></script>
+<script src="app/bareme.js?v=7"></script>
+<script src="app/kb.js?v=7"></script>
+<script src="app/simulateur.js?v=7"></script>
+<script src="comparateur/contrats_kb.js?v=7"></script>
+<script src="comparateur/offres_kb.js?v=7"></script>
+<script src="app/chat.js?v=7"></script>
+<script src="app/ui.js?v=7"></script>
+<script src="app/communaute.js?v=7"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

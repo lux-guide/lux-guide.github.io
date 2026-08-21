@@ -700,3 +700,21 @@ h2.faq-groupe:first-child { margin-top: 24px; }
 .faq-corps p { margin: 0 0 6px; color: var(--text-2); font-size: 14.5px; line-height: 1.65; }
 .faq-corps .chips { margin-top: 10px; }
 .faq-sources { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+/* ---------- Selecteur de theme ---------- */
+
+.theme-btn {
+  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
+  width: 34px; height: 34px; border-radius: 10px; cursor: pointer; flex: none;
+  font-size: 15px; line-height: 1; margin-left: 6px;
+  transition: color .16s, border-color .16s, background .16s;
+}
+.theme-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+/* Suggestions de questions sous la recherche de l'accueil */
+.ask-faq { grid-column: 1 / -1; margin-top: 4px; }
+
+/* Cartes d'outils officiels (onglet Carte) */
+#carte-outils .qcard { cursor: pointer; display: flex; flex-direction: column; }
+.outil-lien { margin-top: auto; padding-top: 10px; font-size: 13px; font-weight: 550; text-decoration: none; }
+.outil-lien:hover { text-decoration: underline; }
