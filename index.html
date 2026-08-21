@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=7">
+<link rel="stylesheet" href="app/styles.css?v=8">
 </head>
 <body>
 
@@ -251,40 +251,102 @@
     <div id="ctr-vue" hidden></div>
 
     <div id="ctr-mrh">
-    <h2>Assurance habitation : la comparaison complète, sur données réelles</h2>
-    <div class="notice small">
-      <strong>Méthode et limites.</strong> Analyse documentaire de conditions générales publiques
-      du marché luxembourgeois, éditions 2017 à 2023, assureurs anonymisés (A à D). Chaque verdict
-      cite la clause et sa page. Une comparaison de conditions générales ne remplace ni un devis
-      ni un conseil : le contrat en vigueur fait foi.
+    <h2>Assurance habitation : la comparaison complète</h2>
+    <p class="lead">
+      <span class="badge on">données réelles</span>
+      Quatre contrats du marché luxembourgeois lus intégralement, treize sinistres concrets posés
+      à chacun, et pour chaque réponse la clause exacte avec sa page.
+    </p>
+
+    <div class="sous-onglets" id="mrh-tabs">
+      <button data-mrh="reco" class="actif">Ma situation</button>
+      <button data-mrh="sinistres">Sinistres</button>
+      <button data-mrh="matrice">Couverture</button>
+      <button data-mrh="constats">Ce qui ressort</button>
+      <button data-mrh="methode">Méthode</button>
     </div>
 
-    <div class="card ctr-wrap">
-      <h3 style="margin-top:0">Posez votre question sur les contrats</h3>
+    <!-- Ma situation : classement calculé en direct -->
+    <div id="mrh-reco">
       <p class="lead small">
-        Décrivez un sinistre ou une situation qui vous ressemble : la réponse montre comment chacun
-        des quatre contrats réagit, avec la clause citée. C'est la meilleure façon de comprendre
-        ce que couvre vraiment un contrat.
+        Cochez ce qui vous concerne. Le classement se recalcule à chaque clic, à partir des
+        verdicts réels : chaque contrat est noté sur les garanties qui comptent
+        <em>pour vous</em>, et les lacunes s'affichent avec la clause qui les cause.
       </p>
-      <div class="chips" id="ctr-suggestions"></div>
-      <div class="chat-log" id="ctr-log"></div>
-      <div class="chat-bar">
-        <input type="text" id="ctr-input" placeholder="Ex : mon vélo est volé dans la rue, suis-je couvert ?" autocomplete="off">
-        <button class="btn" id="ctr-send">Envoyer</button>
+      <div class="card">
+        <div id="mrh-biens" class="biens-grille"></div>
+      </div>
+      <div id="mrh-classement"></div>
+      <div id="mrh-couverture-profil"></div>
+    </div>
+
+    <!-- Sinistres : tableau complet + chat -->
+    <div id="mrh-sinistres" hidden>
+      <p class="lead small">
+        Les treize sinistres posés aux quatre contrats. Cliquez sur une ligne pour voir le détail :
+        plafond, franchise, condition qui décide, et la clause citée avec sa page.
+      </p>
+      <div id="mrh-sinistres-table"></div>
+
+      <h3>Poser un cas qui n'est pas dans la liste</h3>
+      <div class="card ctr-wrap">
+        <div class="chips" id="ctr-suggestions"></div>
+        <div class="chat-log" id="ctr-log"></div>
+        <div class="chat-bar">
+          <input type="text" id="ctr-input" placeholder="Ex : mon vélo est volé dans la rue, suis-je couvert ?" autocomplete="off">
+          <button class="btn" id="ctr-send">Envoyer</button>
+        </div>
       </div>
     </div>
 
-    <h2>Les analyses complètes</h2>
-    <div class="grid serre">
-      <div class="qcard" id="ctr-page-sinistres">
-        <h3>Sinistres réels, contrat par contrat</h3>
-        <p>Treize sinistres concrets posés aux quatre contrats : payé, sous conditions, plafond réduit
-          ou exclu, avec la clause citée et la page.</p>
-      </div>
-      <div class="qcard" id="ctr-page-reco">
-        <h3>Le contrat adapté à un profil</h3>
-        <p>Un profil d'exemple (appartement, télétravail, vélo, bijoux) pondère les garanties qui
-          comptent, classe les contrats et liste les lacunes à négocier.</p>
+    <!-- Matrice de couverture -->
+    <div id="mrh-matrice" hidden>
+      <p class="lead small">
+        Dix-sept garanties recherchées dans les quatre documents. Une case pleine veut dire que le
+        sujet est traité, et à quelle page il apparaît en premier. Attention : c'est un signal de
+        présence, pas une promesse de couverture. Un contrat peut nommer une garantie page 5 et
+        l'exclure page 40, c'est l'objet de l'onglet Sinistres.
+      </p>
+      <div id="mrh-matrice-table"></div>
+      <div id="mrh-sources"></div>
+    </div>
+
+    <!-- Constats -->
+    <div id="mrh-constats" hidden>
+      <p class="lead small">
+        Ce que la lecture des quatre contrats fait ressortir, et les questions à poser avant de signer.
+      </p>
+      <div id="mrh-constats-liste"></div>
+    </div>
+
+    <!-- Méthode -->
+    <div id="mrh-methode" hidden>
+      <p class="lead small">Comment cette comparaison a été faite, et ce qu'elle ne dit pas.</p>
+      <div class="card">
+        <h3 style="margin-top:0">La démarche</h3>
+        <p>Quatre conditions générales publiques du marché luxembourgeois, éditions 2017 à 2023,
+          entre 60 et 139 pages chacune. Le texte est extrait page par page, ce qui rend chaque
+          phrase adressable : c'est ce qui permet de citer une clause avec son numéro de page.</p>
+        <p>Deux passages ensuite. Le premier cherche dix-sept garanties dans les quatre documents,
+          en français, en allemand et en anglais, et produit la matrice de couverture. Le second
+          part de sinistres concrets, choisis pour faire diverger les contrats, et va chercher la
+          clause qui décide dans chaque document.</p>
+        <h3>Pourquoi des sinistres et pas des garanties</h3>
+        <p>Demander à un contrat s'il couvre le vol donne toujours oui. La réponse utile est
+          ailleurs : dans l'exclusion, le plafond, la condition. Deux contrats qui affichent la
+          même garantie répondent différemment sur le même vélo, selon qu'il était dans
+          l'appartement, dans la cave commune ou attaché dans la rue. C'est pour cela que les
+          treize sinistres sont posés dans des lieux et des situations précises.</p>
+        <h3>Ce que cette comparaison ne dit pas</h3>
+        <p>Elle ne donne aucun prix : les conditions générales n'en contiennent pas, la prime
+          dépend de votre logement et de vos capitaux déclarés. Elle porte sur des éditions
+          2017 à 2023, votre contrat peut être plus récent. Elle ne remplace ni un devis ni un
+          conseil. Enfin, les assureurs sont anonymisés : l'objectif est de montrer où les
+          contrats divergent et quelles questions poser, pas de recommander une marque.</p>
+        <h3>Vérifier soi-même</h3>
+        <p>Chaque verdict porte sa citation et sa page. Sur votre propre contrat, la démarche
+          se refait à la main : ouvrez les conditions générales, cherchez le mot du sinistre,
+          et lisez ce qui suit la garantie, c'est-à-dire les exclusions.</p>
       </div>
     </div>
     </div>
@@ -452,14 +514,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=7"></script>
-<script src="app/kb.js?v=7"></script>
-<script src="app/simulateur.js?v=7"></script>
-<script src="comparateur/contrats_kb.js?v=7"></script>
-<script src="comparateur/offres_kb.js?v=7"></script>
-<script src="app/chat.js?v=7"></script>
-<script src="app/ui.js?v=7"></script>
-<script src="app/communaute.js?v=7"></script>
+<script src="app/bareme.js?v=8"></script>
+<script src="app/kb.js?v=8"></script>
+<script src="app/simulateur.js?v=8"></script>
+<script src="comparateur/contrats_kb.js?v=8"></script>
+<script src="comparateur/mrh_kb.js?v=8"></script>
+<script src="comparateur/offres_kb.js?v=8"></script>
+<script src="app/chat.js?v=8"></script>
+<script src="app/ui.js?v=8"></script>
+<script src="app/communaute.js?v=8"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

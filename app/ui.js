@@ -1214,7 +1214,7 @@
     mrh.appendChild(el("h3", null, "Assurance habitation (MRH)"));
     mrh.appendChild(el("p", null,
       "Treize sinistres réels posés à quatre contrats du marché, clause citée à l'appui, " +
-      "et un chat pour poser vos propres cas."));
+      "un classement selon votre situation et un chat pour vos propres cas."));
     mrh.addEventListener("click", function () {
       fermerVerticale();
       var c = $("#ctr-mrh");
@@ -1491,8 +1491,13 @@
         b.addEventListener("click", function () { repondreContrat(s.question); });
         c.appendChild(b);
       });
-      var ba = el("button", "chip", "Ouvrir l'analyse complète");
-      ba.addEventListener("click", function () { window.location.href = "comparateur/sinistres.html"; });
+      var ba = el("button", "chip", "Voir ce que ça donne pour ma situation");
+      ba.addEventListener("click", function () {
+        var onglet = $$("#mrh-tabs button").filter(function (x) { return x.dataset.mrh === "reco"; })[0];
+        if (onglet) onglet.click();
+        var z = $("#mrh-reco");
+        if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       c.appendChild(ba);
       m.appendChild(c);
       var log = $("#ctr-log");
@@ -1500,8 +1505,298 @@
     }, 450 + Math.random() * 500);
   }
 
+  // ---------- Comparateur habitation : les cinq volets ----------
+
+  var STATUTS_FR = {
+    covered: "payé", covered_with_conditions: "payé sous conditions",
+    sub_limited: "payé, plafond réduit", excluded: "exclu",
+    not_covered: "non couvert", not_found: "non déterminé"
+  };
+
+  // Un scenario de contrats_kb.js correspond-il a une cible [groupe, titre] ?
+  function scenariosCibles(cibles) {
+    var out = [];
+    (cibles || []).forEach(function (c) {
+      var groupe = c[0], titre = c[1];
+      window.CONTRATS_KB.scenarios.forEach(function (sc) {
+        if (sc.groupe === groupe && (titre === null || sc.titre === titre)) out.push(sc);
+      });
+    });
+    return out;
+  }
+
+  // Classement selon les biens coches : meme calcul que la case study,
+  // moyenne des scores de protection par bien, ponderee par le poids du bien.
+  function calculerReco(idsCoches) {
+    var K = window.MRH_KB, assureurs = K.assureurs;
+    var res = {}, lignes = [];
+    assureurs.forEach(function (a) { res[a] = { fit: 0, poids: 0, lacunes: [], parBien: {} }; });
+
+    K.biens.filter(function (b) { return idsCoches.indexOf(b.id) !== -1; }).forEach(function (bien) {
+      var scen = scenariosCibles(bien.cibles);
+      var ligne = { bien: bien.nom, poids: bien.poids, scores: {} };
+      assureurs.forEach(function (a) {
+        var vals = [];
+        scen.forEach(function (sc) {
+          var v = sc.verdicts[a];
+          if (!v) return;
+          var s = K.scores[v.statut];
+          if (s !== null && s !== undefined) vals.push(s);
+          if (v.statut === "excluded" || v.statut === "not_covered" || v.statut === "sub_limited") {
+            res[a].lacunes.push({
+              bien: bien.nom,
+              sinistre: sc.groupe + " : " + sc.titre.toLowerCase(),
+              statut: STATUTS_FR[v.statut] || v.statut,
+              clause: v.cle || "",
+              page: v.page
+            });
+          }
+        });
+        var moy = vals.length ? vals.reduce(function (x, y) { return x + y; }, 0) / vals.length : null;
+        ligne.scores[a] = moy;
+        res[a].parBien[bien.nom] = moy;
+        if (moy !== null) { res[a].fit += moy * bien.poids; res[a].poids += bien.poids; }
+      });
+      lignes.push(ligne);
+    });
+
+    assureurs.forEach(function (a) {
+      res[a].pct = res[a].poids ? Math.round(100 * res[a].fit / res[a].poids) : null;
+    });
+    return { scores: res, lignes: lignes };
+  }
+
+  function couleurScore(s) {
+    if (s === null || s === undefined) return "nf";
+    if (s >= 0.95) return "ok";
+    if (s >= 0.8) return "cond";
+    if (s >= 0.4) return "part";
+    return "ko";
+  }
+
+  function biensCoches() {
+    return $$("#mrh-biens input:checked").map(function (i) { return i.value; });
+  }
+
+  function rendreReco() {
+    var ids = biensCoches();
+    var zone = $("#mrh-classement"), zone2 = $("#mrh-couverture-profil");
+    zone.innerHTML = ""; zone2.innerHTML = "";
+
+    if (!ids.length) {
+      zone.appendChild(el("p", "muted",
+        "Cochez au moins une situation pour obtenir un classement."));
+      return;
+    }
+
+    var r = calculerReco(ids);
+    var classement = window.MRH_KB.assureurs.slice().sort(function (a, b) {
+      return (r.scores[b].pct || 0) - (r.scores[a].pct || 0);
+    });
+
+    zone.appendChild(el("h3", null, "Le classement pour cette situation"));
+    classement.forEach(function (nom, i) {
+      var s = r.scores[nom];
+      var c = el("div", "reco-carte" + (i === 0 ? " premier" : ""));
+      var h = el("div", "reco-head");
+      h.appendChild(el("span", "reco-rang", "#" + (i + 1)));
+      h.appendChild(el("span", "reco-nom", nom));
+      h.appendChild(el("span", "reco-pct " + (s.pct >= 78 ? "ok" : s.pct >= 65 ? "part" : "ko"),
+        (s.pct === null ? "?" : s.pct + " %")));
+      c.appendChild(h);
+      var barre = el("div", "reco-barre");
+      var rempli = el("i");
+      rempli.style.width = (s.pct || 0) + "%";
+      rempli.className = s.pct >= 78 ? "ok" : s.pct >= 65 ? "part" : "ko";
+      barre.appendChild(rempli);
+      c.appendChild(barre);
+
+      if (!s.lacunes.length) {
+        c.appendChild(el("p", "reco-ok", "Aucune lacune sur ce que vous avez coché."));
+      } else {
+        var det = el("details", "reco-lacunes");
+        det.appendChild(el("summary", null,
+          s.lacunes.length + (s.lacunes.length > 1 ? " points à négocier" : " point à négocier")));
+        s.lacunes.forEach(function (g) {
+          var d = el("div", "lacune");
+          var t = el("p", "lacune-t");
+          t.appendChild(el("strong", null, g.bien));
+          t.appendChild(document.createTextNode(" · " + g.sinistre + " : "));
+          t.appendChild(el("span", "lacune-s", g.statut));
+          d.appendChild(t);
+          if (g.clause) {
+            d.appendChild(el("p", "lacune-c",
+              "« " + g.clause + " »" + (g.page ? " (p. " + g.page + ")" : "")));
+          }
+          det.appendChild(d);
+        });
+        c.appendChild(det);
+      }
+      zone.appendChild(c);
+    });
+
+    zone.appendChild(el("p", "hint",
+      "Le pourcentage mesure la part de vos besoins réellement payée par le contrat : 100 % veut " +
+      "dire payé plein sur tout ce que vous avez coché, un chiffre plus bas signale des conditions, " +
+      "des plafonds réduits ou des exclusions. Cocher une situation différente change le classement."));
+
+    // Détail : chaque situation cochée, notée contrat par contrat
+    zone2.appendChild(el("h3", null, "Le détail derrière le classement"));
+    var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table");
+    var thead = el("thead"), tr0 = el("tr");
+    tr0.appendChild(el("th", null, "Ce que vous avez coché"));
+    window.MRH_KB.assureurs.forEach(function (a) { tr0.appendChild(el("th", "num", a)); });
+    thead.appendChild(tr0); tab.appendChild(thead);
+    var tb = el("tbody");
+    r.lignes.forEach(function (l) {
+      var tr = el("tr");
+      tr.appendChild(el("td", null, l.bien));
+      window.MRH_KB.assureurs.forEach(function (a) {
+        var s = l.scores[a];
+        var td = el("td", "num cell-" + couleurScore(s), s === null ? "—" : Math.round(s * 100) + " %");
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb); wrap.appendChild(tab); zone2.appendChild(wrap);
+    zone2.appendChild(el("p", "hint",
+      "100 % : payé sans réserve. 85 % : payé sous conditions. 50 % : payé mais avec un plafond " +
+      "réduit. 0 % : exclu ou non couvert. « — » : les extraits ne permettent pas de trancher, " +
+      "et cela se demande par écrit à l'assureur."));
+  }
+
+  function rendreBiens() {
+    var g = $("#mrh-biens");
+    if (!g || g.children.length) return;
+    window.MRH_KB.biens.forEach(function (b) {
+      var d = el("label", "bien");
+      var i = el("input");
+      i.type = "checkbox"; i.value = b.id; i.checked = !!b.defaut;
+      i.addEventListener("change", rendreReco);
+      d.appendChild(i);
+      var t = el("span");
+      t.appendChild(el("span", "bien-nom", b.nom));
+      t.appendChild(el("span", "bien-aide", b.aide));
+      d.appendChild(t);
+      g.appendChild(d);
+    });
+  }
+
+  function rendreMatrice() {
+    var z = $("#mrh-matrice-table");
+    if (!z || z.children.length) return;
+    var K = window.MRH_KB;
+    var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table");
+    var thead = el("thead"), tr0 = el("tr");
+    tr0.appendChild(el("th", null, "Garantie recherchée"));
+    K.assureurs.forEach(function (a) { tr0.appendChild(el("th", "num", a)); });
+    thead.appendChild(tr0); tab.appendChild(thead);
+    var tb = el("tbody");
+    K.criteres.forEach(function (c) {
+      var tr = el("tr");
+      tr.appendChild(el("td", null, c.label));
+      K.assureurs.forEach(function (a) {
+        var cell = (K.cellules[a] || {})[c.id] || { hits: 0 };
+        var td = el("td", "num " + (cell.hits ? "cell-ok" : "cell-nf"));
+        if (!cell.hits) td.textContent = "absent";
+        else {
+          td.appendChild(el("span", "mat-hits", cell.hits + " mentions"));
+          if (cell.first_page) td.appendChild(el("span", "mat-page", "dès la p. " + cell.first_page));
+        }
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb); wrap.appendChild(tab); z.appendChild(wrap);
+
+    var s = $("#mrh-sources");
+    s.innerHTML = "";
+    s.appendChild(el("h3", null, "Les documents analysés"));
+    var ul = el("ul", "mrh-sources-liste");
+    K.sources.forEach(function (src) {
+      ul.appendChild(el("li", null,
+        src.nom + " : conditions générales de " + src.pages + " pages, lues intégralement."));
+    });
+    s.appendChild(ul);
+    s.appendChild(el("p", "hint",
+      "Les assureurs sont anonymisés : cette comparaison sert à montrer où les contrats divergent " +
+      "et quelles questions poser, pas à recommander une marque."));
+  }
+
+  function rendreSinistresTable() {
+    var z = $("#mrh-sinistres-table");
+    if (!z || z.children.length) return;
+    var K = window.MRH_KB;
+    var groupes = {}, ordre = [];
+    window.CONTRATS_KB.scenarios.forEach(function (sc) {
+      if (!groupes[sc.groupe]) { groupes[sc.groupe] = []; ordre.push(sc.groupe); }
+      groupes[sc.groupe].push(sc);
+    });
+    ordre.forEach(function (g) {
+      z.appendChild(el("h3", "sin-groupe", g));
+      groupes[g].forEach(function (sc) {
+        var d = el("details", "sin-item");
+        var sum = el("summary");
+        sum.appendChild(el("span", "sin-titre", sc.titre));
+        var pastilles = el("span", "sin-pastilles");
+        K.assureurs.forEach(function (a) {
+          var v = sc.verdicts[a];
+          var st = STATUTS_CONTRAT[v ? v.statut : "not_found"] || { c: "nf" };
+          var p = el("span", "pastille " + st.c);
+          p.textContent = a.replace("Assureur ", "");
+          p.title = a + " : " + (STATUTS_FR[v ? v.statut : "not_found"] || "?");
+          pastilles.appendChild(p);
+        });
+        sum.appendChild(pastilles);
+        d.appendChild(sum);
+        var corps = el("div", "sin-corps");
+        corps.appendChild(el("p", "sin-question", sc.question));
+        var grille = el("div", "vgrid");
+        K.assureurs.forEach(function (a) {
+          if (sc.verdicts[a]) grille.appendChild(carteVerdict(a, sc.verdicts[a]));
+        });
+        corps.appendChild(grille);
+        d.appendChild(corps);
+        z.appendChild(d);
+      });
+    });
+  }
+
+  function rendreConstats() {
+    var z = $("#mrh-constats-liste");
+    if (!z || z.children.length) return;
+    window.MRH_KB.constats.forEach(function (c, i) {
+      var d = el("div", "constat");
+      var h = el("div", "constat-head");
+      h.appendChild(el("span", "constat-num", String(i + 1)));
+      h.appendChild(el("h3", null, c.titre));
+      d.appendChild(h);
+      d.appendChild(el("p", null, c.texte));
+      d.appendChild(el("span", "constat-portee", c.portee));
+      z.appendChild(d);
+    });
+  }
+
+  function initMrh() {
+    if (!window.MRH_KB || !window.CONTRATS_KB || !$("#mrh-tabs")) return;
+    var vues = ["reco", "sinistres", "matrice", "constats", "methode"];
+    $$("#mrh-tabs button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        $$("#mrh-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
+        var v = b.dataset.mrh;
+        vues.forEach(function (nom) { $("#mrh-" + nom).hidden = nom !== v; });
+        if (v === "matrice") rendreMatrice();
+        if (v === "sinistres") rendreSinistresTable();
+        if (v === "constats") rendreConstats();
+      });
+    });
+    rendreBiens();
+    rendreReco();
+  }
+
   function initComparateur() {
     rendreVerticales();
+    initMrh();
     if (!window.CONTRATS_KB || !$("#ctr-log")) return;
     // Questions suggerees : le premier cas de chaque famille de sinistres
     var sug = $("#ctr-suggestions");
@@ -1525,12 +1820,6 @@
         repondreContrat(e.target.value.trim());
         e.target.value = "";
       }
-    });
-    $("#ctr-page-sinistres").addEventListener("click", function () {
-      window.location.href = "comparateur/sinistres.html";
-    });
-    $("#ctr-page-reco").addEventListener("click", function () {
-      window.location.href = "comparateur/reco.html";
     });
   }
 
