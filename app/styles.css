@@ -138,9 +138,10 @@ p { color: var(--text-2); }
 /* ---------- Hero ---------- */
 
 .hero {
-  position: relative; margin: 0 -24px; min-height: min(78vh, 640px);
+  position: relative; margin: 0; min-height: min(72vh, 600px);
   display: flex; align-items: flex-end; overflow: hidden;
-  border-radius: 0 0 var(--r-l) var(--r-l);
+  border-radius: var(--r-l);
+  box-shadow: var(--ombre-m);
 }
 .hero-img { position: absolute; inset: 0; }
 .hero-img img {
@@ -674,3 +675,28 @@ nav.tabs button.tab-admin[aria-selected="true"] { color: var(--accent); backgrou
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .tl-cta { margin-top: 12px; }
+
+/* ---------- FAQ ---------- */
+
+h2.faq-groupe { margin: 40px 0 12px; font-size: clamp(20px, 2.4vw, 26px); }
+h2.faq-groupe:first-child { margin-top: 24px; }
+.faq-item {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-s);
+  margin: 8px 0; overflow: hidden;
+}
+.faq-item summary {
+  cursor: pointer; padding: 14px 18px; font-weight: 550; font-size: 15px;
+  list-style: none; position: relative; padding-right: 44px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+"; position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  color: var(--accent); font-size: 19px; font-weight: 400; transition: transform .18s;
+}
+.faq-item[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+.faq-item summary:hover { color: var(--accent); }
+.faq-item[open] summary { border-bottom: 1px solid var(--border); }
+.faq-corps { padding: 14px 18px 16px; }
+.faq-corps p { margin: 0 0 6px; color: var(--text-2); font-size: 14.5px; line-height: 1.65; }
+.faq-corps .chips { margin-top: 10px; }
+.faq-sources { font-size: 12.5px; color: var(--muted); margin-top: 10px; }

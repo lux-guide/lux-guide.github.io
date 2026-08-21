@@ -55,7 +55,7 @@
     });
   }
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "simulateur", "comparateur", "carte", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
 
   function ouvrir(nom, sansHash) {
     if (PANNEAUX.indexOf(nom) === -1) nom = "accueil";
@@ -177,13 +177,19 @@
 
     var fq = $("#accueil-faq");
     fq.innerHTML = "";
-    window.KB.faq.slice(0, 8).forEach(function (item) {
+    window.KB.faq.slice(0, 7).forEach(function (item) {
       var card = el("div", "qcard reveal");
       card.appendChild(el("h3", null, item.q));
       card.appendChild(el("p", null, item.a.slice(0, 125) + (item.a.length > 125 ? "..." : "")));
       card.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(item.fiche); });
       fq.appendChild(card);
     });
+    var toutes = el("div", "qcard reveal");
+    toutes.appendChild(el("h3", null, "Toutes les questions →"));
+    toutes.appendChild(el("p", null,
+      "La FAQ complète : " + window.KB.faq.length + " questions vérifiées, filtrables, avec l'assistant en renfort."));
+    toutes.addEventListener("click", function () { ouvrir("faq"); });
+    fq.appendChild(toutes);
 
     rendreCredits();
     activerApparition();
@@ -415,6 +421,103 @@
         envoyer(item.q);
       });
       ac.appendChild(b);
+    });
+  }
+
+  // ---------- FAQ ----------
+  // Recense toutes les questions-reponses de la base, groupees par theme.
+  // Tout est affiche ; le filtre reduit la liste, et l'assistant prend le
+  // relais quand la question n'y figure pas.
+
+  function normaliserFaq(s) {
+    return String(s || "").toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function rendreFaq(filtre) {
+    var liste = $("#faq-liste");
+    if (!liste) return;
+    liste.innerHTML = "";
+
+    var termes = normaliserFaq(filtre || "").split(" ").filter(function (t) { return t.length > 1; });
+    var visibles = window.KB.faq.filter(function (item) {
+      if (!termes.length) return true;
+      var hay = normaliserFaq(item.q + " " + item.a);
+      return termes.every(function (t) { return hay.indexOf(t) !== -1; });
+    });
+
+    var compte = $("#faq-compte");
+    if (compte) {
+      compte.textContent = termes.length
+        ? visibles.length + " / " + window.KB.faq.length + " questions"
+        : window.KB.faq.length + " questions";
+    }
+
+    if (!visibles.length) {
+      liste.appendChild(el("p", "muted",
+        "Aucune question enregistrée ne correspond. L'assistant peut chercher dans le corps des fiches."));
+      var c = el("div", "chips");
+      var b = el("button", "chip", "Poser cette question à l'assistant");
+      b.addEventListener("click", function () {
+        montrerWidget();
+        envoyer(filtre);
+      });
+      c.appendChild(b);
+      liste.appendChild(c);
+      return;
+    }
+
+    // Groupement par theme, via la categorie de la fiche liee
+    var groupes = {}, ordre = [];
+    visibles.forEach(function (item) {
+      var f = window.KB.fiches.filter(function (x) { return x.id === item.fiche; })[0];
+      var cat = f ? f.cat : "Divers";
+      if (!groupes[cat]) { groupes[cat] = []; ordre.push(cat); }
+      groupes[cat].push({ item: item, fiche: f });
+    });
+
+    ordre.forEach(function (cat) {
+      liste.appendChild(el("h2", "faq-groupe", cat));
+      groupes[cat].forEach(function (x) {
+        var d = el("details", "faq-item");
+        d.appendChild(el("summary", null, x.item.q));
+        var corps = el("div", "faq-corps");
+        corps.appendChild(el("p", null, x.item.a));
+        if (x.fiche) {
+          var c = el("div", "chips");
+          var b = el("button", "chip", "Voir la fiche : " + x.fiche.titre);
+          b.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(x.fiche.id); });
+          c.appendChild(b);
+          corps.appendChild(c);
+          if (x.fiche.sources && x.fiche.sources.length) {
+            var s = el("p", "faq-sources");
+            s.appendChild(document.createTextNode("Sources : "));
+            x.fiche.sources.forEach(function (src, i) {
+              if (i) s.appendChild(document.createTextNode(" · "));
+              var a = el("a", null, src.t);
+              a.href = src.u; a.target = "_blank"; a.rel = "noopener";
+              s.appendChild(a);
+            });
+            corps.appendChild(s);
+          }
+        }
+        d.appendChild(corps);
+        liste.appendChild(d);
+      });
+    });
+  }
+
+  function initFaq() {
+    if (!$("#faq-liste")) return;
+    rendreFaq();
+    $("#q-faq").addEventListener("input", function (e) {
+      rendreFaq(e.target.value.trim());
+    });
+    $("#faq-assistant").addEventListener("click", function () {
+      var q = $("#q-faq").value.trim();
+      montrerWidget();
+      if (q.length >= 2) envoyer(q);
     });
   }
 
@@ -1661,6 +1764,7 @@
   rendreFiches();
   initRecherche();
   rendreTimeline();
+  initFaq();
   initSimulateur();
   initChat();
   initComparateur();

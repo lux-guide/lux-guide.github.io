@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=5">
+<link rel="stylesheet" href="app/styles.css?v=6">
 </head>
 <body>
 
@@ -15,6 +15,7 @@
       <button role="tab" data-panel="accueil" aria-selected="true">Accueil</button>
       <button role="tab" data-panel="fiches" aria-selected="false">Fiches</button>
       <button role="tab" data-panel="parcours" aria-selected="false">Parcours</button>
+      <button role="tab" data-panel="faq" aria-selected="false">FAQ</button>
       <button role="tab" data-panel="simulateur" aria-selected="false">Simulateur</button>
       <button role="tab" data-panel="comparateur" aria-selected="false">Comparateur</button>
       <button role="tab" data-panel="carte" aria-selected="false">Carte</button>
@@ -103,6 +104,25 @@
       banque, chèque-service et impôts. Tout part de la commune, dans les 8 jours.
     </div>
     <div class="tl" id="timeline"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="panel" id="panel-faq" hidden>
+    <h1>Questions et réponses</h1>
+    <p class="lead">
+      Toutes les questions recensées par le guide, avec des réponses vérifiées : chaque réponse
+      s'appuie sur une fiche et renvoie à ses sources officielles.
+      <span class="badge" id="faq-compte"></span>
+    </p>
+    <div class="search-bar">
+      <input type="search" id="q-faq" placeholder="Filtrer : classe d'impôt, caution, crèche, permis..." autocomplete="off">
+    </div>
+    <div id="faq-liste"></div>
+    <div class="notice small" style="margin-top:26px">
+      Votre question n'y est pas ? L'assistant cherche aussi dans le corps des fiches,
+      et dit quand il ne sait pas.
+      <button class="chip" id="faq-assistant">Poser la question à l'assistant</button>
+    </div>
   </section>
 
   <!-- Simulateur -->
@@ -424,14 +444,14 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=5"></script>
-<script src="app/kb.js?v=5"></script>
-<script src="app/simulateur.js?v=5"></script>
-<script src="comparateur/contrats_kb.js?v=5"></script>
-<script src="comparateur/offres_kb.js?v=5"></script>
-<script src="app/chat.js?v=5"></script>
-<script src="app/ui.js?v=5"></script>
-<script src="app/communaute.js?v=5"></script>
+<script src="app/bareme.js?v=6"></script>
+<script src="app/kb.js?v=6"></script>
+<script src="app/simulateur.js?v=6"></script>
+<script src="comparateur/contrats_kb.js?v=6"></script>
+<script src="comparateur/offres_kb.js?v=6"></script>
+<script src="app/chat.js?v=6"></script>
+<script src="app/ui.js?v=6"></script>
+<script src="app/communaute.js?v=6"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
