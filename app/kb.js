@@ -56,6 +56,57 @@ window.KB = {
       ]
     },
     {
+      id: "assurance_sante",
+      titre: "La complémentaire santé",
+      cat: "Sante",
+      resume: "Facultative, mais elle couvre précisément ce que la caisse laisse de côté : chambre seule, dentaire et optique.",
+      tags: ["complémentaire", "mutuelle", "santé", "hospitalisation", "dentaire", "optique", "carence", "cns", "assurance"],
+      corps: [
+        "L'assurance maladie obligatoire couvre l'essentiel des soins, mais laisse un reste à charge concentré sur trois postes : l'hospitalisation en chambre individuelle, les soins dentaires lourds et l'optique. C'est précisément ce que vient couvrir une complémentaire privée, proposée par les assureurs locaux comme par des mutuelles.",
+        "Elle n'a rien d'obligatoire, et son utilité dépend de votre situation. Une personne jeune et sans besoin dentaire particulier peut s'en passer plusieurs années. Une famille avec des enfants à appareiller, ou toute personne attachée à la chambre seule en cas d'hospitalisation, l'amortit rapidement.",
+        { h: "Le délai de carence, le point à vérifier en premier" },
+        "La plupart des contrats prévoient un délai de carence, c'est-à-dire une période initiale pendant laquelle certaines garanties ne jouent pas encore, souvent plusieurs mois pour le dentaire et parfois davantage pour l'orthodontie. Souscrire à l'arrivée, avant d'en avoir besoin, évite de découvrir cette clause au mauvais moment. Certains contrats prévoient également des questionnaires médicaux ou des exclusions pour les affections antérieures : lisez cette partie avant de signer.",
+        { h: "Comparer sur les plafonds, pas sur la cotisation" },
+        "Deux contrats affichant la même cotisation mensuelle peuvent différer du simple au double sur ce qu'ils remboursent. Regardez le plafond annuel par poste, en particulier pour le dentaire et l'optique, le taux de remboursement de la chambre seule et sa durée maximale, et l'existence d'un plafond global tous postes confondus.",
+        "Vérifiez également si le contrat couvre les soins reçus à l'étranger. C'est loin d'être anecdotique pour une famille récemment installée, qui continue souvent de consulter dans son pays d'origine les premières années.",
+        { h: "Une particularité à connaître" },
+        "Contrairement aux assurances habitation ou automobile, les complémentaires santé ne sont pas couvertes par le document d'information standardisé européen. Vous ne disposerez donc pas de la fiche synthétique de deux pages qui facilite la comparaison ailleurs : il faut lire les conditions générales et le tableau de garanties."
+      ],
+      aRetenir: [
+        "Souscrire à l'arrivée, à cause des délais de carence.",
+        "Comparer les plafonds par poste, pas la cotisation.",
+        "Vérifier la couverture des soins reçus à l'étranger."
+      ],
+      sources: [
+        { t: "Caisse nationale de santé", u: "https://cns.public.lu/fr.html" },
+        { t: "Commissariat aux assurances", u: "https://www.caa.lu/fr/accueil" }
+      ]
+    },
+    {
+      id: "administration",
+      titre: "Comment fonctionne l'administration",
+      cat: "Administratif",
+      resume: "Petit pays, circuits courts et interlocuteurs accessibles. Mais le courrier et la présence physique restent la règle pour certaines démarches.",
+      tags: ["administration", "démarches", "guichet", "délai", "rendez-vous", "courrier", "langue", "commune", "efficacité"],
+      corps: [
+        "L'administration luxembourgeoise surprend agréablement la plupart des nouveaux arrivants, en particulier ceux venus de grands pays. Le pays est petit, les circuits sont courts, et il n'est pas rare d'obtenir en une visite ce qui demanderait ailleurs plusieurs semaines et trois formulaires.",
+        { h: "Ce qui va vite" },
+        "Beaucoup de documents sont délivrés immédiatement au guichet : certificat de résidence, attestation d'enregistrement, copies conformes. Les communes fonctionnent largement sur rendez-vous, ce qui évite les files d'attente, et les agents répondent en français, en allemand, souvent en anglais.",
+        "Les délais de traitement des dossiers plus lourds restent raisonnables, et surtout, les administrations sont joignables. Un appel ou un courriel obtient généralement une réponse d'une personne identifiable, ce qui change la nature des échanges : en cas de difficulté, il est presque toujours possible de parler à quelqu'un qui connaît le dossier.",
+        { h: "Ce qui reste lent, ou papier" },
+        "Tout n'est pas dématérialisé pour autant. Certaines démarches ne se traitent que par courrier postal ou en personne, l'enregistrement d'un permis de conduire étranger en étant l'exemple le plus courant. D'autres exigent un certificat obtenu ailleurs, ce qui crée des chaînes de dépendance : sans déclaration à la commune, pas de certificat de résidence, donc pas de chèque-service ni d'inscription scolaire.",
+        "Ce sont ces enchaînements, plus que la lenteur des services, qui allongent une installation. D'où l'intérêt de connaître l'ordre des démarches, plutôt que de les entreprendre au fil de l'eau.",
+        { h: "Trois réflexes utiles" },
+        "Prenez rendez-vous en ligne dès que c'est possible, en particulier en période de rentrée, où les créneaux se remplissent plusieurs semaines à l'avance. Vérifiez la liste des pièces sur le site de votre commune, car elle varie d'une commune à l'autre pour une même démarche. Et gardez une trace écrite de ce qui vous est dit oralement : la qualité de l'accueil ne remplace pas un document daté."
+      ],
+      aRetenir: [
+        "Beaucoup de documents sont délivrés immédiatement au guichet.",
+        "Ce sont les enchaînements de démarches qui allongent l'installation, pas les délais.",
+        "Prendre rendez-vous tôt, et vérifier la liste des pièces auprès de sa commune."
+      ],
+      sources: [{ t: "Guichet.lu", u: "https://guichet.public.lu/fr/citoyens.html" }]
+    },
+    {
       id: "luxtrust",
       titre: "LuxTrust et MyGuichet",
       cat: "Administratif",
@@ -99,6 +150,111 @@ window.KB = {
       sources: [{ t: "luxembourg.public.lu, se loger", u: "https://luxembourg.public.lu/fr/vivre.html" }]
     },
     {
+      id: "choisir_commune",
+      titre: "Choisir sa commune",
+      resume: "Le bon critère n'est pas la distance, mais votre mode de déplacement et les trajets que vous ferez tous les jours.",
+      cat: "Logement",
+      tags: ["commune", "quartier", "choisir", "distance", "bus", "train", "école", "trajet", "voiture", "transports"],
+      corps: [
+        "Beaucoup de nouveaux arrivants choisissent leur commune sur une carte, en traçant un rayon autour du lieu de travail. C'est le meilleur moyen de se tromper : deux communes situées à la même distance peuvent offrir des quotidiens radicalement différents selon la desserte et selon les trajets réellement effectués chaque jour.",
+        { h: "Première question : voiture ou transports ?" },
+        "Si vous vous déplacez en voiture, la distance pèse peu et vous pouvez élargir largement la zone de recherche, ce qui fait baisser le loyer de façon significative. Regardez alors le temps de trajet aux heures de pointe, et non le kilométrage : les axes vers la capitale saturent, et vingt kilomètres peuvent prendre quarante-cinq minutes le matin. Vérifiez aussi le stationnement, à la fois au logement et sur le lieu de travail, souvent cher et contingenté.",
+        "Si vous comptez sur les transports publics, la logique s'inverse totalement. La gratuité ne sert à rien si aucune ligne ne passe. Ouvrez les horaires réels depuis l'arrêt le plus proche du logement visité, aux heures qui vous concernent, y compris le soir et le week-end. Une commune desservie toutes les dix minutes en semaine peut n'avoir qu'un bus par heure le samedi.",
+        { h: "Deuxième question : les trajets contraints" },
+        "Le trajet domicile-travail est rarement le plus contraignant pour une famille. Celui qui structure vraiment les journées, c'est l'école, et surtout la garde, parce qu'il a lieu deux fois par jour à heure fixe. Si les enfants sont scolarisés dans un établissement précis, une école européenne ou une section linguistique donnée, cherchez le logement autour de cette école, pas autour du bureau.",
+        "Faites le test concrètement, avant de signer : simulez une journée complète, dépose à l'école, trajet vers le travail, retour, récupération à la garde. Si l'enchaînement ne tient pas sur le papier, il ne tiendra pas en pratique.",
+        { h: "Les critères qu'on oublie" },
+        "Repérez la distance à pied jusqu'à l'arrêt de bus ou à la gare, et pas seulement leur existence : dix minutes de marche sous la pluie deux fois par jour changent l'expérience. Vérifiez la présence d'un parking relais si vous combinez voiture et train. Regardez enfin les commerces de proximité, la crèche communale et le centre de recyclage, ces trois adresses que vous fréquenterez plus que vous ne le pensez.",
+        "Un dernier réflexe utile : la commune est aussi votre guichet administratif pour l'enregistrement, le chèque-service et les inscriptions scolaires. Ses horaires d'ouverture et sa réactivité font partie du confort de vie."
+      ],
+      aRetenir: [
+        "En voiture, élargir la zone et regarder le temps aux heures de pointe.",
+        "En transports, vérifier les horaires réels depuis l'arrêt le plus proche.",
+        "Chercher autour de l'école, pas autour du bureau."
+      ],
+      sources: [{ t: "mobiliteit.lu, horaires et itinéraires", u: "https://www.mobiliteit.lu/" }]
+    },
+    {
+      id: "rdv_technique",
+      titre: "Réussir un rendez-vous technique",
+      cat: "Quotidien",
+      resume: "Installations et raccordements échouent souvent pour une adresse mal transmise ou un appel manqué. Quelques précautions évitent des semaines de retard.",
+      tags: ["rendez-vous", "technicien", "installation", "raccordement", "fibre", "interphone", "adresse", "absence", "frais"],
+      corps: [
+        "Le raccordement à internet, l'installation d'un compteur ou une intervention sur le réseau supposent la venue d'un technicien, et donc votre présence. Ces rendez-vous échouent plus souvent qu'on ne l'imagine, rarement pour des raisons techniques : le plus souvent, le technicien n'a pas trouvé la porte, ou n'a pas pu vous joindre. Chaque échec coûte plusieurs semaines, et parfois des frais de déplacement.",
+        { h: "L'adresse exacte, et ce qui figure sur l'interphone" },
+        "Dans un immeuble récent, l'adresse du logement et celle du local technique diffèrent parfois : le boîtier peut se trouver à un autre numéro de rue du même ensemble. Précisez donc les deux, par écrit, avant l'intervention. Indiquez également le nom inscrit sur l'interphone, qui n'est pas toujours celui du contrat, en particulier dans un couple aux noms différents ou lors d'une reprise de bail. Ajoutez l'étage, le bloc et le numéro d'appartement.",
+        "Faites-le par un canal qui laisse une trace : messagerie du portail de suivi, ou courriel. Un message oral au téléphone ne se retrouve pas, et ne vous servira à rien si vous devez contester ensuite.",
+        { h: "Se rendre joignable, vraiment" },
+        "Beaucoup de techniciens appellent depuis un numéro masqué. Un appel masqué ne peut être ni identifié, ni rappelé : dites-le explicitement au moment de la prise de rendez-vous, et demandez un numéro sur lequel vous pouvez rappeler. Donnez un second numéro si quelqu'un d'autre est présent sur place, et vérifiez que sonnette et interphone fonctionnent la veille.",
+        { h: "Faire confirmer le créneau par écrit" },
+        "Un rendez-vous fixé ou déplacé par téléphone ne laisse aucune trace. Demandez systématiquement une confirmation écrite de la date et du créneau horaire. C'est ce document qui vous protégera si le technicien se présente en dehors de la plage annoncée, ce qui arrive régulièrement.",
+        { h: "Quand deux intervenants sont nécessaires" },
+        "Certains raccordements exigent le passage successif de deux entreprises différentes, l'opérateur de réseau puis votre fournisseur. Elles ne sont pas toujours coordonnées, et l'échec de la première rend la seconde inutile. Demandez qui doit venir, dans quel ordre, et ce qui se passe si le premier passage échoue.",
+        { h: "Si des frais d'absence vous sont facturés" },
+        "Lisez la fiche d'intervention avant de payer. Elle mentionne souvent une rubrique de responsabilité, et il n'est pas rare qu'elle indique que le client n'est pas en cause tout en facturant des frais d'absence : la contradiction est un argument solide. Vérifiez aussi l'adresse portée sur la fiche, et l'heure des appels reçus. Contestez par écrit, en joignant vos captures d'écran."
+      ],
+      aRetenir: [
+        "Signaler par écrit l'adresse exacte, l'étage et le nom sur l'interphone.",
+        "Prévenir qu'un appel masqué ne peut pas être rappelé.",
+        "Exiger la confirmation écrite de la date et du créneau."
+      ],
+      sources: [{ t: "ILR, service de médiation", u: "https://www.ilr.lu/mediation/" }]
+    },
+    {
+      id: "reclamation",
+      titre: "Contester une facture ou un service",
+      cat: "Quotidien",
+      resume: "Une réclamation écrite est le préalable obligatoire à toute médiation. Un appel téléphonique, même suivi d'un refus, ne compte pas.",
+      tags: ["réclamation", "litige", "médiation", "facture", "contester", "remboursement", "ilr", "consommateur", "preuve"],
+      corps: [
+        "Que le désaccord porte sur une facture de télécoms, une prestation d'énergie ou un service financier, la mécanique est toujours la même, et elle commence par un écrit.",
+        { h: "Écrire d'abord, toujours" },
+        "Les organismes de médiation exigent, comme condition de recevabilité, une réclamation écrite préalable adressée au professionnel, restée sans réponse ou suivie d'une réponse insatisfaisante. Un échange téléphonique, même lorsqu'un conseiller vous a explicitement opposé un refus, ne remplit pas cette condition et ne laisse aucune trace. Écrivez donc systématiquement, même après un appel, ne serait-ce que pour acter par écrit ce qui vous a été dit.",
+        { h: "Ce qui rend une réclamation efficace" },
+        "Une réclamation convaincante tient en quelques éléments : des faits datés et horodatés, les pièces qui les établissent, et une demande précise. Évitez d'empiler les griefs : un argument documenté vaut mieux que cinq affirmations. Les meilleurs arguments sont souvent ceux que le professionnel a lui-même produits, un compte rendu d'intervention, un accusé de lecture, un horodatage.",
+        "Fixez un délai de réponse raisonnable, une à deux semaines, et annoncez la suite si rien ne vient. Cette annonce n'est pas une menace, c'est le déroulé normal de la procédure, et elle est souvent suffisante.",
+        { h: "Constituer ses preuves au fil de l'eau" },
+        "Conservez tout au moment où cela se produit, et non après coup : captures d'écran des messages et de leur horodatage, journal des appels, photographies, courriels. Ces éléments sont faciles à réunir sur le moment, et quasiment impossibles à reconstituer trois semaines plus tard.",
+        { h: "Vers qui se tourner ensuite" },
+        "Pour les communications électroniques, la médiation relève de l'Institut luxembourgeois de régulation, et elle est gratuite. Pour les autres litiges de consommation, le service national du Médiateur de la consommation est compétent. Dans les deux cas, la réclamation écrite et l'éventuelle réponse du professionnel font partie des pièces obligatoires du dossier."
+      ],
+      aRetenir: [
+        "Un appel téléphonique ne vaut pas réclamation écrite.",
+        "Les meilleurs arguments sont les documents du professionnel lui-même.",
+        "Constituer les preuves le jour même, pas trois semaines après."
+      ],
+      sources: [
+        { t: "ILR, service de médiation", u: "https://www.ilr.lu/mediation/" },
+        { t: "Médiateur de la consommation", u: "https://www.mediateurconsommation.lu/" }
+      ]
+    },
+    {
+      id: "emmenagement",
+      titre: "Emménager et meubler",
+      cat: "Logement",
+      resume: "Mesurer l'ascenseur avant de commander, prévoir la montée, et demander l'accord écrit avant de percer.",
+      tags: ["emménagement", "meuble", "livraison", "ascenseur", "montage", "percer", "mur", "déménagement", "achat"],
+      corps: [
+        "Les mauvaises surprises de l'emménagement sont rarement dramatiques, mais elles coûtent du temps et de l'argent. Trois d'entre elles reviennent systématiquement.",
+        { h: "Mesurer avant de commander" },
+        "Les meubles en kit sont livrés dans des cartons dont la longueur peut dépasser la profondeur d'une cabine d'ascenseur. Une armoire haute, par exemple, se vend souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant. Mesurez la cabine, la porte palière et les paliers d'escalier avant de commander, pas après. Vérifiez également la largeur des portes intérieures pour les meubles livrés montés.",
+        { h: "La livraison s'arrête souvent au rez-de-chaussée" },
+        "Beaucoup de livreurs déposent au pied de l'immeuble, ou au premier obstacle. La montée et le montage sont alors à votre charge, et il faut soit s'en occuper, soit recourir à un service d'aide à domicile ou à un monteur indépendant. Anticipez ce poste dans le budget, et vérifiez ce que couvre exactement l'option de livraison proposée.",
+        { h: "Percer suppose un accord écrit" },
+        "En location, la plupart des baux interdisent les percements sans accord écrit du bailleur. L'interdiction n'est pas absolue : c'est un accord qu'il faut demander, et un courriel suffit généralement à l'obtenir, en s'engageant à reboucher au départ. Demandez-le avant d'acheter des meubles à fixer au mur.",
+        "Sans percer, les solutions existent mais supportent peu de charge : barres de tension entre deux murs pour une penderie dans une niche, poteaux télescopiques du sol au plafond pour exploiter la hauteur, crochets adhésifs pour les objets légers. Méfiez-vous en revanche des meubles hauts posés sans fixation murale, que les fabricants imposent justement de fixer pour éviter le basculement.",
+        { h: "Acheter de part et d'autre de la frontière" },
+        "Les enseignes de mobilier et d'électroménager sont implantées des deux côtés de la frontière, et leurs promotions ne sont pas synchronisées d'un pays à l'autre. Sur un achat conséquent, comparer les prix dans les magasins voisins de Belgique, de France ou d'Allemagne vaut souvent le déplacement, à condition d'intégrer le coût de la livraison transfrontalière, parfois dissuasif."
+      ],
+      aRetenir: [
+        "Mesurer la cabine d'ascenseur avant de commander un meuble haut.",
+        "Vérifier si la livraison monte à l'étage ou s'arrête en bas.",
+        "Demander par écrit l'accord de percer, il est souvent accordé."
+      ],
+      sources: [{ t: "Guichet.lu, bail à loyer", u: "https://guichet.public.lu/fr/citoyens/logement/location.html" }]
+    },
+    {
       id: "bail",
       titre: "Signer un bail",
       cat: "Logement",
@@ -132,7 +288,9 @@ window.KB = {
         "Le socle habituel réunit l'incendie, les dégâts des eaux, le vol, le bris de glace et la responsabilité civile, cette dernière couvrant les dommages causés à des tiers, y compris par les enfants. Les écarts entre contrats se logent rarement dans ce socle : ils se trouvent dans les plafonds d'indemnisation, les franchises, et les exclusions.",
         { h: "Les quatre points à comparer" },
         "Regardez d'abord la franchise, c'est-à-dire ce qui reste à votre charge à chaque sinistre. Regardez ensuite si les biens sont indemnisés en valeur à neuf ou après vétusté, ce qui change tout sur du mobilier récent. Vérifiez le plafond applicable aux objets de valeur, souvent bien plus bas que le plafond général. Vérifiez enfin les exclusions liées à l'absence prolongée du logement, fréquentes et rarement lues.",
-        "Ces informations figurent dans les conditions générales, pas dans le devis commercial. Demandez systématiquement ce document avant de signer : deux contrats affichant la même prime peuvent offrir des couvertures très différentes.",
+        { h: "Les documents à réclamer avant de signer" },
+        "Trois documents décrivent réellement le contrat, et le devis commercial n'en fait pas partie. Le premier est le document d'information standardisé sur le produit d'assurance, deux pages au format normé dans toute l'Union, qui résume garanties, exclusions et obligations. Il facilite la comparaison entre assureurs, mais il ne remplace rien : il est volontairement succinct.",
+        "Les deux autres sont contractuels. Les conditions générales décrivent l'étendue des garanties, les franchises et les exclusions applicables à tous les assurés. Les conditions particulières précisent ce qui vous concerne, montants assurés et options retenues, et elles priment sur les conditions générales en cas de divergence. Demandez les trois, et lisez en priorité les exclusions : c'est la partie qui décide de ce qui sera refusé le jour du sinistre.",
         { h: "En cas d'achat" },
         "Le prêteur exigera en plus une assurance solde restant dû, qui rembourse le crédit en cas de décès. Elle n'est pas obligatoirement souscrite auprès de la banque prêteuse : mettre plusieurs assureurs en concurrence sur ce seul poste représente souvent plusieurs milliers d'euros sur la durée du prêt."
       ],
@@ -141,7 +299,7 @@ window.KB = {
         "Comparer franchises, valeur à neuf, plafonds et exclusions.",
         "Exiger les conditions générales, pas seulement le devis."
       ],
-      sources: [{ t: "Commissariat aux assurances", u: "https://www.caa.lu/fr" }]
+      sources: [{ t: "Commissariat aux assurances", u: "https://www.caa.lu/fr/accueil" }]
     },
     {
       id: "achat",
@@ -542,14 +700,14 @@ window.KB = {
         "Le point qui pèse le plus sur la prime est votre historique de sinistres. Demandez à votre assureur précédent un relevé d'informations, document qui récapitule vos années d'assurance et vos éventuels sinistres. La plupart des assureurs luxembourgeois en tiennent compte, ce qui peut représenter plusieurs centaines d'euros par an. Réclamez-le avant de résilier, il devient plus difficile à obtenir ensuite.",
         { h: "Ce qui distingue les contrats" },
         "Au-delà de la responsabilité civile obligatoire, les garanties dites tous risques couvrent aussi les dommages à votre propre véhicule. La comparaison utile porte sur quelques points précis : le montant des franchises, la présence d'une assistance dès le domicile ou seulement à partir d'une certaine distance, le prêt d'un véhicule de remplacement, et la couverture du bris de glace.",
-        "Comme pour l'habitation, ces éléments figurent dans les conditions générales et non dans le devis. Deux contrats au même prix peuvent différer nettement sur la franchise et sur l'assistance, c'est-à-dire précisément sur ce que vous constaterez le jour du sinistre."
+        "Comme pour l'habitation, ces éléments figurent dans les conditions générales et non dans le devis. Réclamez le document d'information standardisé, les conditions générales et les conditions particulières : deux contrats au même prix peuvent différer nettement sur la franchise et sur l'assistance, c'est-à-dire précisément sur ce que vous constaterez le jour du sinistre."
       ],
       aRetenir: [
         "Assurance obligatoire avant l'immatriculation.",
         "Réclamer le relevé d'informations avant de résilier.",
         "Comparer franchises et assistance, pas seulement la prime."
       ],
-      sources: [{ t: "Commissariat aux assurances", u: "https://www.caa.lu/fr" }]
+      sources: [{ t: "Commissariat aux assurances", u: "https://www.caa.lu/fr/accueil" }]
     },
     {
       id: "transport",
@@ -654,6 +812,15 @@ window.KB = {
   ],
 
   faq: [
+    { q: "Comment choisir ma commune ?", a: "Pas sur la distance. En voiture, élargissez la zone et regardez le temps aux heures de pointe. En transports, vérifiez les horaires réels depuis l'arrêt le plus proche, y compris le week-end. Et cherchez autour de l'école, pas autour du bureau.", fiche: "choisir_commune" },
+    { q: "Comment éviter qu'une installation échoue ?", a: "Signalez par écrit l'adresse exacte, l'étage et le nom figurant sur l'interphone, qui diffère souvent du nom du contrat. Prévenez qu'un appel masqué ne peut pas être rappelé, et exigez la confirmation écrite du créneau.", fiche: "rdv_technique" },
+    { q: "On me facture des frais d'absence alors que j'étais là", a: "Lisez la fiche d'intervention : elle indique souvent que le client n'est pas responsable tout en facturant les frais, ce qui est un argument solide. Vérifiez aussi l'adresse portée sur la fiche et l'heure des appels, puis contestez par écrit.", fiche: "rdv_technique" },
+    { q: "Comment contester une facture ?", a: "Par écrit, toujours. Un appel téléphonique ne vaut pas réclamation, et la médiation exige cette réclamation écrite préalable. Appuyez-vous en priorité sur les documents produits par le professionnel lui-même.", fiche: "reclamation" },
+    { q: "Puis-je percer les murs de mon logement loué ?", a: "En général seulement avec l'accord écrit du bailleur, que le bail exige mais qui s'obtient souvent par un simple courriel. Demandez-le avant d'acheter des meubles à fixer au mur.", fiche: "emmenagement" },
+    { q: "Mes meubles vont-ils passer dans l'ascenseur ?", a: "Mesurez la cabine, la porte palière et les paliers avant de commander. Les armoires hautes existent souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant.", fiche: "emmenagement" },
+    { q: "Ai-je besoin d'une complémentaire santé ?", a: "Elle est facultative et couvre surtout la chambre seule, le dentaire et l'optique. Si vous en prenez une, souscrivez dès l'arrivée : la plupart des contrats prévoient des délais de carence de plusieurs mois sur ces postes.", fiche: "assurance_sante" },
+    { q: "Quels documents demander à un assureur ?", a: "Le document d'information standardisé de deux pages, les conditions générales et les conditions particulières. Le devis ne suffit pas : ce sont les exclusions et les franchises qui décident de ce qui sera refusé le jour du sinistre.", fiche: "assurance_habitation" },
+    { q: "L'administration est-elle compliquée ?", a: "Plutôt le contraire : circuits courts, documents souvent délivrés au guichet, interlocuteurs joignables. Ce qui rallonge une installation, ce sont les enchaînements de démarches, chacune conditionnant la suivante.", fiche: "administration" },
     { q: "Dans quel délai dois-je me déclarer à la commune ?", a: "Dans les huit jours suivant l'emménagement. Cette déclaration produit le certificat de résidence et le matricule, indispensables à toute la suite. Prenez rendez-vous en ligne avant même d'avoir les clés.", fiche: "arrivee" },
     { q: "Comment obtenir mon matricule ?", a: "Il est attribué lors de l'enregistrement à la commune et figure sur le certificat de résidence, sous la mention numéro d'identification. Il compte treize chiffres : votre date de naissance inversée, suivie de cinq chiffres.", fiche: "arrivee" },
     { q: "Ai-je besoin d'un compte bancaire luxembourgeois ?", a: "Pas légalement : un IBAN européen suffit pour le salaire et le loyer. En pratique, un compte local reste nécessaire pour émettre une garantie locative, et il rend LuxTrust souvent gratuit.", fiche: "banque" },
@@ -697,7 +864,9 @@ window.KB = {
       { t: "S'inscrire sur les listes d'attente des crèches, sans attendre d'avoir un logement.", fiche: "garde", si: { enfants: true } },
       { t: "Vérifier la validité des passeports et pièces d'identité de tout le foyer.", fiche: "arrivee" },
       { t: "Rassembler les actes de naissance et de mariage, récents et traduits si nécessaire.", fiche: "arrivee" },
+      { t: "Définir ses critères de commune selon son mode de déplacement et les trajets quotidiens.", fiche: "choisir_commune" },
       { t: "Préparer le dossier de location complet avant la première visite.", fiche: "recherche_logement", si: { logement: "Louer" } },
+      { t: "Mesurer la cabine d'ascenseur et les portes avant de commander des meubles.", fiche: "emmenagement" },
       { t: "Étudier les quotités de financement et la règle de TVA avant de faire une offre.", fiche: "achat", si: { logement: "Acheter" } },
       { t: "Demander à son assureur automobile un relevé d'informations, pour transférer le bonus.", fiche: "assurance_auto", si: { vehicule: true } },
       { t: "Vérifier si le régime des impatriés peut s'appliquer, avant la signature du contrat de travail.", fiche: "impatries" }
@@ -708,6 +877,7 @@ window.KB = {
       { t: "Ouvrir un compte bancaire local et demander LuxTrust dans la foulée.", fiche: "banque" },
       { t: "Souscrire l'assurance habitation, exigée avant la remise des clés.", fiche: "assurance_habitation" },
       { t: "Souscrire internet et réclamer une solution 4G provisoire.", fiche: "telecom" },
+      { t: "Pour tout rendez-vous technique, transmettre par écrit l'adresse exacte et le nom sur l'interphone.", fiche: "rdv_technique" },
       { t: "Repérer le calendrier de collecte des déchets et le centre de recyclage.", fiche: "dechets" }
     ]},
     { phase: "Mois 1", items: [
@@ -716,6 +886,7 @@ window.KB = {
       { t: "Demander les allocations familiales à la Caisse pour l'avenir des enfants.", fiche: "allocations", si: { enfants: true } },
       { t: "Demander le chèque-service accueil à la commune.", fiche: "garde", si: { enfants: true } },
       { t: "Chercher un médecin et un pédiatre, avant d'en avoir besoin.", fiche: "sante_pratique" },
+      { t: "Étudier une complémentaire santé, à souscrire tôt à cause des délais de carence.", fiche: "assurance_sante" },
       { t: "Déclarer l'activité indépendante au CCSS, dans les huit jours.", fiche: "independant", si: { statut: "Independant" } }
     ]},
     { phase: "Mois 2 et 3", items: [
@@ -731,6 +902,7 @@ window.KB = {
       { t: "Recenser les postes déductibles : déplacements, prévoyance, garde, épargne-logement.", fiche: "deductions" },
       { t: "En couple avec un conjoint non résident, étudier l'imposition collective.", fiche: "impots_classes" },
       { t: "Réévaluer les contrats souscrits dans l'urgence : télécoms, assurances, banque.", fiche: "assurance_habitation" },
+      { t: "Contester par écrit toute facturation anormale, avant qu'elle ne devienne définitive.", fiche: "reclamation" },
       { t: "Envisager des cours de luxembourgeois si la naturalisation fait partie des projets.", fiche: "nationalite" }
     ]}
   ]

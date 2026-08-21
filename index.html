@@ -16,6 +16,8 @@
       <button role="tab" data-panel="fiches" aria-selected="false">Fiches</button>
       <button role="tab" data-panel="parcours" aria-selected="false">Parcours</button>
       <button role="tab" data-panel="simulateur" aria-selected="false">Simulateur</button>
+      <button role="tab" data-panel="comparateur" aria-selected="false">Comparateur</button>
+      <button role="tab" data-panel="carte" aria-selected="false">Carte</button>
       <button role="tab" data-panel="assistant" aria-selected="false">Assistant</button>
       <button role="tab" data-panel="admin" aria-selected="false">Administration</button>
     </nav>
@@ -26,6 +28,17 @@
 
   <!-- Accueil -->
   <section class="panel" id="panel-accueil">
+
+    <div class="ask">
+      <h2 class="ask-titre">Une question sur votre installation&nbsp;?</h2>
+      <p class="ask-sous">Cherchez une fiche ou posez votre question : l'assistant repond depuis le guide, sources a l'appui.</p>
+      <div class="ask-bar">
+        <input type="search" id="q-accueil" placeholder="Ex : combien de jours pour me declarer a la commune ?" autocomplete="off">
+        <button class="btn" id="q-accueil-btn">Demander</button>
+      </div>
+      <div class="chips" id="ask-chips"></div>
+      <div class="grid" id="accueil-resultats"></div>
+    </div>
 
     <div class="hero">
       <div class="hero-img">
@@ -74,6 +87,7 @@
       <div class="search-bar">
         <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatries, creche, permis...">
       </div>
+      <div id="fiches-perso"></div>
       <div class="grid" id="fiches-grid"></div>
     </div>
     <div id="fiche-detail" class="detail" hidden></div>
@@ -99,6 +113,12 @@
       Resultat indicatif : il ne remplace ni une fiche de paie, ni un calcul de l'administration.
     </p>
 
+    <div class="sous-onglets" id="sim-tabs">
+      <button data-sim="salaire" class="actif">Salaire net</button>
+      <button data-sim="emprunt">Capacite d'emprunt</button>
+    </div>
+
+    <div id="sim-salaire">
     <div class="card">
       <div class="row">
         <div>
@@ -125,6 +145,7 @@
         <div class="check">
           <input type="checkbox" id="s-impatrie">
           <label for="s-impatrie">Regime des impatries (50 % exonere)</label>
+          <a href="#fiche/impatries" class="lien-fiche-inline">reserve a des profils precis, voir la fiche</a>
         </div>
         <div class="check">
           <input type="checkbox" id="s-forfaits" checked>
@@ -134,12 +155,24 @@
     </div>
 
     <div class="kpis" id="s-kpis"></div>
+
+    <div class="notice small">
+      <strong>Un ordre de grandeur, pas un chiffre a l'euro pres.</strong>
+      Le resultat est la retenue a la source calculee sur ce seul salaire, avec le bareme officiel.
+      Le net reellement percu peut s'en ecarter selon la situation personnelle : revenus etrangers
+      en classe 2 (le taux moyen mondial s'applique a la declaration), deductions reelles superieures
+      aux forfaits, avantages en nature, credits d'impot. Plus la situation s'ecarte du cas simple
+      (un seul salaire, pas d'autre revenu), plus l'ecart peut etre grand.
+    </div>
+
     <div id="s-detail"></div>
 
     <h2>Comparaison des situations</h2>
     <div class="table-wrap"><table id="s-comp"></table></div>
+    </div>
 
-    <h2>Capacite d'emprunt indicative</h2>
+    <div id="sim-emprunt" hidden>
+    <h2 style="margin-top:0">Capacite d'emprunt indicative</h2>
     <p class="lead small">
       Les banques raisonnent en taux d'effort : la somme des mensualites rapportee aux revenus nets.
       Les credits en cours viennent en deduction.
@@ -166,9 +199,99 @@
     </div>
     <div class="kpis" id="e-kpis"></div>
     <p class="hint">
+      Les seuils de 33 % et 40 % sont des pratiques bancaires, pas un plafond legal : la limite
+      reglementaire fixee au Luxembourg porte sur la quotite, la part du prix financee, et non sur
+      le taux d'effort. Chaque banque decide selon les revenus et le reste a vivre.
+    </p>
+    <p class="hint">
       Quotites maximales au Luxembourg : 100 % du prix pour un primo-accedant en residence principale,
       90 % pour une autre residence principale, 80 % pour un investissement locatif. Les frais d'acte
       restent a financer sur fonds propres.
+    </p>
+    </div>
+  </section>
+
+  <!-- Comparateur de contrats habitation -->
+  <section class="panel" id="panel-comparateur" hidden>
+    <h1>Comparateur de contrats habitation</h1>
+    <p class="lead">
+      Quatre contrats du marche luxembourgeois, compares sinistre par sinistre a partir de leurs
+      conditions generales, la clause exacte citee a l'appui.
+    </p>
+    <div class="notice small">
+      <strong>Methode et limites.</strong> Analyse documentaire de conditions generales publiques
+      du marche luxembourgeois, editions 2017 a 2023, assureurs anonymises (A a D). Chaque verdict
+      cite la clause et sa page. Une comparaison de conditions generales ne remplace ni un devis
+      ni un conseil : le contrat en vigueur fait foi.
+    </div>
+
+    <div class="card ctr-wrap">
+      <h3 style="margin-top:0">Posez votre question sur les contrats</h3>
+      <p class="lead small">
+        Decrivez un sinistre ou une situation qui vous ressemble : la reponse montre comment chacun
+        des quatre contrats reagit, avec la clause citee. C'est la meilleure facon de comprendre
+        ce que couvre vraiment un contrat.
+      </p>
+      <div class="chips" id="ctr-suggestions"></div>
+      <div class="chat-log" id="ctr-log"></div>
+      <div class="chat-bar">
+        <input type="text" id="ctr-input" placeholder="Ex : mon velo est vole dans la rue, suis-je couvert ?" autocomplete="off">
+        <button class="btn" id="ctr-send">Envoyer</button>
+      </div>
+    </div>
+
+    <h2>Les analyses completes</h2>
+    <div class="grid serre">
+      <div class="qcard" id="ctr-page-sinistres">
+        <h3>Sinistres reels, contrat par contrat</h3>
+        <p>Treize sinistres concrets poses aux quatre contrats : paye, sous conditions, plafond reduit
+          ou exclu, avec la clause citee et la page.</p>
+      </div>
+      <div class="qcard" id="ctr-page-reco">
+        <h3>Le contrat adapte a un profil</h3>
+        <p>Un profil d'exemple (appartement, teletravail, velo, bijoux) pondere les garanties qui
+          comptent, classe les contrats et liste les lacunes a negocier.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Carte : ecoles et transports autour d'une adresse -->
+  <section class="panel" id="panel-carte" hidden>
+    <h1>Ecoles et transports autour d'une adresse</h1>
+    <p class="lead">
+      Pour choisir un quartier avant de signer : cherchez une adresse ou une commune, la carte
+      montre les ecoles, les creches et les arrets de bus, tram et train autour.
+    </p>
+    <div class="card">
+      <div class="row">
+        <div style="flex:2">
+          <label for="c-adresse">Adresse ou commune</label>
+          <input type="text" id="c-adresse" placeholder="Ex : Kirchberg, Esch-sur-Alzette, Belair..." autocomplete="off">
+        </div>
+        <div>
+          <label for="c-rayon">Rayon</label>
+          <select id="c-rayon">
+            <option value="500">500 m</option>
+            <option value="1000" selected>1 km</option>
+            <option value="2000">2 km</option>
+          </select>
+        </div>
+        <div style="align-self:flex-end">
+          <button class="btn" id="c-chercher">Chercher</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="check"><input type="checkbox" id="c-ecoles" checked><label for="c-ecoles">Ecoles</label></div>
+        <div class="check"><input type="checkbox" id="c-creches" checked><label for="c-creches">Creches</label></div>
+        <div class="check"><input type="checkbox" id="c-arrets" checked><label for="c-arrets">Bus, tram, train</label></div>
+      </div>
+    </div>
+    <div id="carte-map"></div>
+    <div class="kpis" id="c-stats"></div>
+    <p class="hint" id="c-note">
+      Donnees OpenStreetMap (© les contributeurs OpenStreetMap), chargees a la demande :
+      l'exhaustivite n'est pas garantie. Pour l'inscription scolaire, la commune fait foi,
+      voir la fiche Ecole et scolarite.
     </p>
   </section>
 
@@ -273,10 +396,27 @@
 
 </main>
 
+<!-- Assistant flottant, present sur tous les onglets -->
+<div id="widget" hidden>
+  <div class="w-head">
+    <span>Assistant du guide</span>
+    <button id="widget-close" title="Reduire">×</button>
+  </div>
+  <div class="chat-log" id="widget-log"></div>
+  <div class="chat-bar">
+    <input type="text" id="widget-input" placeholder="Posez votre question..." autocomplete="off">
+    <button class="btn" id="widget-send">Envoyer</button>
+  </div>
+</div>
+<button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
+
 <script src="app/bareme.js"></script>
 <script src="app/kb.js"></script>
 <script src="app/simulateur.js"></script>
+<script src="comparateur/contrats_kb.js"></script>
 <script src="app/chat.js"></script>
 <script src="app/ui.js"></script>
+<script src="app/communaute.js"></script>
+<script src="app/communaute.js"></script>
 </body>
 </html>

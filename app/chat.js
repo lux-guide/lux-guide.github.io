@@ -87,8 +87,11 @@ window.CHAT = (function () {
   }
 
   function scoreFiche(fiche, termes) {
+    var corpsTexte = (fiche.corps || []).map(function (p) {
+      return typeof p === "string" ? p : (p && p.h) || "";
+    }).join(" ");
     var hay = normaliser([fiche.titre, fiche.resume, (fiche.tags || []).join(" "),
-      (fiche.corps || []).join(" "), fiche.cat].join(" "));
+      corpsTexte, fiche.cat].join(" "));
     var titre = normaliser(fiche.titre + " " + (fiche.tags || []).join(" "));
     var s = 0;
     termes.forEach(function (t) {
@@ -122,9 +125,38 @@ window.CHAT = (function () {
     return bestScore >= 0.5 ? best : null;
   }
 
+  // Petites phrases de conversation, pour que l'echange reste naturel.
+  function petitePhrase(question, profil) {
+    var q = normaliser(question);
+    if (/^(bonjour|salut|hello|bonsoir|coucou|hey|bjr)\b/.test(q) && q.length < 30) {
+      return {
+        texte: "Bonjour. Posez-moi une question sur votre installation : demarches, logement, " +
+          "impots, ecole, vehicule... Je reponds a partir des fiches du guide, avec leurs sources.",
+        sources: [], fiches: []
+      };
+    }
+    if (/^(merci|super merci|top merci|parfait merci|merci beaucoup)\b/.test(q) && q.length < 30) {
+      return {
+        texte: "Avec plaisir. Autre chose ? Le parcours de l'onglet Parcours s'adapte a votre profil, " +
+          "et le simulateur donne le salaire net.",
+        sources: [], fiches: []
+      };
+    }
+    if (/^(au revoir|bonne journee|bonne soiree|a bientot|bye)\b/.test(q) && q.length < 30) {
+      return {
+        texte: "Bonne installation au Luxembourg. Le guide reste la, revenez quand vous voulez.",
+        sources: [], fiches: []
+      };
+    }
+    return null;
+  }
+
   // Reponse locale, avec sources.
   function reponseLocale(question, profil) {
     var q = normaliser(question);
+
+    var pp = petitePhrase(question, profil);
+    if (pp) return pp;
 
     // Intentions chiffrees renvoyees vers le simulateur.
     if (/(salaire|net|brut|combien.*gagne|paie)/.test(q) && /\d/.test(question)) {
@@ -151,6 +183,9 @@ window.CHAT = (function () {
     var hits = rechercher(question, 3);
     var pertinent = hits.length && hits[0].score >= 5;
 
+    var toucheContrats = window.CONTRATS_KB &&
+      /(assur|contrat|couvert|couverture|sinistre|franchise|indemnis|vole?\b|degat)/.test(q);
+
     if (!faq && !pertinent) {
       var suggestions = fichesPourProfil(profil).slice(0, 4)
         .map(function (f) { return f.titre; }).join(", ");
@@ -158,7 +193,8 @@ window.CHAT = (function () {
         texte: "Je n'ai pas d'element sur ce point dans la base. Je prefere le dire plutot que d'inventer.\n\n" +
           "Sujets couverts qui vous concernent : " + suggestions + ".\n" +
           "Reformulez, ou consultez directement les fiches.",
-        sources: [], fiches: []
+        sources: [], fiches: [],
+        comparateur: toucheContrats
       };
     }
 
@@ -167,7 +203,9 @@ window.CHAT = (function () {
 
     var principale = pertinent ? hits[0].fiche : null;
     if (principale && (!faq || faq.fiche !== principale.id)) {
-      parts.push(principale.corps.slice(0, 2).join(" "));
+      // Le corps peut contenir des sous-titres { h: ... } : on ne garde que les paragraphes.
+      var paras = (principale.corps || []).filter(function (p) { return typeof p === "string"; });
+      parts.push("D'apres la fiche « " + principale.titre + " » : " + paras.slice(0, 2).join(" "));
     }
     if (principale && principale.aRetenir && principale.aRetenir.length) {
       parts.push("A retenir :\n" + principale.aRetenir.map(function (x) { return "- " + x; }).join("\n"));
@@ -176,11 +214,14 @@ window.CHAT = (function () {
     var srcs = [];
     if (principale && principale.sources) srcs = principale.sources.slice();
 
-    return {
+    var r = {
       texte: parts.join("\n\n"),
       sources: srcs,
       fiches: pertinent ? hits.map(function (h) { return h.fiche.id; }) : []
     };
+    // Question qui touche aux contrats d'assurance : proposer le comparateur.
+    if (toucheContrats) r.comparateur = true;
+    return r;
   }
 
   // ---------- Mode API ----------
@@ -191,7 +232,9 @@ window.CHAT = (function () {
     return hits.map(function (h) {
       var f = h.fiche;
       return "### " + f.titre + " (" + f.cat + ")\n" + f.resume + "\n" +
-        f.corps.join("\n") +
+        (f.corps || []).map(function (p) {
+          return typeof p === "string" ? p : (p && p.h) || "";
+        }).join("\n") +
         (f.aRetenir ? "\nA retenir : " + f.aRetenir.join(" ") : "") +
         (f.sources ? "\nSources : " + f.sources.map(function (s) { return s.t + " " + s.u; }).join(" | ") : "");
     }).join("\n\n");
@@ -199,6 +242,14 @@ window.CHAT = (function () {
 
   function testerApi() {
     if (apiDisponible !== null) return Promise.resolve(apiDisponible);
+    // Le relais tourne en local : hors localhost (site publie en statique),
+    // inutile d'essayer, on reste en mode local sans bruit dans la console.
+    var h = window.location.hostname;
+    if (API_BASE.indexOf("localhost") !== -1 &&
+        h !== "localhost" && h !== "127.0.0.1" && h !== "") {
+      apiDisponible = false;
+      return Promise.resolve(false);
+    }
     return fetch(API_BASE + "/sante", { method: "GET" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) { apiDisponible = !!(j && j.ok); return apiDisponible; })

@@ -55,10 +55,15 @@
     });
   }
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "simulateur", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "simulateur", "comparateur", "carte", "assistant", "admin"];
 
   function ouvrir(nom, sansHash) {
     if (PANNEAUX.indexOf(nom) === -1) nom = "accueil";
+    if (nom === "carte") {
+      initCarte();
+      // La carte a pu etre creee dans un panneau cache : recaler sa taille
+      if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 60);
+    }
     $$("#tabs button").forEach(function (b) {
       b.setAttribute("aria-selected", String(b.dataset.panel === nom));
     });
@@ -183,10 +188,31 @@
 
   // ---------- Fiches ----------
 
+  var voirToutesFiches = false;
+
   function rendreFiches(liste) {
     var g = $("#fiches-grid");
     g.innerHTML = "";
-    (liste || window.KB.fiches).forEach(function (f) {
+    var perso = $("#fiches-perso");
+    if (perso) perso.innerHTML = "";
+
+    var effective = liste;
+    // Sans recherche en cours : si le profil est connu, ne montrer par defaut
+    // que les fiches qui concernent ce profil, avec l'interrupteur pour tout voir.
+    if (!liste && profilRenseigne() && perso) {
+      var filtrer = !voirToutesFiches;
+      if (filtrer) effective = window.CHAT.fichesPourProfil(profil);
+      var bandeau = el("div", "notice small");
+      bandeau.appendChild(document.createTextNode(
+        (filtrer ? "Fiches adaptees a votre profil : " : "Toutes les fiches. Votre profil : ") +
+        window.CHAT.decrireProfil(profil) + ". "));
+      var b = el("button", "chip", filtrer ? "Voir toutes les fiches" : "Ne voir que mes fiches");
+      b.addEventListener("click", function () { voirToutesFiches = !voirToutesFiches; rendreFiches(); });
+      bandeau.appendChild(b);
+      perso.appendChild(bandeau);
+    }
+
+    (effective || window.KB.fiches).forEach(function (f) {
       g.appendChild(tuile(f.cat, f.titre, f.resume, null, function () { montrerFiche(f.id); }));
     });
     if (!g.children.length) g.appendChild(el("p", "muted", "Aucune fiche ne correspond a cette recherche."));
@@ -302,18 +328,177 @@
       var hits = window.CHAT.rechercher(q, 50);
       rendreFiches(hits.map(function (h) { return h.fiche; }));
     });
+
+    // Recherche de la page d'accueil : resultats affiches sur place.
+    // Reconnaissance simple : des fiches correspondent, on les montre ; sinon,
+    // ou si la question depasse la recherche par mots, on propose l'assistant.
+    function boutonAssistant(q, libelle) {
+      var c = el("div", "chips");
+      var b = el("button", "chip", libelle);
+      b.addEventListener("click", function () {
+        montrerWidget();
+        envoyer(q);
+      });
+      c.appendChild(b);
+      return c;
+    }
+
+    var qa = $("#q-accueil");
+    if (qa) qa.addEventListener("input", function (e) {
+      var q = e.target.value.trim();
+      var g = $("#accueil-resultats");
+      g.innerHTML = "";
+      if (q.length < 2) return;
+      var hits = window.CHAT.rechercher(q, 8);
+      if (!hits.length) {
+        g.appendChild(el("p", "muted",
+          "Aucune fiche ne correspond a ces mots. L'assistant peut chercher autrement, ou dire qu'il ne sait pas."));
+        g.appendChild(boutonAssistant(q, "Poser la question a l'assistant"));
+        return;
+      }
+      hits.forEach(function (h) {
+        var f = h.fiche;
+        g.appendChild(tuile(f.cat, f.titre, f.resume, null, function () {
+          ouvrir("fiches");
+          montrerFiche(f.id);
+        }));
+      });
+      // Une vraie question (phrase, point d'interrogation) merite mieux qu'une
+      // liste de fiches : proposer aussi l'assistant.
+      if (/\?/.test(q) || q.split(/\s+/).length >= 4) {
+        g.appendChild(boutonAssistant(q, "Poser cette question a l'assistant"));
+      }
+      activerApparition(g);
+    });
+    qa.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && qa.value.trim().length >= 2 &&
+          !window.CHAT.rechercher(qa.value.trim(), 1).length) {
+        montrerWidget();
+        envoyer(qa.value.trim());
+      }
+    });
+
+    // Bouton Demander : la question part directement a l'assistant
+    var qb = $("#q-accueil-btn");
+    if (qb) qb.addEventListener("click", function () {
+      var q = qa.value.trim();
+      if (q.length < 2) { montrerWidget(); return; }
+      montrerWidget();
+      envoyer(q);
+    });
+
+    // Questions rapides sous la barre, issues des questions frequentes du guide
+    var ac = $("#ask-chips");
+    if (ac) window.KB.faq.slice(0, 4).forEach(function (item) {
+      var b = el("button", "chip", item.q);
+      b.addEventListener("click", function () {
+        montrerWidget();
+        envoyer(item.q);
+      });
+      ac.appendChild(b);
+    });
   }
 
   // ---------- Parcours ----------
 
+  var STORAGE_PARCOURS = "luxguide.parcours.v1";
+  var voirToutParcours = false;
+
+  function chargerCoches() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_PARCOURS) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function sauverCoches(c) {
+    try { localStorage.setItem(STORAGE_PARCOURS, JSON.stringify(c)); } catch (e) {}
+  }
+
+  function profilRenseigne() {
+    return profil && Object.keys(profil).length > 0;
+  }
+
+  // Une etape est gardee si le profil ne la contredit pas. Champ inconnu = on garde.
+  function etapeConcerne(item, p) {
+    if (!item || typeof item === "string" || !item.si) return true;
+    var si = item.si;
+    var ok = true;
+    Object.keys(si).forEach(function (k) {
+      var v = p[k];
+      if (v === undefined) return;
+      if (k === "enfants") { if (v === "Aucun") ok = false; }
+      else if (k === "vehicule") { if (v !== "Oui") ok = false; }
+      else if (k === "logement") {
+        if (v !== si.logement && v !== "Pas encore decide") ok = false;
+      }
+      else if (k === "statut") {
+        if (v !== si.statut && v !== "Les deux") ok = false;
+      }
+      else if (v !== si[k]) ok = false;
+    });
+    return ok;
+  }
+
   function rendreTimeline() {
     var t = $("#timeline");
     t.innerHTML = "";
-    window.KB.timeline.forEach(function (p) {
+    var connu = profilRenseigne();
+    var coches = chargerCoches();
+    var filtrer = connu && !voirToutParcours;
+
+    var bandeau = el("div", "notice small tl-bandeau");
+    if (!connu) {
+      bandeau.appendChild(document.createTextNode(
+        "Parcours complet. Renseignez votre profil dans l'assistant pour ne voir que les etapes qui vous concernent. "));
+      var b = el("button", "chip", "Renseigner mon profil");
+      b.addEventListener("click", function () { ouvrir("assistant"); });
+      bandeau.appendChild(b);
+    } else {
+      bandeau.appendChild(document.createTextNode(
+        (filtrer ? "Parcours adapte a votre profil : " : "Parcours complet. Votre profil : ") +
+        window.CHAT.decrireProfil(profil) + ". "));
+      var b2 = el("button", "chip", filtrer ? "Voir toutes les etapes" : "Ne voir que mes etapes");
+      b2.addEventListener("click", function () { voirToutParcours = !voirToutParcours; rendreTimeline(); });
+      bandeau.appendChild(b2);
+    }
+    t.appendChild(bandeau);
+
+    window.KB.timeline.forEach(function (p, pi) {
+      var visibles = [];
+      p.items.forEach(function (item, ii) {
+        if (!filtrer || etapeConcerne(item, profil)) visibles.push({ item: item, cle: pi + ":" + ii });
+      });
+      if (!visibles.length) return;
+
       var step = el("div", "step");
-      step.appendChild(el("h3", null, p.phase));
-      var ul = el("ul");
-      p.items.forEach(function (i) { ul.appendChild(el("li", null, i)); });
+      var faits = visibles.filter(function (x) { return coches[x.cle]; }).length;
+      var h = el("h3", null, p.phase + " ");
+      h.appendChild(el("span", "tl-compte", faits + "/" + visibles.length));
+      step.appendChild(h);
+
+      var ul = el("ul", "tl-items");
+      visibles.forEach(function (x) {
+        var item = x.item;
+        var texte = typeof item === "string" ? item : item.t;
+        var li = el("li", "tl-item" + (coches[x.cle] ? " fait" : ""));
+        var cb = el("input");
+        cb.type = "checkbox";
+        cb.checked = !!coches[x.cle];
+        cb.setAttribute("aria-label", "Etape faite : " + texte);
+        cb.addEventListener("change", function () {
+          var c = chargerCoches();
+          if (cb.checked) c[x.cle] = 1; else delete c[x.cle];
+          sauverCoches(c);
+          rendreTimeline();
+        });
+        li.appendChild(cb);
+        if (item && item.fiche) {
+          var lien = el("button", "tl-lien", texte);
+          lien.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(item.fiche); });
+          li.appendChild(lien);
+        } else {
+          li.appendChild(el("span", null, texte));
+        }
+        ul.appendChild(li);
+      });
       step.appendChild(ul);
       t.appendChild(step);
     });
@@ -334,7 +519,7 @@
 
     var k = $("#s-kpis");
     k.innerHTML = "";
-    [["Net mensuel", eur(r.netMensuel), true],
+    [["Net mensuel estime", eur(r.netMensuel), true],
      ["Net annuel", eur(r.netAnnuel), false],
      ["Impot total", eur(r.impotTotal), false],
      ["Cotisations", eur(r.cotisations + r.dependance), false],
@@ -441,6 +626,14 @@
   }
 
   function initSimulateur() {
+    // Deux sous-onglets : salaire net, capacite d'emprunt
+    $$("#sim-tabs button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        $$("#sim-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
+        $("#sim-salaire").hidden = b.dataset.sim !== "salaire";
+        $("#sim-emprunt").hidden = b.dataset.sim !== "emprunt";
+      });
+    });
     ["#s-brut", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits"].forEach(function (s) {
       $(s).addEventListener("input", majSimulateur);
       $(s).addEventListener("change", majSimulateur);
@@ -483,10 +676,25 @@
     try { localStorage.removeItem(STORAGE_CHAT); } catch (e) {}
   }
 
-  function bulle(texte, qui, sources, chips) {
-    var log = $("#chat-log");
+  // Le meme fil de conversation s'affiche dans l'onglet Assistant et dans le
+  // widget flottant : chaque bulle est construite dans chacun des journaux.
+  var chipsGroupe = 0;
+
+  function logsActifs() {
+    return [$("#chat-log"), $("#widget-log")].filter(Boolean);
+  }
+
+  function bulleDans(log, texte, qui) {
     var m = el("div", "msg " + qui);
     m.appendChild(document.createTextNode(texte));
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return m;
+  }
+
+  // Sources et boutons de relance, ajoutes une fois le texte affiche.
+  // Les chips d'un meme groupe disparaissent partout des qu'on clique sur l'une.
+  function garnir(m, sources, chips, grp) {
     if (sources && sources.length) {
       var s = el("div", "srcs");
       s.appendChild(el("strong", null, "Sources"));
@@ -499,26 +707,64 @@
     }
     if (chips && chips.length) {
       var c = el("div", "chips");
+      c.setAttribute("data-grp", String(grp));
       chips.forEach(function (ch) {
         var b = el("button", "chip", ch.label);
-        b.addEventListener("click", function () { c.remove(); ch.action(); });
+        b.addEventListener("click", function () {
+          $$(".chips[data-grp='" + grp + "']").forEach(function (x) { x.remove(); });
+          ch.action();
+        });
         c.appendChild(b);
       });
       m.appendChild(c);
     }
-    log.appendChild(m);
-    log.scrollTop = log.scrollHeight;
-    return m;
+    var log = m.parentElement;
+    if (log) log.scrollTop = log.scrollHeight;
+  }
+
+  function bulle(texte, qui, sources, chips) {
+    var grp = ++chipsGroupe;
+    return logsActifs().map(function (log) {
+      var m = bulleDans(log, texte, qui);
+      garnir(m, sources, chips, grp);
+      return m;
+    });
+  }
+
+  // Affichage progressif, mot a mot, pour les reponses de l'assistant.
+  function taper(texte, sources, chips, apres) {
+    var grp = ++chipsGroupe;
+    var ms = logsActifs().map(function (log) { return bulleDans(log, "", "bot"); });
+    var mots = String(texte).split(" ");
+    var i = 0;
+    (function pas() {
+      if (i < mots.length) {
+        ms.forEach(function (m) {
+          m.firstChild.nodeValue += (i ? " " : "") + mots[i];
+          var log = m.parentElement;
+          if (log) log.scrollTop = log.scrollHeight;
+        });
+        i++;
+        setTimeout(pas, 22);
+      } else {
+        ms.forEach(function (m) { garnir(m, sources, chips, grp); });
+        if (apres) apres();
+      }
+    })();
   }
 
   function poserProchaineQuestion() {
     var champ = window.CHAT.prochainChamp(profil);
     if (!champ) {
       bulle("Merci. Votre profil : " + window.CHAT.decrireProfil(profil) +
-        ".\n\nVoici ce qui vous concerne en priorite. Posez maintenant vos questions librement.",
+        ".\n\nLe parcours et les fiches sont maintenant filtres pour vous. " +
+        "Voici ce qui vous concerne en priorite, et vous pouvez poser vos questions librement.",
         "bot", [], window.CHAT.fichesPourProfil(profil).slice(0, 5).map(function (f) {
           return { label: f.titre, action: function () { ouvrir("fiches"); montrerFiche(f.id); } };
         }));
+      // Le profil vient d'etre complete : le parcours et les fiches s'y adaptent.
+      rendreTimeline();
+      rendreFiches();
       return;
     }
     bulle(champ.question, "bot", [], champ.options.map(function (o) {
@@ -528,28 +774,38 @@
           profil[champ.cle] = o;
           bulle(o, "me");
           sauverConversation();
-          setTimeout(poserProchaineQuestion, 120);
+          setTimeout(poserProchaineQuestion, 260);
         }
       };
     }));
   }
 
-  function envoyer() {
-    var input = $("#chat-input");
-    var q = input.value.trim();
+  function envoyer(texteForce) {
+    var q = texteForce;
+    if (!q) {
+      var inputs = [$("#chat-input"), $("#widget-input")].filter(Boolean);
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value.trim()) { q = inputs[i].value.trim(); break; }
+      }
+      inputs.forEach(function (x) { x.value = ""; });
+    }
     if (!q) return;
-    input.value = "";
     bulle(q, "me");
     historique.push({ role: "user", content: q });
     sauverConversation();
 
     var attente = bulle("", "bot");
-    var pts = el("span", "points");
-    pts.innerHTML = "<span></span><span></span><span></span>";
-    attente.appendChild(pts);
+    attente.forEach(function (m) {
+      var pts = el("span", "points");
+      pts.innerHTML = "<span></span><span></span><span></span>";
+      m.appendChild(pts);
+    });
 
-    window.CHAT.repondre(q, profil, historique).then(function (r) {
-      attente.remove();
+    // Petit temps de reflexion avant la reponse, pour garder un rythme de conversation.
+    var delai = new Promise(function (res) { setTimeout(res, 500 + Math.random() * 600); });
+    Promise.all([window.CHAT.repondre(q, profil, historique), delai]).then(function (rs) {
+      var r = rs[0];
+      attente.forEach(function (m) { m.remove(); });
       var chips = (r.fiches || []).slice(0, 3).map(function (id) {
         var f = window.KB.fiches.filter(function (x) { return x.id === id; })[0];
         return f ? {
@@ -562,26 +818,32 @@
         var pf = window.KB.fiches.filter(function (x) { return x.id === r.fiches[0]; })[0];
         if (pf) chips.push({
           label: "En savoir plus",
-          action: function () {
-            $("#chat-input").value = "Peux-tu detailler : " + pf.titre + " ?";
-            envoyer();
-          }
+          action: function () { envoyer("Peux-tu detailler : " + pf.titre + " ?"); }
         });
       }
-      bulle(r.texte, "bot", r.sources, chips);
+      // Question d'assurance : renvoyer vers le comparateur de contrats
+      if (r.comparateur) {
+        chips.push({
+          label: "Comparer 4 contrats habitation",
+          action: function () { ouvrir("comparateur"); }
+        });
+      }
+      taper(r.texte, r.sources, chips);
       historique.push({ role: "assistant", content: r.texte });
       sauverConversation();
       var b = $("#mode-badge");
-      b.textContent = "mode " + (r.via || "local");
-      b.className = "badge" + (String(r.via).indexOf("api") === 0 ? " on" : "");
+      if (b) {
+        b.textContent = "mode " + (r.via || "local");
+        b.className = "badge" + (String(r.via).indexOf("api") === 0 ? " on" : "");
+      }
     }).catch(function (e) {
-      attente.remove();
+      attente.forEach(function (m) { m.remove(); });
       bulle("Une erreur est survenue : " + e.message, "bot");
     });
   }
 
   function initChat() {
-    $("#chat-send").addEventListener("click", envoyer);
+    $("#chat-send").addEventListener("click", function () { envoyer(); });
     $("#chat-input").addEventListener("keydown", function (e) {
       if (e.key === "Enter") envoyer();
     });
@@ -589,9 +851,25 @@
       profil = window.CHAT.profilVide();
       historique = [];
       effacerConversation();
-      $("#chat-log").innerHTML = "";
+      logsActifs().forEach(function (log) { log.innerHTML = ""; });
+      rendreTimeline();
+      rendreFiches();
       demarrerChat();
     });
+
+    // Widget flottant : meme conversation, disponible sur tous les onglets
+    var wb = $("#widget-btn"), w = $("#widget");
+    if (wb && w) {
+      wb.addEventListener("click", montrerWidget);
+      $("#widget-close").addEventListener("click", function () {
+        w.hidden = true;
+        wb.hidden = false;
+      });
+      $("#widget-send").addEventListener("click", function () { envoyer(); });
+      $("#widget-input").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") envoyer();
+      });
+    }
 
     // Reprise de la conversation precedente si elle existe
     if (chargerConversation()) {
@@ -600,19 +878,319 @@
       });
       bulle("Conversation reprise. Profil enregistre : " + window.CHAT.decrireProfil(profil) +
         ".\nVous pouvez continuer, ou tout reinitialiser.", "bot");
+      // Le profil restaure personnalise le parcours et les fiches
+      rendreTimeline();
+      rendreFiches();
     } else {
       demarrerChat();
     }
     window.CHAT.testerApi().then(function (ok) {
       var b = $("#mode-badge");
-      b.textContent = ok ? "mode api" : "mode local";
-      b.className = "badge" + (ok ? " on" : "");
+      if (b) {
+        b.textContent = ok ? "mode api" : "mode local";
+        b.className = "badge" + (ok ? " on" : "");
+      }
     });
   }
 
   function demarrerChat() {
     bulle("Bonjour. Quelques questions pour cibler ce qui vous concerne, puis vous pourrez demander ce que vous voulez.", "bot");
     setTimeout(poserProchaineQuestion, 250);
+  }
+
+  // Ouvre le widget flottant, depuis n'importe quel point de l'interface.
+  function montrerWidget() {
+    var w = $("#widget"), wb = $("#widget-btn");
+    if (!w || !wb) return;
+    w.hidden = false;
+    wb.hidden = true;
+    var log = $("#widget-log");
+    if (log) log.scrollTop = log.scrollHeight;
+    var inp = $("#widget-input");
+    if (inp) inp.focus();
+  }
+
+  // ---------- Comparateur de contrats ----------
+
+  var STATUTS_CONTRAT = {
+    covered: { t: "paye", c: "ok" },
+    covered_with_conditions: { t: "paye (conditions)", c: "cond" },
+    sub_limited: { t: "paye (plafond reduit)", c: "cond" },
+    not_covered: { t: "non couvert", c: "ko" },
+    excluded: { t: "exclu", c: "ko" },
+    not_found: { t: "non trouve", c: "nf" }
+  };
+
+  function normaliserCtr(s) {
+    return String(s || "").toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function motsCtr(s) {
+    var vides = ["le","la","les","un","une","des","de","du","au","aux","et","ou","a","en","pour",
+      "dans","sur","par","avec","est","mon","ma","mes","je","suis","il","que","qui","quel","quelle",
+      "couvert","couverte","assurance","contrat"];
+    return normaliserCtr(s).split(" ").filter(function (m) {
+      return m.length > 2 && vides.indexOf(m) === -1;
+    });
+  }
+
+  function chercherScenario(q) {
+    if (!window.CONTRATS_KB) return null;
+    var termes = motsCtr(q);
+    if (!termes.length) return null;
+    var best = null, bestScore = 0;
+    window.CONTRATS_KB.scenarios.forEach(function (sc) {
+      var hay = normaliserCtr(sc.groupe + " " + sc.titre + " " + sc.question);
+      var s = 0;
+      termes.forEach(function (t) { if (hay.indexOf(t) !== -1) s += 1; });
+      if (s > bestScore) { bestScore = s; best = sc; }
+    });
+    return bestScore >= 2 || (bestScore >= 1 && termes.length === 1) ? best : null;
+  }
+
+  function bulleCtr(texte, qui) {
+    var log = $("#ctr-log");
+    if (!log) return null;
+    var m = el("div", "msg " + qui);
+    if (texte) m.appendChild(document.createTextNode(texte));
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return m;
+  }
+
+  function carteVerdict(nom, v) {
+    var st = STATUTS_CONTRAT[v.statut] || { t: v.statut || "?", c: "nf" };
+    var d = el("div", "vcard " + st.c);
+    var h = el("div", "vhead");
+    h.appendChild(el("strong", null, nom));
+    h.appendChild(el("span", "vstatut " + st.c, st.t));
+    d.appendChild(h);
+    if (v.cle) d.appendChild(el("p", "vcle", v.cle));
+    if (v.plafond) d.appendChild(el("p", "vinfo", "Plafond : " + v.plafond));
+    if (v.franchise) d.appendChild(el("p", "vinfo", "Franchise : " + v.franchise));
+    if (v.citation) {
+      var det = el("details");
+      det.appendChild(el("summary", null,
+        "Clause citee" + (v.page ? " (p. " + v.page + ")" : "") +
+        (v.verifiee ? " · retrouvee dans le PDF" : " · a reverifier")));
+      det.appendChild(el("blockquote", "vcitation", "« " + v.citation + " »"));
+      d.appendChild(det);
+    }
+    return d;
+  }
+
+  function repondreContrat(q) {
+    bulleCtr(q, "me");
+    var attente = bulleCtr("", "bot");
+    if (attente) {
+      var pts = el("span", "points");
+      pts.innerHTML = "<span></span><span></span><span></span>";
+      attente.appendChild(pts);
+    }
+    setTimeout(function () {
+      if (attente) attente.remove();
+      var sc = chercherScenario(q);
+      if (!sc) {
+        var groupes = [];
+        (window.CONTRATS_KB ? window.CONTRATS_KB.scenarios : []).forEach(function (s) {
+          if (groupes.indexOf(s.groupe) === -1) groupes.push(s.groupe);
+        });
+        bulleCtr("Ce cas ne figure pas dans les sinistres analyses, je prefere le dire " +
+          "plutot que d'improviser une reponse. Les sujets couverts : " +
+          groupes.join(", ") + ". Reformulez, ou cliquez sur une question suggeree.", "bot");
+        return;
+      }
+      var m = bulleCtr("Cas analyse : " + sc.groupe + ", " + sc.titre.toLowerCase() +
+        ". Voici comment les quatre contrats repondent, clause citee a l'appui.", "bot");
+      if (!m) return;
+      var grille = el("div", "vgrid");
+      (window.CONTRATS_KB.assureurs || Object.keys(sc.verdicts)).forEach(function (nom) {
+        if (sc.verdicts[nom]) grille.appendChild(carteVerdict(nom, sc.verdicts[nom]));
+      });
+      m.appendChild(grille);
+      m.appendChild(el("p", "vsuite",
+        "La ou les contrats divergent, tout se joue sur un mot, un seuil ou une exclusion. " +
+        "Posez un autre cas, ou ouvrez l'analyse complete."));
+      var voisins = window.CONTRATS_KB.scenarios.filter(function (s) {
+        return s.groupe === sc.groupe && s.titre !== sc.titre;
+      }).slice(0, 2);
+      var c = el("div", "chips");
+      voisins.forEach(function (s) {
+        var b = el("button", "chip", s.groupe + " : " + s.titre.toLowerCase());
+        b.addEventListener("click", function () { repondreContrat(s.question); });
+        c.appendChild(b);
+      });
+      var ba = el("button", "chip", "Ouvrir l'analyse complete");
+      ba.addEventListener("click", function () { window.location.href = "comparateur/sinistres.html"; });
+      c.appendChild(ba);
+      m.appendChild(c);
+      var log = $("#ctr-log");
+      if (log) log.scrollTop = log.scrollHeight;
+    }, 450 + Math.random() * 500);
+  }
+
+  function initComparateur() {
+    if (!window.CONTRATS_KB || !$("#ctr-log")) return;
+    // Questions suggerees : le premier cas de chaque famille de sinistres
+    var sug = $("#ctr-suggestions");
+    var vus = {};
+    window.CONTRATS_KB.scenarios.forEach(function (sc) {
+      if (vus[sc.groupe]) return;
+      vus[sc.groupe] = 1;
+      var b = el("button", "chip", sc.groupe + " : " + sc.titre.toLowerCase());
+      b.addEventListener("click", function () { repondreContrat(sc.question); });
+      sug.appendChild(b);
+    });
+    bulleCtr("Bonjour. Decrivez un sinistre ou choisissez une question suggeree : je montre " +
+      "la reponse des quatre contrats, avec la clause exacte et sa page. C'est en posant vos " +
+      "propres cas qu'on comprend un contrat.", "bot");
+    $("#ctr-send").addEventListener("click", function () {
+      var i = $("#ctr-input");
+      if (i.value.trim()) { repondreContrat(i.value.trim()); i.value = ""; }
+    });
+    $("#ctr-input").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && e.target.value.trim()) {
+        repondreContrat(e.target.value.trim());
+        e.target.value = "";
+      }
+    });
+    $("#ctr-page-sinistres").addEventListener("click", function () {
+      window.location.href = "comparateur/sinistres.html";
+    });
+    $("#ctr-page-reco").addEventListener("click", function () {
+      window.location.href = "comparateur/reco.html";
+    });
+  }
+
+  // ---------- Carte : ecoles et transports ----------
+
+  var carteDemarree = false, carteObj = null, carteCouche = null;
+
+  function chargerLeaflet(cb) {
+    if (window.L) return cb();
+    var css = el("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    var s = el("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.onload = cb;
+    s.onerror = function () {
+      statsCarteMessage("La bibliotheque de carte n'a pas pu etre chargee (acces reseau requis).");
+    };
+    document.head.appendChild(s);
+  }
+
+  function statsCarteMessage(txt) {
+    var k = $("#c-stats");
+    if (!k) return;
+    k.innerHTML = "";
+    k.appendChild(el("p", "muted", txt));
+  }
+
+  function afficherAlentours(lat, lon) {
+    var rayon = Number($("#c-rayon").value) || 1000;
+    var voulu = {
+      ecoles: $("#c-ecoles").checked,
+      creches: $("#c-creches").checked,
+      arrets: $("#c-arrets").checked
+    };
+    var blocs = [];
+    if (voulu.ecoles) blocs.push('nwr["amenity"="school"](around:' + rayon + "," + lat + "," + lon + ");");
+    if (voulu.creches) blocs.push('nwr["amenity"~"kindergarten|childcare"](around:' + rayon + "," + lat + "," + lon + ");");
+    if (voulu.arrets) {
+      blocs.push('node["highway"="bus_stop"](around:' + rayon + "," + lat + "," + lon + ");");
+      blocs.push('node["railway"~"tram_stop|station|halt"](around:' + rayon + "," + lat + "," + lon + ");");
+    }
+    if (!blocs.length) { statsCarteMessage("Cochez au moins une categorie."); return; }
+    statsCarteMessage("Chargement des environs (OpenStreetMap)...");
+    var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 600;";
+    fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(q)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (j) {
+      carteCouche.clearLayers();
+      L.circle([lat, lon], { radius: rayon, color: "#64748b", weight: 1, fillOpacity: 0.04 }).addTo(carteCouche);
+      L.circleMarker([lat, lon], { radius: 7, color: "#0f172a", fillColor: "#0f172a", fillOpacity: 1 })
+        .bindPopup("Adresse cherchee").addTo(carteCouche);
+      var comptes = { ecoles: 0, creches: 0, arrets: 0 };
+      (j.elements || []).forEach(function (e) {
+        var la = e.lat !== undefined ? e.lat : (e.center && e.center.lat);
+        var lo = e.lon !== undefined ? e.lon : (e.center && e.center.lon);
+        if (la === undefined || lo === undefined) return;
+        var tags = e.tags || {};
+        var type, couleur;
+        if (tags.amenity === "school") { type = "Ecole"; couleur = "#2563eb"; comptes.ecoles++; }
+        else if (tags.amenity === "kindergarten" || tags.amenity === "childcare") { type = "Creche"; couleur = "#7c3aed"; comptes.creches++; }
+        else if (tags.highway === "bus_stop") { type = "Arret de bus"; couleur = "#059669"; comptes.arrets++; }
+        else if (tags.railway === "tram_stop") { type = "Arret de tram"; couleur = "#0d9488"; comptes.arrets++; }
+        else if (tags.railway === "station" || tags.railway === "halt") { type = "Gare"; couleur = "#b45309"; comptes.arrets++; }
+        else return;
+        L.circleMarker([la, lo], { radius: 6, color: couleur, fillColor: couleur, fillOpacity: 0.85, weight: 1 })
+          .bindPopup("<b>" + type + "</b>" + (tags.name ? "<br>" + tags.name : ""))
+          .addTo(carteCouche);
+      });
+      var k = $("#c-stats");
+      k.innerHTML = "";
+      [["Ecoles", comptes.ecoles, voulu.ecoles],
+       ["Creches", comptes.creches, voulu.creches],
+       ["Bus, tram, train", comptes.arrets, voulu.arrets]
+      ].forEach(function (x) {
+        if (!x[2]) return;
+        var d = el("div", "kpi");
+        d.appendChild(el("div", "k", x[0] + " dans le rayon"));
+        d.appendChild(el("div", "v", String(x[1])));
+        k.appendChild(d);
+      });
+    }).catch(function (e) {
+      statsCarteMessage("Les environs n'ont pas pu etre charges (" + e.message + "). Reessayez dans un instant.");
+    });
+  }
+
+  function chercherAdresse() {
+    var q = $("#c-adresse").value.trim();
+    if (!q || !window.L || !carteObj) return;
+    statsCarteMessage("Recherche de l'adresse...");
+    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=lu&q=" +
+      encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res || !res.length) {
+          statsCarteMessage("Adresse introuvable au Luxembourg. Essayez avec la commune ou le quartier.");
+          return;
+        }
+        var lat = Number(res[0].lat), lon = Number(res[0].lon);
+        var rayon = Number($("#c-rayon").value) || 1000;
+        carteObj.setView([lat, lon], rayon <= 500 ? 15 : (rayon <= 1000 ? 14 : 13));
+        afficherAlentours(lat, lon);
+      })
+      .catch(function (e) {
+        statsCarteMessage("La recherche d'adresse a echoue (" + e.message + ").");
+      });
+  }
+
+  // Appelee a l'ouverture de l'onglet : la bibliotheque de carte n'est chargee qu'a ce moment.
+  function initCarte() {
+    if (carteDemarree) return;
+    carteDemarree = true;
+    chargerLeaflet(function () {
+      carteObj = L.map("carte-map").setView([49.6116, 6.1319], 12);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© les contributeurs OpenStreetMap"
+      }).addTo(carteObj);
+      carteCouche = L.layerGroup().addTo(carteObj);
+    });
+    $("#c-chercher").addEventListener("click", chercherAdresse);
+    $("#c-adresse").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") chercherAdresse();
+    });
   }
 
   // ---------- Administration ----------
@@ -814,6 +1392,7 @@
   rendreTimeline();
   initSimulateur();
   initChat();
+  initComparateur();
   initAdmin();
   ouvrirDepuisHash();
   window.addEventListener("hashchange", ouvrirDepuisHash);
