@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css">
+<link rel="stylesheet" href="app/styles.css?v=3">
 </head>
 <body>
 
@@ -31,9 +31,9 @@
 
     <div class="ask">
       <h2 class="ask-titre">Une question sur votre installation&nbsp;?</h2>
-      <p class="ask-sous">Cherchez une fiche ou posez votre question : l'assistant repond depuis le guide, sources a l'appui.</p>
+      <p class="ask-sous">Cherchez une fiche ou posez votre question : l'assistant répond depuis le guide, sources à l'appui.</p>
       <div class="ask-bar">
-        <input type="search" id="q-accueil" placeholder="Ex : combien de jours pour me declarer a la commune ?" autocomplete="off">
+        <input type="search" id="q-accueil" placeholder="Ex : combien de jours pour me déclarer à la commune ?" autocomplete="off">
         <button class="btn" id="q-accueil-btn">Demander</button>
       </div>
       <div class="chips" id="ask-chips"></div>
@@ -45,35 +45,35 @@
         <img src="assets/hero.jpg" alt="Vue de la vieille ville de Luxembourg, du Grund et du plateau de Kirchberg" loading="eager">
       </div>
       <div class="hero-in">
-        <span class="kicker"><span class="pt"></span>Verifie en aout 2026</span>
+        <span class="kicker"><span class="pt"></span>Vérifié en août 2026</span>
         <h1>Arriver au Luxembourg, <em>sans rien oublier</em></h1>
         <p>
-          Des huit jours pour se declarer a la commune au calcul de votre salaire net,
-          chaque demarche expliquee, dans le bon ordre, avec sa source officielle.
+          Des huit jours pour se déclarer à la commune au calcul de votre salaire net,
+          chaque démarche expliquée, dans le bon ordre, avec sa source officielle.
         </p>
         <div class="hero-cta">
-          <button class="btn clair" data-go="assistant">Demarrer avec l'assistant</button>
+          <button class="btn clair" data-go="assistant">Démarrer avec l'assistant</button>
           <button class="btn contour" data-go="parcours">Voir le parcours complet</button>
         </div>
         <div class="hero-stats">
           <div class="s"><div class="n" id="stat-fiches">—</div><div class="l">fiches pratiques</div></div>
-          <div class="s"><div class="n">8</div><div class="l">jours pour se declarer</div></div>
+          <div class="s"><div class="n">8</div><div class="l">jours pour se déclarer</div></div>
           <div class="s"><div class="n">11,55 %</div><div class="l">de cotisations salariales</div></div>
           <div class="s"><div class="n">0 €</div><div class="l">les transports publics</div></div>
         </div>
       </div>
     </div>
 
-    <h2>Par theme</h2>
+    <h2>Par thème</h2>
     <div class="grid" id="accueil-cats"></div>
 
-    <h2>Les questions les plus posees</h2>
+    <h2>Les questions les plus posées</h2>
     <div class="grid serre" id="accueil-faq"></div>
 
     <div class="notice small">
-      <strong>Fiabilite.</strong> Informations verifiees en aout 2026 aupres des administrations
-      luxembourgeoises. La reglementation evolue, en particulier les baremes et les plafonds :
-      chaque fiche renvoie a sa source, qui fait foi avant toute demarche engageante.
+      <strong>Fiabilité.</strong> Informations vérifiées en août 2026 auprès des administrations
+      luxembourgeoises. La réglementation évolue, en particulier les barèmes et les plafonds :
+      chaque fiche renvoie à sa source, qui fait foi avant toute démarche engageante.
     </div>
 
     <div class="credits" id="credits-photos"></div>
@@ -83,9 +83,9 @@
   <section class="panel" id="panel-fiches" hidden>
     <div id="fiches-liste">
       <h1>Fiches pratiques</h1>
-      <p class="lead">Chaque fiche est autonome, avec ses points cles et ses sources officielles.</p>
+      <p class="lead">Chaque fiche est autonome, avec ses points clés et ses sources officielles.</p>
       <div class="search-bar">
-        <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatries, creche, permis...">
+        <input type="search" id="q-fiches" placeholder="Rechercher : caution, matricule, impatriés, crèche, permis...">
       </div>
       <div id="fiches-perso"></div>
       <div class="grid" id="fiches-grid"></div>
@@ -96,11 +96,11 @@
   <!-- Parcours -->
   <section class="panel" id="panel-parcours" hidden>
     <h1>Parcours d'installation</h1>
-    <p class="lead">L'ordre compte : certaines demarches en conditionnent d'autres.</p>
+    <p class="lead">L'ordre compte : certaines démarches en conditionnent d'autres.</p>
     <div class="notice">
-      <strong>La chaine a ne pas casser.</strong>
-      Declaration a la commune, puis certificat de residence et matricule, puis securite sociale,
-      banque, cheque-service et impots. Tout part de la commune, dans les 8 jours.
+      <strong>La chaîne à ne pas casser.</strong>
+      Déclaration à la commune, puis certificat de résidence et matricule, puis sécurité sociale,
+      banque, chèque-service et impôts. Tout part de la commune, dans les 8 jours.
     </div>
     <div class="tl" id="timeline"></div>
   </section>
@@ -109,13 +109,13 @@
   <section class="panel" id="panel-simulateur" hidden>
     <h1>Simulateur de salaire net</h1>
     <p class="lead">
-      Bareme officiel de l'Administration des contributions directes et parametres sociaux en vigueur.
-      Resultat indicatif : il ne remplace ni une fiche de paie, ni un calcul de l'administration.
+      Barème officiel de l'Administration des contributions directes et paramètres sociaux en vigueur.
+      Résultat indicatif : il ne remplace ni une fiche de paie, ni un calcul de l'administration.
     </p>
 
     <div class="sous-onglets" id="sim-tabs">
       <button data-sim="salaire" class="actif">Salaire net</button>
-      <button data-sim="emprunt">Capacite d'emprunt</button>
+      <button data-sim="emprunt">Capacité d'emprunt</button>
     </div>
 
     <div id="sim-salaire">
@@ -126,7 +126,7 @@
           <input type="number" id="s-brut" value="80000" min="0" step="1000">
         </div>
         <div>
-          <label for="s-classe">Classe d'impot</label>
+          <label for="s-classe">Classe d'impôt</label>
           <select id="s-classe">
             <option value="classe1">Classe 1</option>
             <option value="classe1a">Classe 1a</option>
@@ -134,7 +134,7 @@
           </select>
         </div>
         <div>
-          <label for="s-mois">Reparti sur</label>
+          <label for="s-mois">Réparti sur</label>
           <select id="s-mois">
             <option value="12" selected>12 mois</option>
             <option value="13">13 mois</option>
@@ -144,12 +144,12 @@
       <div class="row" style="margin-top:12px">
         <div class="check">
           <input type="checkbox" id="s-impatrie">
-          <label for="s-impatrie">Regime des impatries (50 % exonere)</label>
-          <a href="#fiche/impatries" class="lien-fiche-inline">reserve a des profils precis, voir la fiche</a>
+          <label for="s-impatrie">Régime des impatriés (50 % exonéré)</label>
+          <a href="#fiche/impatries" class="lien-fiche-inline">réservé à des profils précis, voir la fiche</a>
         </div>
         <div class="check">
           <input type="checkbox" id="s-forfaits" checked>
-          <label for="s-forfaits">Forfaits frais et depenses speciales</label>
+          <label for="s-forfaits">Forfaits frais et dépenses spéciales</label>
         </div>
       </div>
     </div>
@@ -157,12 +157,12 @@
     <div class="kpis" id="s-kpis"></div>
 
     <div class="notice small">
-      <strong>Un ordre de grandeur, pas un chiffre a l'euro pres.</strong>
-      Le resultat est la retenue a la source calculee sur ce seul salaire, avec le bareme officiel.
-      Le net reellement percu peut s'en ecarter selon la situation personnelle : revenus etrangers
-      en classe 2 (le taux moyen mondial s'applique a la declaration), deductions reelles superieures
-      aux forfaits, avantages en nature, credits d'impot. Plus la situation s'ecarte du cas simple
-      (un seul salaire, pas d'autre revenu), plus l'ecart peut etre grand.
+      <strong>Un ordre de grandeur, pas un chiffre à l'euro près.</strong>
+      Le résultat est la retenue à la source calculée sur ce seul salaire, avec le barème officiel.
+      Le net réellement perçu peut s'en écarter selon la situation personnelle : revenus étrangers
+      en classe 2 (le taux moyen mondial s'applique à la déclaration), déductions réelles supérieures
+      aux forfaits, avantages en nature, crédits d'impôt. Plus la situation s'écarte du cas simple
+      (un seul salaire, pas d'autre revenu), plus l'écart peut être grand.
     </div>
 
     <div id="s-detail"></div>
@@ -172,19 +172,19 @@
     </div>
 
     <div id="sim-emprunt" hidden>
-    <h2 style="margin-top:0">Capacite d'emprunt indicative</h2>
+    <h2 style="margin-top:0">Capacité d'emprunt indicative</h2>
     <p class="lead small">
-      Les banques raisonnent en taux d'effort : la somme des mensualites rapportee aux revenus nets.
-      Les credits en cours viennent en deduction.
+      Les banques raisonnent en taux d'effort : la somme des mensualités rapportée aux revenus nets.
+      Les crédits en cours viennent en déduction.
     </p>
     <div class="card">
       <div class="row">
         <div>
-          <label for="e-net">Revenus nets du menage (EUR/mois)</label>
+          <label for="e-net">Revenus nets du ménage (EUR/mois)</label>
           <input type="number" id="e-net" value="5000" min="0" step="100">
         </div>
         <div>
-          <label for="e-charges">Credits en cours (EUR/mois)</label>
+          <label for="e-charges">Crédits en cours (EUR/mois)</label>
           <input type="number" id="e-charges" value="0" min="0" step="50">
         </div>
         <div>
@@ -192,21 +192,21 @@
           <input type="number" id="e-taux" value="4.3" min="0" step="0.1">
         </div>
         <div>
-          <label for="e-duree">Duree (annees)</label>
+          <label for="e-duree">Durée (années)</label>
           <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
         </div>
       </div>
     </div>
     <div class="kpis" id="e-kpis"></div>
     <p class="hint">
-      Les seuils de 33 % et 40 % sont des pratiques bancaires, pas un plafond legal : la limite
-      reglementaire fixee au Luxembourg porte sur la quotite, la part du prix financee, et non sur
-      le taux d'effort. Chaque banque decide selon les revenus et le reste a vivre.
+      Les seuils de 33 % et 40 % sont des pratiques bancaires, pas un plafond légal : la limite
+      réglementaire fixée au Luxembourg porte sur la quotité, la part du prix financée, et non sur
+      le taux d'effort. Chaque banque décide selon les revenus et le reste à vivre.
     </p>
     <p class="hint">
-      Quotites maximales au Luxembourg : 100 % du prix pour un primo-accedant en residence principale,
-      90 % pour une autre residence principale, 80 % pour un investissement locatif. Les frais d'acte
-      restent a financer sur fonds propres.
+      Quotités maximales au Luxembourg : 100 % du prix pour un primo-accédant en résidence principale,
+      90 % pour une autre résidence principale, 80 % pour un investissement locatif. Les frais d'acte
+      restent à financer sur fonds propres.
     </p>
     </div>
   </section>
@@ -215,52 +215,52 @@
   <section class="panel" id="panel-comparateur" hidden>
     <h1>Comparateur de contrats habitation</h1>
     <p class="lead">
-      Quatre contrats du marche luxembourgeois, compares sinistre par sinistre a partir de leurs
-      conditions generales, la clause exacte citee a l'appui.
+      Quatre contrats du marché luxembourgeois, comparés sinistre par sinistre à partir de leurs
+      conditions générales, la clause exacte citée à l'appui.
     </p>
     <div class="notice small">
-      <strong>Methode et limites.</strong> Analyse documentaire de conditions generales publiques
-      du marche luxembourgeois, editions 2017 a 2023, assureurs anonymises (A a D). Chaque verdict
-      cite la clause et sa page. Une comparaison de conditions generales ne remplace ni un devis
+      <strong>Méthode et limites.</strong> Analyse documentaire de conditions générales publiques
+      du marché luxembourgeois, éditions 2017 à 2023, assureurs anonymisés (A à D). Chaque verdict
+      cite la clause et sa page. Une comparaison de conditions générales ne remplace ni un devis
       ni un conseil : le contrat en vigueur fait foi.
     </div>
 
     <div class="card ctr-wrap">
       <h3 style="margin-top:0">Posez votre question sur les contrats</h3>
       <p class="lead small">
-        Decrivez un sinistre ou une situation qui vous ressemble : la reponse montre comment chacun
-        des quatre contrats reagit, avec la clause citee. C'est la meilleure facon de comprendre
+        Décrivez un sinistre ou une situation qui vous ressemble : la réponse montre comment chacun
+        des quatre contrats réagit, avec la clause citée. C'est la meilleure façon de comprendre
         ce que couvre vraiment un contrat.
       </p>
       <div class="chips" id="ctr-suggestions"></div>
       <div class="chat-log" id="ctr-log"></div>
       <div class="chat-bar">
-        <input type="text" id="ctr-input" placeholder="Ex : mon velo est vole dans la rue, suis-je couvert ?" autocomplete="off">
+        <input type="text" id="ctr-input" placeholder="Ex : mon vélo est volé dans la rue, suis-je couvert ?" autocomplete="off">
         <button class="btn" id="ctr-send">Envoyer</button>
       </div>
     </div>
 
-    <h2>Les analyses completes</h2>
+    <h2>Les analyses complètes</h2>
     <div class="grid serre">
       <div class="qcard" id="ctr-page-sinistres">
-        <h3>Sinistres reels, contrat par contrat</h3>
-        <p>Treize sinistres concrets poses aux quatre contrats : paye, sous conditions, plafond reduit
-          ou exclu, avec la clause citee et la page.</p>
+        <h3>Sinistres réels, contrat par contrat</h3>
+        <p>Treize sinistres concrets posés aux quatre contrats : payé, sous conditions, plafond réduit
+          ou exclu, avec la clause citée et la page.</p>
       </div>
       <div class="qcard" id="ctr-page-reco">
-        <h3>Le contrat adapte a un profil</h3>
-        <p>Un profil d'exemple (appartement, teletravail, velo, bijoux) pondere les garanties qui
-          comptent, classe les contrats et liste les lacunes a negocier.</p>
+        <h3>Le contrat adapté à un profil</h3>
+        <p>Un profil d'exemple (appartement, télétravail, vélo, bijoux) pondère les garanties qui
+          comptent, classe les contrats et liste les lacunes à négocier.</p>
       </div>
     </div>
   </section>
 
   <!-- Carte : ecoles et transports autour d'une adresse -->
   <section class="panel" id="panel-carte" hidden>
-    <h1>Ecoles et transports autour d'une adresse</h1>
+    <h1>Écoles et transports autour d'une adresse</h1>
     <p class="lead">
       Pour choisir un quartier avant de signer : cherchez une adresse ou une commune, la carte
-      montre les ecoles, les creches et les arrets de bus, tram et train autour.
+      montre les écoles, les crèches et les arrêts de bus, tram et train autour.
     </p>
     <div class="card">
       <div class="row">
@@ -281,17 +281,17 @@
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <div class="check"><input type="checkbox" id="c-ecoles" checked><label for="c-ecoles">Ecoles</label></div>
-        <div class="check"><input type="checkbox" id="c-creches" checked><label for="c-creches">Creches</label></div>
+        <div class="check"><input type="checkbox" id="c-ecoles" checked><label for="c-ecoles">Écoles</label></div>
+        <div class="check"><input type="checkbox" id="c-creches" checked><label for="c-creches">Crèches</label></div>
         <div class="check"><input type="checkbox" id="c-arrets" checked><label for="c-arrets">Bus, tram, train</label></div>
       </div>
     </div>
     <div id="carte-map"></div>
     <div class="kpis" id="c-stats"></div>
     <p class="hint" id="c-note">
-      Donnees OpenStreetMap (© les contributeurs OpenStreetMap), chargees a la demande :
-      l'exhaustivite n'est pas garantie. Pour l'inscription scolaire, la commune fait foi,
-      voir la fiche Ecole et scolarite.
+      Données OpenStreetMap (© les contributeurs OpenStreetMap), chargées à la demande :
+      l'exhaustivité n'est pas garantie. Pour l'inscription scolaire, la commune fait foi,
+      voir la fiche Scolariser ses enfants.
     </p>
   </section>
 
@@ -299,7 +299,7 @@
   <section class="panel" id="panel-assistant" hidden>
     <h1>Assistant</h1>
     <p class="lead">
-      Il construit votre profil au fil des reponses, puis cible ce qui vous concerne.
+      Il construit votre profil au fil des réponses, puis cible ce qui vous concerne.
       <span class="badge" id="mode-badge">mode local</span>
     </p>
     <div class="card chat-wrap">
@@ -307,34 +307,34 @@
       <div class="chat-bar">
         <input type="text" id="chat-input" placeholder="Posez votre question..." autocomplete="off">
         <button class="btn" id="chat-send">Envoyer</button>
-        <button class="btn ghost" id="chat-reset" title="Reinitialiser le profil">Reinitialiser</button>
+        <button class="btn ghost" id="chat-reset" title="Réinitialiser le profil">Réinitialiser</button>
       </div>
     </div>
     <p class="hint">
-      Les reponses proviennent de la base de connaissances de ce guide, avec leurs sources.
-      Quand une information n'y figure pas, l'assistant le dit plutot que d'inventer.
+      Les réponses proviennent de la base de connaissances de ce guide, avec leurs sources.
+      Quand une information n'y figure pas, l'assistant le dit plutôt que d'inventer.
     </p>
   </section>
 
   <!-- Administration -->
   <section class="panel" id="panel-admin" hidden>
     <h1>Administration</h1>
-    <p class="lead">Modifier le contenu des fiches, les questions frequentes et les parametres du simulateur.</p>
+    <p class="lead">Modifier le contenu des fiches, les questions fréquentes et les paramètres du simulateur.</p>
 
     <div class="notice small">
-      Les modifications sont enregistrees dans ce navigateur. Utilisez <strong>Exporter</strong> pour
-      produire un fichier a replacer dans <code>app/kb.js</code>, afin de les rendre permanentes pour tous.
+      Les modifications sont enregistrées dans ce navigateur. Utilisez <strong>Exporter</strong> pour
+      produire un fichier à replacer dans <code>app/kb.js</code>, afin de les rendre permanentes pour tous.
     </div>
 
     <div class="card">
       <h3 style="margin-top:0">Fiches</h3>
       <div class="row">
         <div>
-          <label for="a-fiche">Fiche a modifier</label>
+          <label for="a-fiche">Fiche à modifier</label>
           <select id="a-fiche"></select>
         </div>
         <div>
-          <label for="a-cat">Categorie</label>
+          <label for="a-cat">Catégorie</label>
           <input type="text" id="a-cat">
         </div>
       </div>
@@ -343,7 +343,7 @@
         <input type="text" id="a-titre">
       </div>
       <div style="margin-top:12px">
-        <label for="a-resume">Resume</label>
+        <label for="a-resume">Résumé</label>
         <input type="text" id="a-resume">
       </div>
       <div style="margin-top:12px">
@@ -351,15 +351,15 @@
         <textarea id="a-corps" style="min-height:190px"></textarea>
       </div>
       <div style="margin-top:12px">
-        <label for="a-retenir">A retenir (une puce par ligne)</label>
+        <label for="a-retenir">À retenir (une puce par ligne)</label>
         <textarea id="a-retenir"></textarea>
       </div>
       <div style="margin-top:12px">
-        <label for="a-tags">Mots-cles, separes par des virgules (utilises par l'assistant)</label>
+        <label for="a-tags">Mots-clés, séparés par des virgules (utilisés par l'assistant)</label>
         <input type="text" id="a-tags">
       </div>
       <div style="margin-top:12px">
-        <label for="a-sources">Sources, une par ligne, au format : intitule | url</label>
+        <label for="a-sources">Sources, une par ligne, au format : intitulé | url</label>
         <textarea id="a-sources"></textarea>
       </div>
       <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap">
@@ -370,11 +370,11 @@
       <p class="hint" id="a-status"></p>
     </div>
 
-    <h2>Parametres du simulateur</h2>
+    <h2>Paramètres du simulateur</h2>
     <div class="card">
       <div class="row" id="a-params"></div>
       <div style="margin-top:14px">
-        <button class="btn" id="p-save">Enregistrer les parametres</button>
+        <button class="btn" id="p-save">Enregistrer les paramètres</button>
         <span class="hint" id="p-status"></span>
       </div>
     </div>
@@ -388,8 +388,8 @@
         <input type="file" id="x-file" accept=".js,.json" hidden>
       </div>
       <p class="hint">
-        L'export produit un <code>kb.js</code> complet. Remplacez le fichier du meme nom dans
-        <code>app/</code> et rechargez : les modifications deviennent la version de reference.
+        L'export produit un <code>kb.js</code> complet. Remplacez le fichier du même nom dans
+        <code>app/</code> et rechargez : les modifications deviennent la version de référence.
       </p>
     </div>
   </section>
@@ -400,7 +400,7 @@
 <div id="widget" hidden>
   <div class="w-head">
     <span>Assistant du guide</span>
-    <button id="widget-close" title="Reduire">×</button>
+    <button id="widget-close" title="Réduire">×</button>
   </div>
   <div class="chat-log" id="widget-log"></div>
   <div class="chat-bar">
@@ -410,13 +410,13 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js"></script>
-<script src="app/kb.js"></script>
-<script src="app/simulateur.js"></script>
-<script src="comparateur/contrats_kb.js"></script>
-<script src="app/chat.js"></script>
-<script src="app/ui.js"></script>
-<script src="app/communaute.js"></script>
+<script src="app/bareme.js?v=3"></script>
+<script src="app/kb.js?v=3"></script>
+<script src="app/simulateur.js?v=3"></script>
+<script src="comparateur/contrats_kb.js?v=3"></script>
+<script src="app/chat.js?v=3"></script>
+<script src="app/ui.js?v=3"></script>
+<script src="app/communaute.js?v=3"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

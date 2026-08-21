@@ -68,6 +68,17 @@
       b.setAttribute("aria-selected", String(b.dataset.panel === nom));
     });
     $$(".panel").forEach(function (p) { p.hidden = p.id !== "panel-" + nom; });
+    // L'onglet Fiches revient toujours a la liste (une fiche ouverte la masquait,
+    // barre de recherche comprise). montrerFiche, appele ensuite le cas echeant,
+    // rouvre le detail par-dessus.
+    if (nom === "fiches") {
+      var qf = $("#q-fiches") ? $("#q-fiches").value.trim() : "";
+      if (qf) {
+        rendreFiches(window.CHAT.rechercher(qf, 50).map(function (h) { return h.fiche; }));
+      } else {
+        rendreFiches();
+      }
+    }
     if (!sansHash && window.location.hash !== "#" + nom) {
       try { history.replaceState(null, "", "#" + nom); } catch (e) { /* file:// */ }
     }
@@ -182,7 +193,7 @@
     c.innerHTML = "";
     c.appendChild(document.createTextNode(
       "Photographies : Luxembourg, sous licence Creative Commons via Wikimedia Commons. " +
-      "Auteurs : Cayambe, GilPe, Krzysztof Golik, Dietmar Rabich. Detail des licences dans assets/CREDITS.json."
+      "Auteurs : Cayambe, GilPe, Krzysztof Golik, Dietmar Rabich. Détail des licences dans assets/CREDITS.json."
     ));
   }
 
@@ -204,7 +215,7 @@
       if (filtrer) effective = window.CHAT.fichesPourProfil(profil);
       var bandeau = el("div", "notice small");
       bandeau.appendChild(document.createTextNode(
-        (filtrer ? "Fiches adaptees a votre profil : " : "Toutes les fiches. Votre profil : ") +
+        (filtrer ? "Fiches adaptées à votre profil : " : "Toutes les fiches. Votre profil : ") +
         window.CHAT.decrireProfil(profil) + ". "));
       var b = el("button", "chip", filtrer ? "Voir toutes les fiches" : "Ne voir que mes fiches");
       b.addEventListener("click", function () { voirToutesFiches = !voirToutesFiches; rendreFiches(); });
@@ -215,7 +226,7 @@
     (effective || window.KB.fiches).forEach(function (f) {
       g.appendChild(tuile(f.cat, f.titre, f.resume, null, function () { montrerFiche(f.id); }));
     });
-    if (!g.children.length) g.appendChild(el("p", "muted", "Aucune fiche ne correspond a cette recherche."));
+    if (!g.children.length) g.appendChild(el("p", "muted", "Aucune fiche ne correspond à cette recherche."));
     activerApparition(g);
     $("#fiches-liste").hidden = false;
     $("#fiche-detail").hidden = true;
@@ -352,8 +363,8 @@
       var hits = window.CHAT.rechercher(q, 8);
       if (!hits.length) {
         g.appendChild(el("p", "muted",
-          "Aucune fiche ne correspond a ces mots. L'assistant peut chercher autrement, ou dire qu'il ne sait pas."));
-        g.appendChild(boutonAssistant(q, "Poser la question a l'assistant"));
+          "Aucune fiche ne correspond à ces mots. L'assistant peut chercher autrement, ou dire qu'il ne sait pas."));
+        g.appendChild(boutonAssistant(q, "Poser la question à l'assistant"));
         return;
       }
       hits.forEach(function (h) {
@@ -366,7 +377,7 @@
       // Une vraie question (phrase, point d'interrogation) merite mieux qu'une
       // liste de fiches : proposer aussi l'assistant.
       if (/\?/.test(q) || q.split(/\s+/).length >= 4) {
-        g.appendChild(boutonAssistant(q, "Poser cette question a l'assistant"));
+        g.appendChild(boutonAssistant(q, "Poser cette question à l'assistant"));
       }
       activerApparition(g);
     });
@@ -447,15 +458,15 @@
     var bandeau = el("div", "notice small tl-bandeau");
     if (!connu) {
       bandeau.appendChild(document.createTextNode(
-        "Parcours complet. Renseignez votre profil dans l'assistant pour ne voir que les etapes qui vous concernent. "));
+        "Parcours complet. Renseignez votre profil dans l'assistant pour ne voir que les étapes qui vous concernent. "));
       var b = el("button", "chip", "Renseigner mon profil");
       b.addEventListener("click", function () { ouvrir("assistant"); });
       bandeau.appendChild(b);
     } else {
       bandeau.appendChild(document.createTextNode(
-        (filtrer ? "Parcours adapte a votre profil : " : "Parcours complet. Votre profil : ") +
+        (filtrer ? "Parcours adapté à votre profil : " : "Parcours complet. Votre profil : ") +
         window.CHAT.decrireProfil(profil) + ". "));
-      var b2 = el("button", "chip", filtrer ? "Voir toutes les etapes" : "Ne voir que mes etapes");
+      var b2 = el("button", "chip", filtrer ? "Voir toutes les étapes" : "Ne voir que mes étapes");
       b2.addEventListener("click", function () { voirToutParcours = !voirToutParcours; rendreTimeline(); });
       bandeau.appendChild(b2);
     }
@@ -482,7 +493,7 @@
         var cb = el("input");
         cb.type = "checkbox";
         cb.checked = !!coches[x.cle];
-        cb.setAttribute("aria-label", "Etape faite : " + texte);
+        cb.setAttribute("aria-label", "Étape faite : " + texte);
         cb.addEventListener("change", function () {
           var c = chargerCoches();
           if (cb.checked) c[x.cle] = 1; else delete c[x.cle];
@@ -519,11 +530,11 @@
 
     var k = $("#s-kpis");
     k.innerHTML = "";
-    [["Net mensuel estime", eur(r.netMensuel), true],
+    [["Net mensuel estimé", eur(r.netMensuel), true],
      ["Net annuel", eur(r.netAnnuel), false],
-     ["Impot total", eur(r.impotTotal), false],
+     ["Impôt total", eur(r.impotTotal), false],
      ["Cotisations", eur(r.cotisations + r.dependance), false],
-     ["Prelevement global", pct(r.tauxPrelevementGlobal), false]
+     ["Prélèvement global", pct(r.tauxPrelevementGlobal), false]
     ].forEach(function (x) {
       var d = el("div", "kpi" + (x[2] ? " hl" : ""));
       d.appendChild(el("div", "k", x[0]));
@@ -536,13 +547,13 @@
     var wrap = el("div", "table-wrap"), tab = el("table");
     var lignes = [
       ["Brut annuel", eur(r.brut)],
-      ["Cotisations sociales (" + pct(r.tauxCotisations) + ", plafonnees)", "- " + eur(r.cotisations)],
-      ["Contribution dependance", "- " + eur(r.dependance)],
-      ["Net avant impot", eur(r.netAvantImpot)]
+      ["Cotisations sociales (" + pct(r.tauxCotisations) + ", plafonnées)", "- " + eur(r.cotisations)],
+      ["Contribution dépendance", "- " + eur(r.dependance)],
+      ["Net avant impôt", eur(r.netAvantImpot)]
     ];
-    if (r.exoneration > 0) lignes.push(["Exoneration impatries", "- " + eur(r.exoneration)]);
+    if (r.exoneration > 0) lignes.push(["Exonération impatriés", "- " + eur(r.exoneration)]);
     lignes.push(["Revenu imposable retenu", eur(r.imposable)]);
-    lignes.push(["Impot sur le revenu", "- " + eur(r.impot)]);
+    lignes.push(["Impôt sur le revenu", "- " + eur(r.impot)]);
     lignes.push(["Fonds pour l'emploi (" + pct(r.tauxFondsEmploi) + ")", "- " + eur(r.fondsEmploi)]);
     lignes.push(["Net annuel", eur(r.netAnnuel)]);
     lignes.push(["Net sur " + r.mois + " mois", eur(r.netMensuel)]);
@@ -567,7 +578,7 @@
       b.appendChild(sNet); b.appendChild(sImp); b.appendChild(sCot);
       rep.appendChild(b);
       var lg = el("div", "legende");
-      [["net", "Net percu", pNet], ["impot", "Impots", pImp], ["cotis", "Cotisations", pCot]]
+      [["net", "Net perçu", pNet], ["impot", "Impôts", pImp], ["cotis", "Cotisations", pCot]]
         .forEach(function (x) {
           var sp = el("span");
           var i = el("i"); i.className = "";
@@ -584,7 +595,7 @@
     var ct = $("#s-comp");
     ct.innerHTML = "";
     var th = el("thead"), tr0 = el("tr");
-    ["Situation", "Net mensuel", "Net annuel", "Prelevement"].forEach(function (c, i) {
+    ["Situation", "Net mensuel", "Net annuel", "Prélèvement"].forEach(function (c, i) {
       tr0.appendChild(el("th", i > 0 ? "num" : null, c));
     });
     th.appendChild(tr0); ct.appendChild(th);
@@ -618,8 +629,8 @@
       d.appendChild(el("div", "v", eur(c.capital)));
       var m = el("div", "k");
       m.textContent = c.capital > 0
-        ? "mensualite " + eur(c.mensualiteDisponible)
-        : "charges superieures a la capacite";
+        ? "mensualité " + eur(c.mensualiteDisponible)
+        : "charges supérieures à la capacité";
       d.appendChild(m);
       k.appendChild(d);
     });
@@ -757,8 +768,8 @@
     var champ = window.CHAT.prochainChamp(profil);
     if (!champ) {
       bulle("Merci. Votre profil : " + window.CHAT.decrireProfil(profil) +
-        ".\n\nLe parcours et les fiches sont maintenant filtres pour vous. " +
-        "Voici ce qui vous concerne en priorite, et vous pouvez poser vos questions librement.",
+        ".\n\nLe parcours et les fiches sont maintenant filtrés pour vous. " +
+        "Voici ce qui vous concerne en priorité, et vous pouvez poser vos questions librement.",
         "bot", [], window.CHAT.fichesPourProfil(profil).slice(0, 5).map(function (f) {
           return { label: f.titre, action: function () { ouvrir("fiches"); montrerFiche(f.id); } };
         }));
@@ -769,10 +780,10 @@
     }
     bulle(champ.question, "bot", [], champ.options.map(function (o) {
       return {
-        label: o,
+        label: window.CHAT.afficher(o),
         action: function () {
           profil[champ.cle] = o;
-          bulle(o, "me");
+          bulle(window.CHAT.afficher(o), "me");
           sauverConversation();
           setTimeout(poserProchaineQuestion, 260);
         }
@@ -818,7 +829,7 @@
         var pf = window.KB.fiches.filter(function (x) { return x.id === r.fiches[0]; })[0];
         if (pf) chips.push({
           label: "En savoir plus",
-          action: function () { envoyer("Peux-tu detailler : " + pf.titre + " ?"); }
+          action: function () { envoyer("Peux-tu détailler : " + pf.titre + " ?"); }
         });
       }
       // Question d'assurance : renvoyer vers le comparateur de contrats
@@ -876,8 +887,8 @@
       historique.forEach(function (m) {
         bulle(m.content, m.role === "user" ? "me" : "bot");
       });
-      bulle("Conversation reprise. Profil enregistre : " + window.CHAT.decrireProfil(profil) +
-        ".\nVous pouvez continuer, ou tout reinitialiser.", "bot");
+      bulle("Conversation reprise. Profil enregistré : " + window.CHAT.decrireProfil(profil) +
+        ".\nVous pouvez continuer, ou tout réinitialiser.", "bot");
       // Le profil restaure personnalise le parcours et les fiches
       rendreTimeline();
       rendreFiches();
@@ -913,12 +924,12 @@
   // ---------- Comparateur de contrats ----------
 
   var STATUTS_CONTRAT = {
-    covered: { t: "paye", c: "ok" },
-    covered_with_conditions: { t: "paye (conditions)", c: "cond" },
-    sub_limited: { t: "paye (plafond reduit)", c: "cond" },
+    covered: { t: "payé", c: "ok" },
+    covered_with_conditions: { t: "payé (conditions)", c: "cond" },
+    sub_limited: { t: "payé (plafond réduit)", c: "cond" },
     not_covered: { t: "non couvert", c: "ko" },
     excluded: { t: "exclu", c: "ko" },
-    not_found: { t: "non trouve", c: "nf" }
+    not_found: { t: "non trouvé", c: "nf" }
   };
 
   function normaliserCtr(s) {
@@ -973,8 +984,8 @@
     if (v.citation) {
       var det = el("details");
       det.appendChild(el("summary", null,
-        "Clause citee" + (v.page ? " (p. " + v.page + ")" : "") +
-        (v.verifiee ? " · retrouvee dans le PDF" : " · a reverifier")));
+        "Clause citée" + (v.page ? " (p. " + v.page + ")" : "") +
+        (v.verifiee ? " · retrouvée dans le PDF" : " · à revérifier")));
       det.appendChild(el("blockquote", "vcitation", "« " + v.citation + " »"));
       d.appendChild(det);
     }
@@ -997,13 +1008,13 @@
         (window.CONTRATS_KB ? window.CONTRATS_KB.scenarios : []).forEach(function (s) {
           if (groupes.indexOf(s.groupe) === -1) groupes.push(s.groupe);
         });
-        bulleCtr("Ce cas ne figure pas dans les sinistres analyses, je prefere le dire " +
-          "plutot que d'improviser une reponse. Les sujets couverts : " +
-          groupes.join(", ") + ". Reformulez, ou cliquez sur une question suggeree.", "bot");
+        bulleCtr("Ce cas ne figure pas dans les sinistres analysés, je préfère le dire " +
+          "plutôt que d'improviser une réponse. Les sujets couverts : " +
+          groupes.join(", ") + ". Reformulez, ou cliquez sur une question suggérée.", "bot");
         return;
       }
-      var m = bulleCtr("Cas analyse : " + sc.groupe + ", " + sc.titre.toLowerCase() +
-        ". Voici comment les quatre contrats repondent, clause citee a l'appui.", "bot");
+      var m = bulleCtr("Cas analysé : " + sc.groupe + ", " + sc.titre.toLowerCase() +
+        ". Voici comment les quatre contrats répondent, clause citée à l'appui.", "bot");
       if (!m) return;
       var grille = el("div", "vgrid");
       (window.CONTRATS_KB.assureurs || Object.keys(sc.verdicts)).forEach(function (nom) {
@@ -1011,8 +1022,8 @@
       });
       m.appendChild(grille);
       m.appendChild(el("p", "vsuite",
-        "La ou les contrats divergent, tout se joue sur un mot, un seuil ou une exclusion. " +
-        "Posez un autre cas, ou ouvrez l'analyse complete."));
+        "Là où les contrats divergent, tout se joue sur un mot, un seuil ou une exclusion. " +
+        "Posez un autre cas, ou ouvrez l'analyse complète."));
       var voisins = window.CONTRATS_KB.scenarios.filter(function (s) {
         return s.groupe === sc.groupe && s.titre !== sc.titre;
       }).slice(0, 2);
@@ -1022,7 +1033,7 @@
         b.addEventListener("click", function () { repondreContrat(s.question); });
         c.appendChild(b);
       });
-      var ba = el("button", "chip", "Ouvrir l'analyse complete");
+      var ba = el("button", "chip", "Ouvrir l'analyse complète");
       ba.addEventListener("click", function () { window.location.href = "comparateur/sinistres.html"; });
       c.appendChild(ba);
       m.appendChild(c);
@@ -1043,8 +1054,8 @@
       b.addEventListener("click", function () { repondreContrat(sc.question); });
       sug.appendChild(b);
     });
-    bulleCtr("Bonjour. Decrivez un sinistre ou choisissez une question suggeree : je montre " +
-      "la reponse des quatre contrats, avec la clause exacte et sa page. C'est en posant vos " +
+    bulleCtr("Bonjour. Décrivez un sinistre ou choisissez une question suggérée : je montre " +
+      "la réponse des quatre contrats, avec la clause exacte et sa page. C'est en posant vos " +
       "propres cas qu'on comprend un contrat.", "bot");
     $("#ctr-send").addEventListener("click", function () {
       var i = $("#ctr-input");
@@ -1078,7 +1089,7 @@
     s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     s.onload = cb;
     s.onerror = function () {
-      statsCarteMessage("La bibliotheque de carte n'a pas pu etre chargee (acces reseau requis).");
+      statsCarteMessage("La bibliothèque de carte n'a pas pu être chargée (accès réseau requis).");
     };
     document.head.appendChild(s);
   }
@@ -1104,7 +1115,7 @@
       blocs.push('node["highway"="bus_stop"](around:' + rayon + "," + lat + "," + lon + ");");
       blocs.push('node["railway"~"tram_stop|station|halt"](around:' + rayon + "," + lat + "," + lon + ");");
     }
-    if (!blocs.length) { statsCarteMessage("Cochez au moins une categorie."); return; }
+    if (!blocs.length) { statsCarteMessage("Cochez au moins une catégorie."); return; }
     statsCarteMessage("Chargement des environs (OpenStreetMap)...");
     var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 600;";
     fetch("https://overpass-api.de/api/interpreter", {
@@ -1118,7 +1129,7 @@
       carteCouche.clearLayers();
       L.circle([lat, lon], { radius: rayon, color: "#64748b", weight: 1, fillOpacity: 0.04 }).addTo(carteCouche);
       L.circleMarker([lat, lon], { radius: 7, color: "#0f172a", fillColor: "#0f172a", fillOpacity: 1 })
-        .bindPopup("Adresse cherchee").addTo(carteCouche);
+        .bindPopup("Adresse cherchée").addTo(carteCouche);
       var comptes = { ecoles: 0, creches: 0, arrets: 0 };
       (j.elements || []).forEach(function (e) {
         var la = e.lat !== undefined ? e.lat : (e.center && e.center.lat);
@@ -1126,10 +1137,10 @@
         if (la === undefined || lo === undefined) return;
         var tags = e.tags || {};
         var type, couleur;
-        if (tags.amenity === "school") { type = "Ecole"; couleur = "#2563eb"; comptes.ecoles++; }
-        else if (tags.amenity === "kindergarten" || tags.amenity === "childcare") { type = "Creche"; couleur = "#7c3aed"; comptes.creches++; }
-        else if (tags.highway === "bus_stop") { type = "Arret de bus"; couleur = "#059669"; comptes.arrets++; }
-        else if (tags.railway === "tram_stop") { type = "Arret de tram"; couleur = "#0d9488"; comptes.arrets++; }
+        if (tags.amenity === "school") { type = "École"; couleur = "#2563eb"; comptes.ecoles++; }
+        else if (tags.amenity === "kindergarten" || tags.amenity === "childcare") { type = "Crèche"; couleur = "#7c3aed"; comptes.creches++; }
+        else if (tags.highway === "bus_stop") { type = "Arrêt de bus"; couleur = "#059669"; comptes.arrets++; }
+        else if (tags.railway === "tram_stop") { type = "Arrêt de tram"; couleur = "#0d9488"; comptes.arrets++; }
         else if (tags.railway === "station" || tags.railway === "halt") { type = "Gare"; couleur = "#b45309"; comptes.arrets++; }
         else return;
         L.circleMarker([la, lo], { radius: 6, color: couleur, fillColor: couleur, fillOpacity: 0.85, weight: 1 })
@@ -1138,8 +1149,8 @@
       });
       var k = $("#c-stats");
       k.innerHTML = "";
-      [["Ecoles", comptes.ecoles, voulu.ecoles],
-       ["Creches", comptes.creches, voulu.creches],
+      [["Écoles", comptes.ecoles, voulu.ecoles],
+       ["Crèches", comptes.creches, voulu.creches],
        ["Bus, tram, train", comptes.arrets, voulu.arrets]
       ].forEach(function (x) {
         if (!x[2]) return;
@@ -1149,7 +1160,7 @@
         k.appendChild(d);
       });
     }).catch(function (e) {
-      statsCarteMessage("Les environs n'ont pas pu etre charges (" + e.message + "). Reessayez dans un instant.");
+      statsCarteMessage("Les environs n'ont pas pu être chargés (" + e.message + "). Réessayez dans un instant.");
     });
   }
 
@@ -1171,7 +1182,7 @@
         afficherAlentours(lat, lon);
       })
       .catch(function (e) {
-        statsCarteMessage("La recherche d'adresse a echoue (" + e.message + ").");
+        statsCarteMessage("La recherche d'adresse a échoué (" + e.message + ").");
       });
   }
 
@@ -1252,7 +1263,7 @@
       }).filter(function (s) { return s.t; });
       var ok = sauverKB();
       $("#a-status").textContent = ok
-        ? "Enregistre dans ce navigateur. Utilisez Exporter pour rendre la modification permanente."
+        ? "Enregistré dans ce navigateur. Utilisez Exporter pour rendre la modification permanente."
         : "Stockage du navigateur indisponible : exportez le fichier pour ne rien perdre.";
       remplirSelectFiches();
       rendreAccueil(); rendreFiches(); rendreTimeline();
@@ -1265,7 +1276,7 @@
       var id = titre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
         .replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || ("fiche_" + Date.now());
       if (window.KB.fiches.some(function (f) { return f.id === id; })) {
-        alert("Une fiche porte deja cet identifiant."); return;
+        alert("Une fiche porte déjà cet identifiant."); return;
       }
       window.KB.fiches.push({
         id: id, titre: titre, cat: "Divers", resume: "",
@@ -1274,20 +1285,20 @@
       sauverKB(); remplirSelectFiches();
       $("#a-fiche").value = id; chargerFicheDansFormulaire(id);
       rendreAccueil(); rendreFiches();
-      $("#a-status").textContent = "Fiche creee. Completez-la puis enregistrez.";
+      $("#a-status").textContent = "Fiche créée. Complétez-la puis enregistrez.";
     });
 
     $("#a-del").addEventListener("click", function () {
       var id = $("#a-fiche").value;
       var f = window.KB.fiches.filter(function (x) { return x.id === id; })[0];
       if (!f) return;
-      if (!confirm("Supprimer definitivement la fiche \"" + f.titre + "\" ?")) return;
+      if (!confirm("Supprimer définitivement la fiche \"" + f.titre + "\" ?")) return;
       window.KB.fiches = window.KB.fiches.filter(function (x) { return x.id !== id; });
       window.KB.faq = window.KB.faq.filter(function (q) { return q.fiche !== id; });
       sauverKB(); remplirSelectFiches();
       if (window.KB.fiches.length) chargerFicheDansFormulaire(window.KB.fiches[0].id);
       rendreAccueil(); rendreFiches();
-      $("#a-status").textContent = "Fiche supprimee.";
+      $("#a-status").textContent = "Fiche supprimée.";
     });
 
     // Parametres du simulateur
@@ -1296,16 +1307,16 @@
       plafondFacteur: "Plafond cotisable (x SSM)",
       tauxPension: "Taux pension",
       tauxMaladieNature: "Maladie en nature",
-      tauxMaladieEspeces: "Maladie en especes",
-      tauxDependance: "Contribution dependance",
+      tauxMaladieEspeces: "Maladie en espèces",
+      tauxDependance: "Contribution dépendance",
       fondsEmploi: "Fonds pour l'emploi",
-      fondsEmploiTaux2: "Fonds pour l'emploi, taux majore",
-      seuilFondsClasse1: "Seuil taux majore, classe 1 et 1a",
-      seuilFondsClasse2: "Seuil taux majore, classe 2",
-      impatrieTaux: "Exoneration impatries",
-      impatriePlafond: "Plafond de remuneration eligible",
+      fondsEmploiTaux2: "Fonds pour l'emploi, taux majoré",
+      seuilFondsClasse1: "Seuil taux majoré, classe 1 et 1a",
+      seuilFondsClasse2: "Seuil taux majoré, classe 2",
+      impatrieTaux: "Exonération impatriés",
+      impatriePlafond: "Plafond de rémunération éligible",
       fraisObtention: "Forfait frais d'obtention",
-      depensesSpeciales: "Forfait depenses speciales"
+      depensesSpeciales: "Forfait dépenses spéciales"
     };
     var cont = $("#a-params");
     cont.innerHTML = "";
@@ -1328,7 +1339,7 @@
       window.SIM.setParams(patch);
       try { localStorage.setItem(STORAGE_PARAMS, JSON.stringify(window.SIM.params())); } catch (e) {}
       majSimulateur(); majEmprunt();
-      $("#p-status").textContent = "Parametres enregistres.";
+      $("#p-status").textContent = "Paramètres enregistrés.";
       setTimeout(function () { $("#p-status").textContent = ""; }, 2500);
     });
 
@@ -1362,7 +1373,7 @@
           remplirSelectFiches();
           if (window.KB.fiches.length) chargerFicheDansFormulaire(window.KB.fiches[0].id);
           rendreAccueil(); rendreFiches(); rendreTimeline();
-          $("#a-status").textContent = "Import reussi : " + window.KB.fiches.length + " fiches.";
+          $("#a-status").textContent = "Import réussi : " + window.KB.fiches.length + " fiches.";
         } catch (err) {
           $("#a-status").textContent = "Import impossible : " + err.message;
         }
@@ -1378,7 +1389,7 @@
       remplirSelectFiches();
       if (window.KB.fiches.length) chargerFicheDansFormulaire(window.KB.fiches[0].id);
       rendreAccueil(); rendreFiches(); rendreTimeline();
-      $("#a-status").textContent = "Contenu d'origine restaure.";
+      $("#a-status").textContent = "Contenu d'origine restauré.";
     });
   }
 

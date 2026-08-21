@@ -20,11 +20,23 @@ window.CHAT = (function () {
       options: ["Salarie", "Independant", "Les deux", "Pas encore d'emploi"] },
     { cle: "logement", question: "Vous comptez louer ou acheter ?",
       options: ["Louer", "Acheter", "Pas encore decide"] },
-    { cle: "vehicule", question: "Vous amenez un vehicule ?",
+    { cle: "vehicule", question: "Vous amenez un véhicule ?",
       options: ["Oui", "Non"] },
-    { cle: "horizon", question: "Ou en etes-vous ?",
+    { cle: "horizon", question: "Où en êtes-vous ?",
       options: ["Je prepare mon depart", "Je viens d'arriver", "Je suis installe"] }
   ];
+
+  // Les valeurs de profil restent sans accent : elles servent d'identifiants
+  // (conditions du parcours, profils deja enregistres dans les navigateurs).
+  // Cette table ne sert qu'a l'affichage.
+  var AFFICHAGE = {
+    "Salarie": "Salarié",
+    "Independant": "Indépendant",
+    "Pas encore decide": "Pas encore décidé",
+    "Je prepare mon depart": "Je prépare mon départ",
+    "Je suis installe": "Je suis installé"
+  };
+  function afficher(v) { return AFFICHAGE[v] || v; }
 
   function profilVide() { return {}; }
 
@@ -39,13 +51,13 @@ window.CHAT = (function () {
 
   function decrireProfil(profil) {
     var p = [];
-    if (profil.situation) p.push(String(profil.situation).toLowerCase());
+    if (profil.situation) p.push(afficher(profil.situation).toLowerCase());
     if (profil.enfants && profil.enfants !== "Aucun") p.push(profil.enfants + " enfant(s)");
-    if (profil.statut) p.push(String(profil.statut).toLowerCase());
-    if (profil.logement) p.push(String(profil.logement).toLowerCase());
-    if (profil.vehicule === "Oui") p.push("avec vehicule");
-    if (profil.horizon) p.push(String(profil.horizon).toLowerCase());
-    return p.length ? p.join(", ") : "profil non renseigne";
+    if (profil.statut) p.push(afficher(profil.statut).toLowerCase());
+    if (profil.logement) p.push(afficher(profil.logement).toLowerCase());
+    if (profil.vehicule === "Oui") p.push("avec véhicule");
+    if (profil.horizon) p.push(afficher(profil.horizon).toLowerCase());
+    return p.length ? p.join(", ") : "profil non renseigné";
   }
 
   // Fiches prioritaires selon le profil.
@@ -130,21 +142,21 @@ window.CHAT = (function () {
     var q = normaliser(question);
     if (/^(bonjour|salut|hello|bonsoir|coucou|hey|bjr)\b/.test(q) && q.length < 30) {
       return {
-        texte: "Bonjour. Posez-moi une question sur votre installation : demarches, logement, " +
-          "impots, ecole, vehicule... Je reponds a partir des fiches du guide, avec leurs sources.",
+        texte: "Bonjour. Posez-moi une question sur votre installation : démarches, logement, " +
+          "impôts, école, véhicule... Je réponds à partir des fiches du guide, avec leurs sources.",
         sources: [], fiches: []
       };
     }
     if (/^(merci|super merci|top merci|parfait merci|merci beaucoup)\b/.test(q) && q.length < 30) {
       return {
-        texte: "Avec plaisir. Autre chose ? Le parcours de l'onglet Parcours s'adapte a votre profil, " +
+        texte: "Avec plaisir. Autre chose ? Le parcours de l'onglet Parcours s'adapte à votre profil, " +
           "et le simulateur donne le salaire net.",
         sources: [], fiches: []
       };
     }
     if (/^(au revoir|bonne journee|bonne soiree|a bientot|bye)\b/.test(q) && q.length < 30) {
       return {
-        texte: "Bonne installation au Luxembourg. Le guide reste la, revenez quand vous voulez.",
+        texte: "Bonne installation au Luxembourg. Le guide reste là, revenez quand vous voulez.",
         sources: [], fiches: []
       };
     }
@@ -170,9 +182,9 @@ window.CHAT = (function () {
           });
           return {
             texte: "Pour " + brut.toLocaleString("fr-FR") + " EUR brut par an, sur 12 mois :\n\n" +
-              lignes.join("\n") + "\n\nCes montants correspondent a la retenue sur le seul salaire. " +
-              "L'onglet Simulateur permet d'ajuster le nombre de mois, le regime des impatries et les forfaits.",
-            sources: [{ t: "Bareme officiel ACD", u: "https://impotsdirects.public.lu/fr/baremes.html" }],
+              lignes.join("\n") + "\n\nCes montants correspondent à la retenue sur le seul salaire. " +
+              "L'onglet Simulateur permet d'ajuster le nombre de mois, le régime des impatriés et les forfaits.",
+            sources: [{ t: "Barème officiel ACD", u: "https://impotsdirects.public.lu/fr/baremes.html" }],
             fiches: ["impots_classes", "impatries"]
           };
         }
@@ -190,7 +202,7 @@ window.CHAT = (function () {
       var suggestions = fichesPourProfil(profil).slice(0, 4)
         .map(function (f) { return f.titre; }).join(", ");
       return {
-        texte: "Je n'ai pas d'element sur ce point dans la base. Je prefere le dire plutot que d'inventer.\n\n" +
+        texte: "Je n'ai pas d'élément sur ce point dans la base. Je préfère le dire plutôt que d'inventer.\n\n" +
           "Sujets couverts qui vous concernent : " + suggestions + ".\n" +
           "Reformulez, ou consultez directement les fiches.",
         sources: [], fiches: [],
@@ -205,10 +217,10 @@ window.CHAT = (function () {
     if (principale && (!faq || faq.fiche !== principale.id)) {
       // Le corps peut contenir des sous-titres { h: ... } : on ne garde que les paragraphes.
       var paras = (principale.corps || []).filter(function (p) { return typeof p === "string"; });
-      parts.push("D'apres la fiche « " + principale.titre + " » : " + paras.slice(0, 2).join(" "));
+      parts.push("D'après la fiche « " + principale.titre + " » : " + paras.slice(0, 2).join(" "));
     }
     if (principale && principale.aRetenir && principale.aRetenir.length) {
-      parts.push("A retenir :\n" + principale.aRetenir.map(function (x) { return "- " + x; }).join("\n"));
+      parts.push("À retenir :\n" + principale.aRetenir.map(function (x) { return "- " + x; }).join("\n"));
     }
 
     var srcs = [];
@@ -300,6 +312,7 @@ window.CHAT = (function () {
 
   return {
     CHAMPS: CHAMPS,
+    afficher: afficher,
     profilVide: profilVide,
     prochainChamp: prochainChamp,
     profilComplet: profilComplet,
