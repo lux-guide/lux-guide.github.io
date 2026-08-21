@@ -412,6 +412,36 @@ window.KB = {
       sources: [{ t: "ACD, index des matières", u: "https://impotsdirects.public.lu/fr/az.html" }]
     },
     {
+      id: "conseil_fiscal",
+      titre: "Conseil fiscal : les leviers de la première année",
+      cat: "Impots",
+      resume: "Vérifier la classe d'impôt et la faire corriger, puis activer les déductions qui rapportent : 111bis, épargne-logement.",
+      tags: ["conseil fiscal", "111bis", "prévoyance-vieillesse", "épargne-logement", "classe", "fiche de retenue", "rectification", "correction", "164 R", "bureau RTS", "optimisation", "déduction"],
+      corps: [
+        "La première année, quelques décisions simples pèsent plus sur l'impôt final que tout le reste. Cette fiche regroupe les leviers concrets, dans l'ordre où ils se présentent.",
+        { h: "D'abord, vérifier la classe d'impôt, et la faire corriger si elle est fausse" },
+        "La retenue mensuelle repose sur la fiche de retenue d'impôt établie par l'administration. Vérifiez la classe inscrite dès réception : pour un nouvel arrivant, la situation familiale est parfois mal reprise et la classe attribuée est alors erronée, ce qui arrive plus souvent qu'on ne le croit. Ni vous ni votre employeur n'avez le droit de corriger la fiche vous-mêmes.",
+        "La modification se demande sans tarder au bureau RTS compétent pour votre commune, de préférence avec le formulaire 164 R. Tant que la fiche n'est pas corrigée, la retenue se fait sur la mauvaise classe ; l'écart se régularise ensuite, mais autant ne pas avancer cet argent des mois durant.",
+        { h: "Le contrat de prévoyance-vieillesse, dit 111bis" },
+        "Les primes versées à un contrat de prévoyance-vieillesse se déduisent jusqu'à 3 200 euros par an et par contribuable, quel que soit l'âge, et chaque conjoint qui souscrit son propre contrat a son propre plafond. En contrepartie, c'est une épargne longue : contrat d'au moins dix ans, épargne remboursable au plus tôt à 60 ans et au plus tard à 75 ans, en capital, en rente viagère ou en mixte. Le remboursement anticipé est exclu, sauf maladie grave ou invalidité.",
+        { h: "L'épargne-logement" },
+        "Les cotisations à un contrat d'épargne-logement se déduisent jusqu'à 1 344 euros par an et par personne du ménage lorsque le souscripteur a entre 18 et 41 ans, 672 euros au-delà. Le plafond se majore pour le conjoint imposé collectivement et pour chaque enfant donnant droit à une modération d'impôt : pour une famille, cela se multiplie vite. L'épargne doit financer l'habitation personnelle ; utilisée à autre chose avant dix ans, la déduction est reprise par imposition rectificative.",
+        { h: "Les autres leviers, déjà détaillés dans le guide" },
+        "Les frais réels au-delà des forfaits, les primes d'assurance et les frais de garde sont détaillés dans la fiche « Ce qui réduit votre impôt ». Les intérêts d'un prêt pour l'habitation principale ont leur fiche propre, et le régime des impatriés la sienne. Pour un couple dont l'un travaille hors du Luxembourg, le choix d'imposition en classe 2 mérite un calcul, voir la fiche sur les classes d'impôt.",
+        "Les plafonds cités ici sont ceux publiés par Guichet.lu à la date de vérification de ce guide. Ils évoluent : avant de signer un contrat pour raison fiscale, la page officielle fait foi."
+      ],
+      aRetenir: [
+        "Classe erronée : demander la correction au bureau RTS, formulaire 164 R, sans tarder.",
+        "111bis : jusqu'à 3 200 € par an et par contribuable, épargne bloquée jusqu'à 60 ans au plus tôt.",
+        "Épargne-logement : 1 344 € par personne jusqu'à 41 ans, 672 € ensuite, plafond multiplié par la taille du ménage."
+      ],
+      sources: [
+        { t: "Guichet.lu, faire modifier la fiche de retenue d'impôt", u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/fiche-retenue-impot/demander-modifier-fiche-impot.html" },
+        { t: "Guichet.lu, contrat de prévoyance-vieillesse", u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/depenses-deductibles/contrat-prevoyance-resident.html" },
+        { t: "Guichet.lu, cotisations d'épargne-logement", u: "https://guichet.public.lu/fr/citoyens/fiscalite/immobilier/depenses-deductibles/epargne-logement-resident.html" }
+      ]
+    },
+    {
       id: "impatries",
       titre: "Régime des impatriés",
       cat: "Impots",
@@ -842,6 +872,7 @@ window.KB = {
     { q: "Qu'est-ce que le régime des impatriés ?", a: "Une exonération portant sur la moitié de la rémunération brute, pendant neuf années au maximum. Attention, les conditions sont strictes : il faut notamment ne pas avoir résidé à moins de 150 km de la frontière durant les cinq années précédentes.", fiche: "impatries" },
     { q: "Quelle différence entre classe 1 et classe 2 ?", a: "La classe 2 applique le splitting aux couples imposés collectivement, ce qui allège fortement l'impôt à revenu égal. À haut revenu, l'écart dépasse souvent mille euros par mois. Le simulateur le chiffre précisément.", fiche: "impots_classes" },
     { q: "Que puis-je déduire de mes impôts ?", a: "Au-delà des forfaits appliqués d'office : les frais de déplacement, les cotisations de prévoyance, les primes d'assurance, l'épargne-logement, les frais de garde et, sous conditions, les pensions alimentaires versées.", fiche: "deductions" },
+    { q: "Ma classe d'impôt est fausse, que faire ?", a: "Cela arrive, surtout la première année. Ni vous ni l'employeur ne pouvez corriger la fiche de retenue : demandez la modification au bureau RTS compétent pour votre commune, de préférence avec le formulaire 164 R, sans attendre.", fiche: "conseil_fiscal" },
     { q: "Puis-je déduire les intérêts de mon prêt immobilier ?", a: "Oui, pour l'habitation principale. La déduction est intégrale les deux premières années, puis plafonnée. Surtout, le plafond est multiplié par le nombre de membres du ménage, conjoint et enfants compris.", fiche: "interets" },
     { q: "Combien puis-je emprunter par rapport au prix du bien ?", a: "Jusqu'à 100 % pour un primo-accédant en résidence principale, 90 % pour un acquéreur déjà propriétaire, et 80 % pour un investissement locatif. Les frais d'acte restent à financer sur fonds propres.", fiche: "achat" },
     { q: "La TVA sur un logement neuf est-elle toujours de 3 % ?", a: "Non. Le taux de 3 % suppose une affectation en habitation principale pendant deux ans et l'accord préalable de l'administration, et l'avantage est plafonné à 50 000 euros par logement. Au-delà, la part restante repasse à 17 %.", fiche: "achat" },
@@ -892,6 +923,7 @@ window.KB = {
     { phase: "Mois 1", items: [
       { t: "Vérifier l'affiliation à la sécurité sociale, faite par l'employeur pour un salarié.", fiche: "matricule" },
       { t: "Réclamer la fiche de retenue d'impôt, faute de quoi la retenue se fait au taux maximal.", fiche: "impots_classes" },
+      { t: "Vérifier la classe inscrite sur la fiche de retenue, et demander la correction au bureau RTS si elle est erronée.", fiche: "conseil_fiscal" },
       { t: "Demander les allocations familiales à la Caisse pour l'avenir des enfants.", fiche: "allocations", si: { enfants: true } },
       { t: "Demander le chèque-service accueil à la commune.", fiche: "garde", si: { enfants: true } },
       { t: "Chercher un médecin et un pédiatre, avant d'en avoir besoin.", fiche: "sante_pratique" },

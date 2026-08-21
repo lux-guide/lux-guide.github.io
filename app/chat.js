@@ -67,7 +67,7 @@ window.CHAT = (function () {
     if (profil.logement === "Acheter") { ids.push("achat", "interets", "logement_abordable"); }
     if (profil.enfants && profil.enfants !== "Aucun") { ids.push("ecole", "garde"); }
     if (profil.statut === "Independant" || profil.statut === "Les deux") ids.push("independant");
-    if (profil.statut === "Salarie" || profil.statut === "Les deux") { ids.push("impots_classes", "impatries"); }
+    if (profil.statut === "Salarie" || profil.statut === "Les deux") { ids.push("impots_classes", "conseil_fiscal", "impatries"); }
     if (profil.vehicule === "Oui") { ids.push("vehicule", "permis"); }
     ids.push("transport", "telecom", "cout_vie");
     var vus = {}, out = [];
@@ -91,6 +91,16 @@ window.CHAT = (function () {
     "dans","sur","par","avec","est","sont","il","elle","je","tu","nous","vous","ils","que","qui",
     "quoi","comment","quand","combien","dois","doit","puis","peux","peut","mon","ma","mes","mais",
     "ce","cette","ces","son","sa","ses","y","d","l","n","s","faut","etre","avoir"];
+
+  // Coupe un texte a la fin d'une phrase, au plus pres de la longueur cible.
+  function resumer(texte, max) {
+    var t = String(texte || "").trim();
+    if (t.length <= max) return t;
+    var coupe = t.slice(0, max);
+    var point = coupe.lastIndexOf(". ");
+    if (point > max * 0.5) return coupe.slice(0, point + 1);
+    return coupe.slice(0, coupe.lastIndexOf(" ")) + "…";
+  }
 
   function mots(s) {
     return normaliser(s).split(" ").filter(function (m) {
@@ -216,11 +226,13 @@ window.CHAT = (function () {
     var principale = pertinent ? hits[0].fiche : null;
     if (principale && (!faq || faq.fiche !== principale.id)) {
       // Le corps peut contenir des sous-titres { h: ... } : on ne garde que les paragraphes.
+      // Reponse courte : l'essentiel tient dans une bulle, la fiche donne le detail.
       var paras = (principale.corps || []).filter(function (p) { return typeof p === "string"; });
-      parts.push("D'après la fiche « " + principale.titre + " » : " + paras.slice(0, 2).join(" "));
+      parts.push("D'après la fiche « " + principale.titre + " » : " + resumer(paras.join(" "), 320));
     }
     if (principale && principale.aRetenir && principale.aRetenir.length) {
-      parts.push("À retenir :\n" + principale.aRetenir.map(function (x) { return "- " + x; }).join("\n"));
+      parts.push("À retenir :\n" + principale.aRetenir.slice(0, 2)
+        .map(function (x) { return "- " + x; }).join("\n"));
     }
 
     var srcs = [];

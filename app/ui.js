@@ -80,7 +80,9 @@
       }
     }
     if (!sansHash && window.location.hash !== "#" + nom) {
-      try { history.replaceState(null, "", "#" + nom); } catch (e) { /* file:// */ }
+      // pushState et non replaceState : chaque vue devient une entree
+      // d'historique, le bouton retour du navigateur fonctionne.
+      try { history.pushState(null, "", "#" + nom); } catch (e) { /* file:// */ }
     }
     window.scrollTo(0, 0);
   }
@@ -90,7 +92,7 @@
   //   #fiche/bail        ouvre directement une fiche, lien partageable
   function ouvrirDepuisHash() {
     var h = (window.location.hash || "").replace("#", "");
-    if (!h) return;
+    if (!h) { ouvrir("accueil", true); return; }
     if (h.indexOf("fiche/") === 0) {
       var id = h.slice(6);
       ouvrir("fiches", true);
@@ -235,8 +237,8 @@
   function montrerFiche(id, sansHash) {
     var f = window.KB.fiches.filter(function (x) { return x.id === id; })[0];
     if (!f) { rendreFiches(); return; }
-    if (!sansHash) {
-      try { history.replaceState(null, "", "#fiche/" + id); } catch (e) { /* file:// */ }
+    if (!sansHash && window.location.hash !== "#fiche/" + id) {
+      try { history.pushState(null, "", "#fiche/" + id); } catch (e) { /* file:// */ }
     }
     var d = $("#fiche-detail");
     d.innerHTML = "";
@@ -254,7 +256,7 @@
 
     var back = el("button", "back", "← Toutes les fiches");
     back.addEventListener("click", function () {
-      try { history.replaceState(null, "", "#fiches"); } catch (e) {}
+      try { history.pushState(null, "", "#fiches"); } catch (e) {}
       rendreFiches();
     });
     d.appendChild(back);
@@ -389,19 +391,25 @@
       }
     });
 
-    // Bouton Demander : la question part directement a l'assistant
+    // Bouton Demander : la question part a l'assistant, la grille de
+    // resultats se range pour ne pas concurrencer la conversation
     var qb = $("#q-accueil-btn");
     if (qb) qb.addEventListener("click", function () {
       var q = qa.value.trim();
-      if (q.length < 2) { montrerWidget(); return; }
       montrerWidget();
-      envoyer(q);
+      if (q.length >= 2) {
+        envoyer(q);
+        qa.value = "";
+        $("#accueil-resultats").innerHTML = "";
+      }
     });
 
     // Questions rapides sous la barre, issues des questions frequentes du guide
     var ac = $("#ask-chips");
     if (ac) window.KB.faq.slice(0, 4).forEach(function (item) {
-      var b = el("button", "chip", item.q);
+      var lbl = item.q.length > 46 ? item.q.slice(0, 44).trim() + "…" : item.q;
+      var b = el("button", "chip", lbl);
+      b.title = item.q;
       b.addEventListener("click", function () {
         montrerWidget();
         envoyer(item.q);
@@ -458,14 +466,17 @@
     var bandeau = el("div", "notice small tl-bandeau");
     if (!connu) {
       bandeau.appendChild(document.createTextNode(
-        "Parcours complet. Renseignez votre profil dans l'assistant pour ne voir que les étapes qui vous concernent. "));
-      var b = el("button", "chip", "Renseigner mon profil");
-      b.addEventListener("click", function () { ouvrir("assistant"); });
-      bandeau.appendChild(b);
+        "Parcours complet. Cochez les étapes faites : votre avancement est enregistré dans ce navigateur. " +
+        "En vous enregistrant (six questions, une minute), le parcours ne montre plus que ce qui vous concerne."));
+      var cta = el("div", "tl-cta");
+      var b = el("button", "btn", "S'enregistrer et personnaliser mon parcours");
+      b.addEventListener("click", function () { montrerWidget(); });
+      cta.appendChild(b);
+      bandeau.appendChild(cta);
     } else {
       bandeau.appendChild(document.createTextNode(
         (filtrer ? "Parcours adapté à votre profil : " : "Parcours complet. Votre profil : ") +
-        window.CHAT.decrireProfil(profil) + ". "));
+        window.CHAT.decrireProfil(profil) + ". Votre avancement est enregistré dans ce navigateur. "));
       var b2 = el("button", "chip", filtrer ? "Voir toutes les étapes" : "Ne voir que mes étapes");
       b2.addEventListener("click", function () { voirToutParcours = !voirToutParcours; rendreTimeline(); });
       bandeau.appendChild(b2);
