@@ -591,6 +591,74 @@
       rep.appendChild(lg);
       det.appendChild(rep);
     }
+    // Menage a deux salaires : retenue mensuelle contre regularisation annuelle
+    var zoneM = $("#s-menage");
+    if (zoneM) {
+      zoneM.innerHTML = "";
+      var brut2 = Number($("#s-brut2") ? $("#s-brut2").value : 0) || 0;
+      if (brut2 > 0 && brut > 0) {
+        var m = window.SIM.menage({
+          brut1: brut, brut2: brut2,
+          classe: $("#s-classe").value, mois: mois,
+          impatrie1: $("#s-impatrie").checked,
+          forfaits: $("#s-forfaits").checked
+        });
+
+        zoneM.appendChild(el("h2", null, "Le ménage, avec deux salaires"));
+
+        var intro = el("p", "lead small");
+        intro.textContent = "Aucun employeur ne connaît le salaire du conjoint. Le plus élevé des deux "
+          + "porte la fiche principale et subit le barème ; le second est retenu à un taux fixe de "
+          + pct(m.tauxFixeSecondaire) + ", qui ne dépend que de la classe d'impôt. La déclaration "
+          + "annuelle commune régularise ensuite l'écart.";
+        zoneM.appendChild(intro);
+
+        var km = el("div", "kpis");
+        [["Net mensuel retenu", eur(m.netMensuelRetenue), true],
+         ["Net mensuel réel", eur(m.netMensuelReel), false],
+         [m.solde >= 0 ? "Solde à payer" : "Remboursement attendu", eur(Math.abs(m.solde)), false],
+         ["Brut du ménage", eur(m.brutMenage), false]
+        ].forEach(function (x) {
+          var d = el("div", "kpi" + (x[2] ? " hl" : ""));
+          d.appendChild(el("div", "k", x[0]));
+          d.appendChild(el("div", "v", x[1]));
+          km.appendChild(d);
+        });
+        zoneM.appendChild(km);
+
+        var wrapM = el("div", "table-wrap"), tabM = el("table");
+        var thM = el("thead"), trM = el("tr");
+        ["", "Ce qui est prélevé chaque mois", "Ce qui est réellement dû"].forEach(function (c, i) {
+          trM.appendChild(el("th", i > 0 ? "num" : null, c));
+        });
+        thM.appendChild(trM); tabM.appendChild(thM);
+        var tbM = el("tbody");
+        [["Salaire principal (" + eur(m.brutPrincipal) + ")", eur(m.impotPrincipal), ""],
+         ["Second salaire (" + eur(m.brutSecondaire) + ")", eur(m.impotSecondaire) + " au taux de " + pct(m.tauxFixeSecondaire), ""],
+         ["Impôt du ménage", eur(m.retenueTotale), eur(m.impotAssiette)],
+         ["Net annuel du ménage", eur(m.netRetenue), eur(m.netReel)]
+        ].forEach(function (l) {
+          var tr = el("tr");
+          tr.appendChild(el("td", null, l[0]));
+          tr.appendChild(el("td", "num", l[1]));
+          tr.appendChild(el("td", "num", l[2]));
+          tbM.appendChild(tr);
+        });
+        tabM.appendChild(tbM); wrapM.appendChild(tabM); zoneM.appendChild(wrapM);
+
+        var avert = el("div", "notice small");
+        var fort = el("strong", null, m.solde >= 0
+          ? "Prévoyez ce solde : il tombe en une fois."
+          : "Vous devriez être remboursé après la déclaration.");
+        avert.appendChild(fort);
+        avert.appendChild(document.createTextNode(" Le taux fixe appliqué au second salaire est un maximum "
+          + "forfaitaire, calculé sans connaître le revenu du ménage. L'écart se régularise à la déclaration "
+          + "commune, qui produit un solde à payer ou un remboursement. Un taux de retenue adapté peut être "
+          + "demandé à l'administration pour lisser ce décalage. À l'inverse, un taux plus élevé ne peut pas "
+          + "être inscrit sur une fiche additionnelle : le complément prend la forme d'avances trimestrielles, de sorte que seule la première année se solde en une fois."));
+        zoneM.appendChild(avert);
+      }
+    }
     var comp = window.SIM.comparatif(brut, mois);
     var ct = $("#s-comp");
     ct.innerHTML = "";
@@ -645,7 +713,7 @@
         $("#sim-emprunt").hidden = b.dataset.sim !== "emprunt";
       });
     });
-    ["#s-brut", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits"].forEach(function (s) {
+    ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits"].forEach(function (s) {
       $(s).addEventListener("input", majSimulateur);
       $(s).addEventListener("change", majSimulateur);
     });
@@ -921,6 +989,186 @@
     if (inp) inp.focus();
   }
 
+  // ---------- Comparaisons standardisees ----------
+  // Les cartes du haut de l'onglet Comparateur : la MRH sur donnees reelles,
+  // et des verticales de demonstration (offres fictives, criteres reels)
+  // definies dans comparateur/offres_kb.js, chacune avec son chat d'affinage.
+
+  function rendreVerticales() {
+    var g = $("#ctr-verticales");
+    if (!g || !window.OFFRES_KB) return;
+    g.innerHTML = "";
+
+    var mrh = el("div", "qcard vert-carte");
+    mrh.appendChild(el("span", "vert-badge reel", "Données réelles"));
+    mrh.appendChild(el("h3", null, "Assurance habitation (MRH)"));
+    mrh.appendChild(el("p", null,
+      "Treize sinistres réels posés à quatre contrats du marché, clause citée à l'appui, " +
+      "et un chat pour poser vos propres cas."));
+    mrh.addEventListener("click", function () {
+      fermerVerticale();
+      var c = $("#ctr-mrh");
+      if (c) c.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    g.appendChild(mrh);
+
+    window.OFFRES_KB.verticales.forEach(function (v) {
+      var c = el("div", "qcard vert-carte");
+      c.appendChild(el("span", "vert-badge demo", "Démo, données fictives"));
+      c.appendChild(el("h3", null, v.titre));
+      c.appendChild(el("p", null, v.sousTitre + ". Une grille standard, puis quelques questions pour affiner."));
+      c.addEventListener("click", function () { ouvrirVerticale(v); });
+      g.appendChild(c);
+    });
+  }
+
+  function fermerVerticale() {
+    var vue = $("#ctr-vue");
+    if (vue) { vue.hidden = true; vue.innerHTML = ""; }
+  }
+
+  function ouvrirVerticale(v) {
+    var vue = $("#ctr-vue");
+    if (!vue) return;
+    vue.innerHTML = "";
+    vue.hidden = false;
+
+    var head = el("div", "vert-head");
+    head.appendChild(el("h2", null, v.titre));
+    var retour = el("button", "chip", "← Toutes les comparaisons");
+    retour.addEventListener("click", fermerVerticale);
+    head.appendChild(retour);
+    vue.appendChild(head);
+    vue.appendChild(el("p", "lead small", v.sousTitre + "."));
+
+    var avert = el("div", "notice small");
+    avert.appendChild(el("strong", null, "Démonstration. "));
+    avert.appendChild(document.createTextNode(window.OFFRES_KB.avertissement));
+    vue.appendChild(avert);
+
+    // La grille standardisee : une ligne par critere, une colonne par offre
+    var wrap = el("div", "table-wrap"), tab = el("table");
+    tab.id = "vert-table";
+    var thead = el("thead"), tr0 = el("tr");
+    tr0.appendChild(el("th", null, ""));
+    v.offres.forEach(function (o, i) {
+      var th = el("th", "num vert-col");
+      th.appendChild(el("div", null, o));
+      th.appendChild(el("div", "vert-pos", v.positionnement[i]));
+      tr0.appendChild(th);
+    });
+    thead.appendChild(tr0); tab.appendChild(thead);
+    var tb = el("tbody");
+    v.criteres.forEach(function (c) {
+      var tr = el("tr");
+      tr.appendChild(el("td", null, c.nom));
+      c.valeurs.forEach(function (x) { tr.appendChild(el("td", "num", x)); });
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb); wrap.appendChild(tab);
+    vue.appendChild(wrap);
+
+    if (v.fiche) {
+      var f = window.KB.fiches.filter(function (x) { return x.id === v.fiche; })[0];
+      if (f) {
+        var cf = el("div", "chips");
+        var bf = el("button", "chip", "Ouvrir la fiche : " + f.titre);
+        bf.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(f.id); });
+        cf.appendChild(bf);
+        vue.appendChild(cf);
+      }
+    }
+
+    var card = el("div", "card ctr-wrap");
+    card.appendChild(el("h3", null, "Affiner selon votre situation"));
+    var log = el("div", "chat-log");
+    log.id = "vert-log";
+    card.appendChild(log);
+    vue.appendChild(card);
+    demarrerAffinage(v, log);
+    vue.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function bulleVert(log, texte, qui) {
+    var m = el("div", "msg " + qui);
+    if (texte) m.appendChild(document.createTextNode(texte));
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return m;
+  }
+
+  function demarrerAffinage(v, log) {
+    var scores = v.offres.map(function () { return 0; });
+    var raisons = [];
+    var etape = 0;
+
+    bulleVert(log,
+      "Quelques questions, et je vous dis quelle colonne du tableau colle à votre situation, et pourquoi.",
+      "bot");
+
+    function poser() {
+      if (etape >= v.questions.length) { conclure(); return; }
+      var q = v.questions[etape];
+      var m = bulleVert(log, q.question, "bot");
+      var c = el("div", "chips");
+      q.options.forEach(function (o) {
+        var b = el("button", "chip", o.label);
+        b.addEventListener("click", function () {
+          c.remove();
+          bulleVert(log, o.label, "me");
+          o.points.forEach(function (p, i) { scores[i] += p; });
+          raisons.push(o.raison);
+          etape++;
+          setTimeout(poser, 260);
+        });
+        c.appendChild(b);
+      });
+      m.appendChild(c);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function conclure() {
+      var max = Math.max.apply(null, scores);
+      var classement = v.offres.map(function (o, i) { return { nom: o, score: scores[i], i: i }; })
+        .sort(function (a, b) { return b.score - a.score; });
+      var m = bulleVert(log, "Pour votre situation, voici le classement :", "bot");
+      var cl = el("div", "classement");
+      classement.forEach(function (x, rang) {
+        var ligne = el("div", "cl-ligne" + (rang === 0 ? " gagnant" : ""));
+        ligne.appendChild(el("span", "cl-rang", "#" + (rang + 1)));
+        ligne.appendChild(el("span", "cl-nom", x.nom + " · " + v.positionnement[x.i]));
+        var barre = el("span", "cl-barre");
+        var rempli = el("i");
+        rempli.style.width = Math.round(100 * x.score / Math.max(1, max)) + "%";
+        barre.appendChild(rempli);
+        ligne.appendChild(barre);
+        cl.appendChild(ligne);
+      });
+      m.appendChild(cl);
+      m.appendChild(el("p", "vsuite", "Pourquoi : " + raisons.join(" ; ") + "."));
+      // La colonne gagnante se surligne dans la grille au-dessus
+      var iGagnant = classement[0].i;
+      $$("#vert-table tr").forEach(function (tr) {
+        var cell = tr.children[iGagnant + 1];
+        if (cell) cell.classList.add("col-gagnante");
+      });
+      m.appendChild(el("p", "vsuite",
+        "Rappel : offres fictives de démonstration. La méthode, elle, est la bonne : posez ces " +
+        "mêmes questions aux offres réelles, grilles datées en main."));
+      var c = el("div", "chips");
+      var r = el("button", "chip", "Recommencer");
+      r.addEventListener("click", function () { ouvrirVerticale(v); });
+      c.appendChild(r);
+      var autres = el("button", "chip", "← Toutes les comparaisons");
+      autres.addEventListener("click", fermerVerticale);
+      c.appendChild(autres);
+      m.appendChild(c);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    setTimeout(poser, 300);
+  }
+
   // ---------- Comparateur de contrats ----------
 
   var STATUTS_CONTRAT = {
@@ -1043,6 +1291,7 @@
   }
 
   function initComparateur() {
+    rendreVerticales();
     if (!window.CONTRATS_KB || !$("#ctr-log")) return;
     // Questions suggerees : le premier cas de chaque famille de sinistres
     var sug = $("#ctr-suggestions");

@@ -96,6 +96,70 @@ window.SIM = (function () {
     };
   }
 
+  // Taux fixes portés sur une fiche de retenue additionnelle, c'est-à-dire
+  // sur le second salaire d'un ménage imposé collectivement, ou sur un second
+  // emploi. Ils ne dépendent que de la classe d'impôt, jamais du revenu réel.
+  // Ce sont des maxima : un taux réduit peut être demandé à l'administration.
+  // Source : ACD, taux de retenue fixe inscrit sur la fiche additionnelle.
+  var TAUX_FICHE_ADDITIONNELLE = { classe1: 0.33, classe1a: 0.21, classe2: 0.15 };
+
+  // Ménage à deux salaires imposé collectivement.
+  // Deux vues, qui ne donnent pas le même chiffre, et c'est normal :
+  //   1. retenue : ce qui est prélevé chaque mois, barème sur le salaire
+  //      principal et taux fixe sur le second ;
+  //   2. regularisation : ce que le ménage doit réellement, barème de classe 2
+  //      applique au revenu imposable cumulé, comme à la déclaration annuelle.
+  function menage(opts) {
+    var b1 = Math.max(0, Number(opts.brut1) || 0);
+    var b2 = Math.max(0, Number(opts.brut2) || 0);
+    var mois = Number(opts.mois) || 12;
+    var classe = opts.classe || "classe2";
+    var forfaits = opts.forfaits !== false;
+
+    // Le salaire le plus élevé porte la fiche principale, par usage.
+    var principal = Math.max(b1, b2);
+    var secondaire = Math.min(b1, b2);
+
+    var rP = calcul({ brut: principal, classe: classe, mois: mois, impatrie: opts.impatrie1, forfaits: forfaits });
+    // Le second salaire subit les cotisations, puis un taux fixe, sans barème.
+    var rS = calcul({ brut: secondaire, classe: classe, mois: mois, forfaits: false });
+    var tauxFixe = TAUX_FICHE_ADDITIONNELLE[classe] || 0.15;
+    var impotSecondaire = rS.netAvantImpot * tauxFixe;
+
+    var retenueTotale = rP.impotTotal + impotSecondaire;
+    var netAvantImpotMenage = rP.netAvantImpot + rS.netAvantImpot;
+    var netRetenue = netAvantImpotMenage - retenueTotale;
+
+    // Régularisation annuelle : barème appliqué au revenu imposable cumulé.
+    var imposableCumule = Math.max(0, rP.imposable + rS.netAvantImpot - (forfaits ? (P.fraisObtention + P.depensesSpeciales) : 0));
+    var impotAssiette = impotBareme(imposableCumule, classe);
+    var seuil = (classe === "classe2") ? P.seuilFondsClasse2 : P.seuilFondsClasse1;
+    var tauxFonds = imposableCumule > seuil ? P.fondsEmploiTaux2 : P.fondsEmploi;
+    var impotAssietteTotal = impotAssiette * (1 + tauxFonds);
+    var netReel = netAvantImpotMenage - impotAssietteTotal;
+
+    return {
+      brutPrincipal: principal,
+      brutSecondaire: secondaire,
+      brutMenage: principal + secondaire,
+      cotisations: rP.cotisations + rP.dependance + rS.cotisations + rS.dependance,
+      netAvantImpot: netAvantImpotMenage,
+      tauxFixeSecondaire: tauxFixe,
+      impotPrincipal: rP.impotTotal,
+      impotSecondaire: impotSecondaire,
+      retenueTotale: retenueTotale,
+      netRetenue: netRetenue,
+      netMensuelRetenue: netRetenue / mois,
+      imposableCumule: imposableCumule,
+      impotAssiette: impotAssietteTotal,
+      netReel: netReel,
+      netMensuelReel: netReel / mois,
+      // Positif : le ménage devra un solde. Négatif : il sera remboursé.
+      solde: impotAssietteTotal - retenueTotale,
+      mois: mois
+    };
+  }
+
   // Comparaison des trois situations les plus utiles.
   function comparatif(brut, mois) {
     return [
@@ -131,6 +195,8 @@ window.SIM = (function () {
 
   return {
     calcul: calcul,
+    menage: menage,
+    tauxFicheAdditionnelle: TAUX_FICHE_ADDITIONNELLE,
     comparatif: comparatif,
     impotBareme: impotBareme,
     capaciteEmprunt: capaciteEmprunt,

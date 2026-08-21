@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=3">
+<link rel="stylesheet" href="app/styles.css?v=4">
 </head>
 <body>
 
@@ -140,6 +140,10 @@
             <option value="13">13 mois</option>
           </select>
         </div>
+        <div>
+          <label for="s-brut2">Salaire du conjoint (EUR, facultatif)</label>
+          <input type="number" id="s-brut2" value="0" min="0" step="1000" placeholder="0">
+        </div>
       </div>
       <div class="row" style="margin-top:12px">
         <div class="check">
@@ -164,6 +168,8 @@
       aux forfaits, avantages en nature, crédits d'impôt. Plus la situation s'écarte du cas simple
       (un seul salaire, pas d'autre revenu), plus l'écart peut être grand.
     </div>
+
+    <div id="s-menage"></div>
 
     <div id="s-detail"></div>
 
@@ -211,13 +217,20 @@
     </div>
   </section>
 
-  <!-- Comparateur de contrats habitation -->
+  <!-- Comparateur -->
   <section class="panel" id="panel-comparateur" hidden>
-    <h1>Comparateur de contrats habitation</h1>
+    <h1>Comparateur</h1>
     <p class="lead">
-      Quatre contrats du marché luxembourgeois, comparés sinistre par sinistre à partir de leurs
-      conditions générales, la clause exacte citée à l'appui.
+      Des comparaisons standardisées, poste par poste : d'abord une grille claire de ce qui
+      distingue vraiment les offres, puis un chat pour affiner selon votre situation.
     </p>
+
+    <div class="grid serre" id="ctr-verticales"></div>
+
+    <div id="ctr-vue" hidden></div>
+
+    <div id="ctr-mrh">
+    <h2>Assurance habitation : la comparaison complète, sur données réelles</h2>
     <div class="notice small">
       <strong>Méthode et limites.</strong> Analyse documentaire de conditions générales publiques
       du marché luxembourgeois, éditions 2017 à 2023, assureurs anonymisés (A à D). Chaque verdict
@@ -252,6 +265,7 @@
         <p>Un profil d'exemple (appartement, télétravail, vélo, bijoux) pondère les garanties qui
           comptent, classe les contrats et liste les lacunes à négocier.</p>
       </div>
+    </div>
     </div>
   </section>
 
@@ -410,13 +424,14 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=3"></script>
-<script src="app/kb.js?v=3"></script>
-<script src="app/simulateur.js?v=3"></script>
-<script src="comparateur/contrats_kb.js?v=3"></script>
-<script src="app/chat.js?v=3"></script>
-<script src="app/ui.js?v=3"></script>
-<script src="app/communaute.js?v=3"></script>
+<script src="app/bareme.js?v=4"></script>
+<script src="app/kb.js?v=4"></script>
+<script src="app/simulateur.js?v=4"></script>
+<script src="comparateur/contrats_kb.js?v=4"></script>
+<script src="comparateur/offres_kb.js?v=4"></script>
+<script src="app/chat.js?v=4"></script>
+<script src="app/ui.js?v=4"></script>
+<script src="app/communaute.js?v=4"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
