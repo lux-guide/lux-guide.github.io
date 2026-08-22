@@ -325,6 +325,9 @@ window.CHAT = (function () {
   return {
     CHAMPS: CHAMPS,
     afficher: afficher,
+    // Les mots porteurs de sens d'une question, sans accents : servent au
+    // surlignage du passage correspondant dans la fiche ouverte.
+    termesUtiles: function (q) { return mots(q); },
     profilVide: profilVide,
     prochainChamp: prochainChamp,
     profilComplet: profilComplet,

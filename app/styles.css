@@ -826,3 +826,68 @@ table.carte-table th .adr-pastille { margin-bottom: 5px; }
 .carte-commune { font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; }
 .carte-poi { font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; }
 td.sous-ligne { color: var(--muted); font-size: 12.5px; }
+
+/* ---------- Assistant ancre en panneau lateral ---------- */
+/* Sous 1100 px, le rail n'a pas la place : l'assistant reste une bulle.
+   Au-dessus, il s'ancre a droite et pousse le contenu au lieu de le couvrir. */
+
+@media (min-width: 1100px) {
+  #widget {
+    top: 0; right: 0; bottom: 0; left: auto;
+    width: 400px; height: 100vh; max-height: none;
+    border-radius: 0; border-width: 0 0 0 1px;
+    box-shadow: -14px 0 34px -22px rgba(11,18,32,.28);
+    animation: rail .22s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes rail { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* Le contenu se decale : rien n'est masque par le panneau. La marge sur le
+     corps retrecit la page entiere, et main, centre par ses marges auto, se
+     recentre dans la place restante. Le panneau, en position fixe, reste
+     colle au bord de la fenetre. */
+  body.rail-ouvert { margin-right: 400px; }
+  body.rail-ouvert #widget-btn { display: none; }
+
+  /* La barre de titre du panneau reprend le fond de la page, plus sobre
+     qu'un bandeau colore sur toute la hauteur de l'ecran. */
+  #widget .w-head {
+    background: var(--surface-2); color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 18px;
+  }
+  #widget .w-head button { color: var(--muted); font-size: 24px; }
+  #widget .w-head button:hover { color: var(--accent); }
+  #widget .msg { max-width: 92%; }
+}
+
+/* Transition douce du contenu quand le panneau s'ouvre ou se ferme. */
+@media (min-width: 1100px) and (prefers-reduced-motion: no-preference) {
+  body { transition: margin-right .22s cubic-bezier(.2,.8,.3,1); }
+}
+
+/* Surlignage du passage qui repond, dans la fiche ouverte */
+mark.surligne {
+  background: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  color: inherit; padding: 1px 3px; border-radius: 4px;
+}
+mark.surligne.pulse { animation: surlign 1.5s ease-out; }
+@keyframes surlign {
+  0%, 100% { background: color-mix(in srgb, var(--accent-2) 30%, transparent); }
+  25% { background: color-mix(in srgb, var(--accent-2) 72%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { mark.surligne.pulse { animation: none; } }
+
+/* Le badge de mode ne se coupe plus en deux lignes */
+.badge { white-space: nowrap; display: inline-block; }
+
+/* Titre avec une action a droite */
+.titre-action {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.titre-action h1 { margin-bottom: 0; }
+
+/* Actions de la barre du panneau */
+.w-actions { display: inline-flex; align-items: center; gap: 2px; }
+#widget-plein { font-size: 16px; }
+@media (max-width: 1099px) { #widget-plein { display: none; } }

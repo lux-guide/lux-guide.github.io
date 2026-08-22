@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=9">
+<link rel="stylesheet" href="app/styles.css?v=10">
 </head>
 <body>
 
@@ -429,7 +429,10 @@
 
   <!-- Assistant -->
   <section class="panel" id="panel-assistant" hidden>
-    <h1>Assistant</h1>
+    <div class="titre-action">
+      <h1>Assistant</h1>
+      <button class="btn ghost" id="assistant-ancrer">Ouvrir en panneau latéral</button>
+    </div>
     <p class="lead">
       Il construit votre profil au fil des réponses, puis cible ce qui vous concerne.
       <span class="badge" id="mode-badge">mode local</span>
@@ -532,7 +535,10 @@
 <div id="widget" hidden>
   <div class="w-head">
     <span>Assistant du guide</span>
-    <button id="widget-close" title="Réduire">×</button>
+    <span class="w-actions">
+      <button id="widget-plein" title="Ouvrir en pleine page" aria-label="Ouvrir en pleine page">⤢</button>
+      <button id="widget-close" title="Fermer" aria-label="Fermer l'assistant">×</button>
+    </span>
   </div>
   <div class="chat-log" id="widget-log"></div>
   <div class="chat-bar">
@@ -542,15 +548,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=9"></script>
-<script src="app/kb.js?v=9"></script>
-<script src="app/simulateur.js?v=9"></script>
-<script src="comparateur/contrats_kb.js?v=9"></script>
-<script src="comparateur/mrh_kb.js?v=9"></script>
-<script src="comparateur/offres_kb.js?v=9"></script>
-<script src="app/chat.js?v=9"></script>
-<script src="app/ui.js?v=9"></script>
-<script src="app/communaute.js?v=9"></script>
+<script src="app/bareme.js?v=10"></script>
+<script src="app/kb.js?v=10"></script>
+<script src="app/simulateur.js?v=10"></script>
+<script src="comparateur/contrats_kb.js?v=10"></script>
+<script src="comparateur/mrh_kb.js?v=10"></script>
+<script src="comparateur/offres_kb.js?v=10"></script>
+<script src="app/chat.js?v=10"></script>
+<script src="app/ui.js?v=10"></script>
+<script src="app/communaute.js?v=10"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

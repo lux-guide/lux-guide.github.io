@@ -94,8 +94,13 @@
 
   var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
 
+  var pagePrecedente = null;
+
   function ouvrir(nom, sansHash) {
     if (PANNEAUX.indexOf(nom) === -1) nom = "accueil";
+    // Retenue pour revenir au contenu quand on rebascule en panneau lateral.
+    var courante = $$(".panel").filter(function (p) { return !p.hidden; })[0];
+    if (courante) pagePrecedente = courante.id.replace("panel-", "");
     if (nom === "carte") {
       initCarte();
       // La carte a pu etre creee dans un panneau cache : recaler sa taille
@@ -1117,7 +1122,11 @@
           action: function () { ouvrir("comparateur"); }
         });
       }
-      taper(r.texte, r.sources, chips);
+      taper(r.texte, r.sources, chips, function () {
+        // Panneau ancre : la fiche s'ouvre dans la page, passage surligne,
+        // sans quitter la conversation.
+        if (r.fiches && r.fiches.length) guiderVersFiche(r.fiches[0], q);
+      });
       historique.push({ role: "assistant", content: r.texte });
       sauverConversation();
       var b = $("#mode-badge");
@@ -1150,9 +1159,25 @@
     var wb = $("#widget-btn"), w = $("#widget");
     if (wb && w) {
       wb.addEventListener("click", montrerWidget);
-      $("#widget-close").addEventListener("click", function () {
-        w.hidden = true;
-        wb.hidden = false;
+      $("#widget-close").addEventListener("click", cacherWidget);
+      // Panneau lateral vers pleine page, et retour : la conversation est la
+      // meme des deux cotes, le passage ne perd donc rien.
+      $("#widget-plein").addEventListener("click", function () {
+        cacherWidget();
+        ouvrir("assistant");
+        var i = $("#chat-input");
+        if (i) i.focus();
+      });
+      var ancrer = $("#assistant-ancrer");
+      if (ancrer) ancrer.addEventListener("click", function () {
+        if (!railPossible()) {
+          montrerWidget();
+          return;
+        }
+        // On revient a la page consultee avant l'assistant, sinon l'accueil :
+        // le panneau n'a d'interet qu'a cote d'un contenu.
+        ouvrir(pagePrecedente && pagePrecedente !== "assistant" ? pagePrecedente : "accueil");
+        montrerWidget();
       });
       $("#widget-send").addEventListener("click", function () { envoyer(); });
       $("#widget-input").addEventListener("keydown", function (e) {
@@ -1180,6 +1205,17 @@
         b.className = "badge" + (ok ? " on" : "");
       }
     });
+
+    // Le panneau reste ouvert d'une visite a l'autre s'il l'etait.
+    try {
+      if (localStorage.getItem(STORAGE_RAIL) === "1" && railPossible()) montrerWidget();
+    } catch (e) { /* stockage indisponible */ }
+
+    // Passer sous le seuil du rail rend la bulle : le contenu reprend sa largeur.
+    window.addEventListener("resize", function () {
+      if (!railPossible()) document.body.classList.remove("rail-ouvert");
+      else if ($("#widget") && !$("#widget").hidden) document.body.classList.add("rail-ouvert");
+    });
   }
 
   function demarrerChat() {
@@ -1187,16 +1223,90 @@
     setTimeout(poserProchaineQuestion, 250);
   }
 
-  // Ouvre le widget flottant, depuis n'importe quel point de l'interface.
+  // Au-dela de cette largeur, l'assistant s'ancre en panneau lateral et pousse
+  // le contenu ; en dessous, il reste une bulle posee sur la page.
+  var LARGEUR_RAIL = 1100;
+  function railPossible() { return window.innerWidth >= LARGEUR_RAIL; }
+
+  // Ouvre l'assistant, depuis n'importe quel point de l'interface.
   function montrerWidget() {
     var w = $("#widget"), wb = $("#widget-btn");
     if (!w || !wb) return;
     w.hidden = false;
     wb.hidden = true;
+    if (railPossible()) document.body.classList.add("rail-ouvert");
+    try { localStorage.setItem(STORAGE_RAIL, "1"); } catch (e) {}
     var log = $("#widget-log");
     if (log) log.scrollTop = log.scrollHeight;
     var inp = $("#widget-input");
     if (inp) inp.focus();
+    if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 260);
+  }
+
+  function cacherWidget() {
+    var w = $("#widget"), wb = $("#widget-btn");
+    if (!w || !wb) return;
+    w.hidden = true;
+    wb.hidden = false;
+    document.body.classList.remove("rail-ouvert");
+    try { localStorage.setItem(STORAGE_RAIL, "0"); } catch (e) {}
+    if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 260);
+  }
+
+  var STORAGE_RAIL = "luxguide.rail.v1";
+
+  // Surligne dans la page les mots de la question, et fait defiler jusqu'au
+  // premier passage trouve. C'est ce que le panneau ancre rend possible :
+  // la reponse reste lisible pendant qu'on regarde la fiche.
+  function surlignerDansFiche(question) {
+    var d = $("#fiche-detail");
+    if (!d) return;
+    $$("mark.surligne", d).forEach(function (m) {
+      var p = m.parentNode;
+      p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+    var termes = window.CHAT.termesUtiles(question);
+    if (!termes.length) return;
+
+    var premier = null;
+    $$(".detail-texte p, .detail-texte li, .bloc.cle li", d).forEach(function (n) {
+      if (n.querySelector("mark.surligne")) return;
+      var brut = n.textContent;
+      var sans = brut.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      // On repere la position dans le texte sans accents, puis on decoupe
+      // le texte d'origine aux memes index : les accents sont preserves.
+      var trouve = null;
+      for (var i = 0; i < termes.length && !trouve; i++) {
+        var k = sans.indexOf(termes[i]);
+        if (k !== -1) trouve = { debut: k, fin: k + termes[i].length };
+      }
+      if (!trouve) return;
+      var avant = brut.slice(0, trouve.debut);
+      var mot = brut.slice(trouve.debut, trouve.fin);
+      var apres = brut.slice(trouve.fin);
+      n.textContent = "";
+      n.appendChild(document.createTextNode(avant));
+      var m = el("mark", "surligne", mot);
+      n.appendChild(m);
+      n.appendChild(document.createTextNode(apres));
+      if (!premier) premier = m;
+    });
+    if (premier) {
+      premier.scrollIntoView({ behavior: "smooth", block: "center" });
+      premier.classList.add("pulse");
+      setTimeout(function () { premier.classList.remove("pulse"); }, 1600);
+    }
+  }
+
+  // Quand le panneau est ancre, la reponse ouvre la fiche dans la page.
+  function guiderVersFiche(idFiche, question) {
+    if (!idFiche || !railPossible() || document.body.classList.contains("rail-ouvert") === false) return;
+    var f = window.KB.fiches.filter(function (x) { return x.id === idFiche; })[0];
+    if (!f) return;
+    ouvrir("fiches");
+    montrerFiche(idFiche);
+    setTimeout(function () { surlignerDansFiche(question); }, 120);
   }
 
   // ---------- Comparaisons standardisees ----------
