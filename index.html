@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=12">
+<link rel="stylesheet" href="app/styles.css?v=13">
 </head>
 <body>
 
 <header class="top">
   <div class="top-in">
-    <div class="brand"><span class="mark" aria-hidden="true"></span>S'installer au Luxembourg</div>
+    <div class="brand" title="S'installer au Luxembourg"><span class="mark" aria-hidden="true"></span><span class="brand-txt">S'installer au Luxembourg</span></div>
     <nav class="tabs" id="tabs" role="tablist">
       <button role="tab" data-panel="accueil" aria-selected="true">Accueil</button>
       <button role="tab" data-panel="fiches" aria-selected="false">Fiches</button>
@@ -20,7 +20,7 @@
       <button role="tab" data-panel="comparateur" aria-selected="false">Comparateur</button>
       <button role="tab" data-panel="carte" aria-selected="false">Carte</button>
       <button role="tab" data-panel="assistant" aria-selected="false">Assistant</button>
-      <button role="tab" data-panel="admin" aria-selected="false" class="tab-admin" title="Administration du contenu">Administration</button>
+      <button role="tab" data-panel="admin" aria-selected="false" class="tab-admin" title="Administration du contenu" aria-label="Administration du contenu">Admin</button>
     </nav>
     <button id="theme-btn" class="theme-btn" title="Changer de thème" aria-label="Changer de thème"></button>
   </div>
@@ -243,7 +243,8 @@
     <h1>Comparateur</h1>
     <p class="lead">
       Des comparaisons standardisées, poste par poste : d'abord une grille claire de ce qui
-      distingue vraiment les offres, puis un chat pour affiner selon votre situation.
+      distingue vraiment les offres, puis un chat qui réécrit le tableau selon votre situation,
+      avec vos propres critères.
     </p>
 
     <div class="grid serre" id="ctr-verticales"></div>
@@ -260,6 +261,7 @@
 
     <div class="sous-onglets" id="mrh-tabs">
       <button data-mrh="reco" class="actif">Ma situation</button>
+      <button data-mrh="surmesure">Tableau sur mesure</button>
       <button data-mrh="sinistres">Sinistres</button>
       <button data-mrh="matrice">Couverture</button>
       <button data-mrh="constats">Ce qui ressort</button>
@@ -287,16 +289,24 @@
         plafond, franchise, condition qui décide, et la clause citée avec sa page.
       </p>
       <div id="mrh-sinistres-table"></div>
+    </div>
 
-      <h3>Poser un cas qui n'est pas dans la liste</h3>
+    <!-- Tableau sur mesure : le chat construit et modifie la comparaison -->
+    <div id="mrh-surmesure" hidden>
+      <p class="lead small">
+        Ici le chat ne se contente pas de répondre : il construit le tableau. Demandez les
+        garanties qui vous intéressent, restreignez aux contrats que vous avez en main, ajoutez
+        un critère qui n'est pas dans la grille, et la comparaison se réécrit sous vos yeux.
+      </p>
       <div class="card ctr-wrap">
         <div class="chips" id="ctr-suggestions"></div>
         <div class="chat-log" id="ctr-log"></div>
         <div class="chat-bar">
-          <input type="text" id="ctr-input" placeholder="Ex : mon vélo est volé dans la rue, suis-je couvert ?" autocomplete="off">
+          <input type="text" id="ctr-input" placeholder="Ex : compare le vol et le dégât des eaux, seulement chez l'assureur A et l'assureur C" autocomplete="off">
           <button class="btn" id="ctr-send">Envoyer</button>
         </div>
       </div>
+      <div id="ctr-tableau"></div>
     </div>
 
     <!-- Matrice de couverture -->
@@ -549,15 +559,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=12"></script>
-<script src="app/kb.js?v=12"></script>
-<script src="app/simulateur.js?v=12"></script>
-<script src="comparateur/contrats_kb.js?v=12"></script>
-<script src="comparateur/mrh_kb.js?v=12"></script>
-<script src="comparateur/offres_kb.js?v=12"></script>
-<script src="app/chat.js?v=12"></script>
-<script src="app/ui.js?v=12"></script>
-<script src="app/communaute.js?v=12"></script>
+<script src="app/bareme.js?v=13"></script>
+<script src="app/kb.js?v=13"></script>
+<script src="app/simulateur.js?v=13"></script>
+<script src="comparateur/contrats_kb.js?v=13"></script>
+<script src="comparateur/mrh_kb.js?v=13"></script>
+<script src="comparateur/offres_kb.js?v=13"></script>
+<script src="app/chat.js?v=13"></script>
+<script src="app/ui.js?v=13"></script>
+<script src="app/communaute.js?v=13"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

@@ -82,6 +82,29 @@
 
   // ---------- Navigation ----------
 
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
+
+  var pagePrecedente = null;
+
+  // La barre d'onglets tient sur une ligne et defile quand la fenetre est
+  // etroite. On signale par un fondu qu'il reste des onglets a gauche ou a
+  // droite, sinon on croit la liste terminee.
+  function majDefilementOnglets() {
+    var nav = $("#tabs");
+    if (!nav) return;
+    var reste = nav.scrollWidth - nav.clientWidth;
+    if (reste <= 2) { nav.removeAttribute("data-defile"); return; }
+    var g = nav.scrollLeft > 2, d = nav.scrollLeft < reste - 2;
+    nav.setAttribute("data-defile", g && d ? "deux" : (g ? "gauche" : "droite"));
+  }
+
+  function amenerOngletEnVue(nom) {
+    var nav = $("#tabs");
+    if (!nav || nav.scrollWidth <= nav.clientWidth + 2) return;
+    var b = $$("#tabs button").filter(function (x) { return x.dataset.panel === nom; })[0];
+    if (b && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }
+
   function initOnglets() {
     $$("#tabs button").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.panel); });
@@ -90,11 +113,12 @@
     $$("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.go); });
     });
+    var nav = $("#tabs");
+    if (!nav) return;
+    nav.addEventListener("scroll", majDefilementOnglets, { passive: true });
+    window.addEventListener("resize", majDefilementOnglets);
+    majDefilementOnglets();
   }
-
-  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
-
-  var pagePrecedente = null;
 
   function ouvrir(nom, sansHash) {
     if (PANNEAUX.indexOf(nom) === -1) nom = "accueil";
@@ -112,6 +136,8 @@
     $$("#tabs button").forEach(function (b) {
       b.setAttribute("aria-selected", String(b.dataset.panel === nom));
     });
+    amenerOngletEnVue(nom);
+    setTimeout(majDefilementOnglets, 320);
     $$(".panel").forEach(function (p) { p.hidden = p.id !== "panel-" + nom; });
     // L'onglet Fiches revient toujours a la liste (une fiche ouverte la masquait,
     // barre de recherche comprise). montrerFiche, appele ensuite le cas echeant,
@@ -1118,11 +1144,16 @@
           action: function () { envoyer("Peux-tu détailler : " + pf.titre + " ?"); }
         });
       }
-      // Question d'assurance : renvoyer vers le comparateur de contrats
+      // Question d'assurance : la main passe au comparateur, qui sait faire ce
+      // que l'assistant general ne fait pas, construire le tableau. On lui
+      // transmet la question telle quelle plutot que d'y repondre deux fois.
       if (r.comparateur) {
         chips.push({
-          label: "Comparer 4 contrats habitation",
-          action: function () { ouvrir("comparateur"); }
+          label: "Construire le tableau de comparaison",
+          action: function () {
+            ouvrir("comparateur");
+            passerAuComparateur(q);
+          }
         });
       }
       taper(r.texte, r.sources, chips, function () {
@@ -1638,6 +1669,447 @@
     return d;
   }
 
+  // ---------- Tableau sur mesure ----------
+  //
+  // Le chat du comparateur ne repond pas a cote du tableau : il le construit.
+  // Une demande devient une operation sur l'affichage (ajouter une ligne,
+  // restreindre les colonnes, trier, vider), et la comparaison se redessine.
+  // Tout se calcule en local sur les deux bases du dossier : les 13 sinistres
+  // de contrats_kb.js, avec statut, plafond, franchise et clause citee, et les
+  // 17 garanties de mrh_kb.js, avec le nombre de mentions et la premiere page.
+  // Aucun chiffre n'est invente : ce qui n'est pas dans les documents analyses
+  // est affiche comme absent, pas comme non couvert.
+
+  var STORAGE_SM = "luxguide.surmesure.v1";
+  var surMesure = { lignes: [], colonnes: null };
+  var catalogueCache = null;
+
+  function tousAssureurs() {
+    return (window.CONTRATS_KB && window.CONTRATS_KB.assureurs) ||
+      (window.MRH_KB && window.MRH_KB.assureurs) || [];
+  }
+
+  function colonnesSM() {
+    var t = tousAssureurs();
+    if (!surMesure.colonnes || !surMesure.colonnes.length) return t.slice();
+    return t.filter(function (a) { return surMesure.colonnes.indexOf(a) !== -1; });
+  }
+
+  // Catalogue des criteres reconnaissables : les garanties de la matrice,
+  // les sinistres analyses, et les biens de l'onglet Ma situation.
+  function catalogueSM() {
+    if (catalogueCache) return catalogueCache;
+    var out = [];
+    (window.MRH_KB ? window.MRH_KB.criteres : []).forEach(function (c) {
+      out.push({ type: "garantie", id: "g:" + c.id, ref: c.id, label: c.label, mots: c.label });
+    });
+    (window.CONTRATS_KB ? window.CONTRATS_KB.scenarios : []).forEach(function (sc) {
+      out.push({
+        type: "sinistre", id: "s:" + sc.groupe + "|" + sc.titre,
+        label: sc.groupe + " : " + sc.titre.toLowerCase(),
+        mots: sc.groupe + " " + sc.titre + " " + sc.question, sc: sc
+      });
+    });
+    catalogueCache = out;
+    return out;
+  }
+
+  function entreeSM(id) {
+    return catalogueSM().filter(function (e) { return e.id === id; })[0] || null;
+  }
+
+  // Decoupe une demande en morceaux comparables : « le vol et les degats des
+  // eaux » donne deux criteres, pas un seul melange.
+  function fragmenterSM(q) {
+    return String(q || "")
+      .split(/\s+(?:et|puis|ainsi que|avec)\s+|[,;]|\bet\/ou\b/i)
+      .map(function (f) { return f.trim(); })
+      .filter(function (f) { return f.length > 2; });
+  }
+
+  function trouverCritere(fragment) {
+    var termes = motsCtr(fragment);
+    if (!termes.length) return null;
+    var best = null, bestScore = 0;
+    catalogueSM().forEach(function (e) {
+      var hay = normaliserCtr(e.mots), s = 0;
+      termes.forEach(function (t) {
+        if (hay.indexOf(t) !== -1) s += (t.length > 5 ? 1.4 : 1);
+      });
+      // Un critere court et precis l'emporte sur un scenario qui contient tout
+      if (e.type === "garantie") s *= 1.15;
+      if (s > bestScore) { bestScore = s; best = e; }
+    });
+    return bestScore >= 1.15 ? best : null;
+  }
+
+  // Critere absent de la grille : on cherche le mot dans les clauses citees,
+  // par contrat. On rapporte ce qu'on trouve, et rien de plus.
+  function chercherLibre(terme) {
+    var t = normaliserCtr(terme);
+    var res = {};
+    tousAssureurs().forEach(function (a) { res[a] = { occ: 0, page: null }; });
+    (window.CONTRATS_KB ? window.CONTRATS_KB.scenarios : []).forEach(function (sc) {
+      tousAssureurs().forEach(function (a) {
+        var v = sc.verdicts[a];
+        if (!v) return;
+        var hay = normaliserCtr((v.cle || "") + " " + (v.citation || ""));
+        var n = 0, i = hay.indexOf(t);
+        while (t && i !== -1) { n++; i = hay.indexOf(t, i + t.length); }
+        if (n) {
+          res[a].occ += n;
+          if (res[a].page === null && v.page) res[a].page = v.page;
+        }
+      });
+    });
+    return res;
+  }
+
+  function ajouterLigneSM(entree, silencieux) {
+    if (!entree) return false;
+    if (surMesure.lignes.filter(function (l) { return l.id === entree.id; }).length) return false;
+    surMesure.lignes.push({ id: entree.id, type: entree.type, label: entree.label,
+      terme: entree.terme || null, poids: 1 });
+    sauverSM();
+    if (!silencieux) rendreSurMesure();
+    return true;
+  }
+
+  function retirerLigneSM(id) {
+    surMesure.lignes = surMesure.lignes.filter(function (l) { return l.id !== id; });
+    sauverSM();
+    rendreSurMesure();
+  }
+
+  function sauverSM() {
+    try { localStorage.setItem(STORAGE_SM, JSON.stringify(surMesure)); } catch (e) { /* prive */ }
+  }
+
+  function chargerSM() {
+    try {
+      var d = JSON.parse(localStorage.getItem(STORAGE_SM) || "null");
+      if (d && d.lignes) surMesure = { lignes: d.lignes, colonnes: d.colonnes || null };
+    } catch (e) { /* rien */ }
+  }
+
+  // Score d'un contrat sur les lignes de sinistres retenues : moyenne ponderee
+  // des statuts, avec la meme table de scores que l'onglet Ma situation.
+  function scoresSM() {
+    var K = window.MRH_KB, out = {};
+    colonnesSM().forEach(function (a) {
+      var somme = 0, poids = 0;
+      surMesure.lignes.forEach(function (l) {
+        if (l.type !== "sinistre") return;
+        var e = entreeSM(l.id);
+        if (!e || !e.sc) return;
+        var v = e.sc.verdicts[a];
+        var s = v ? K.scores[v.statut] : null;
+        if (s === null || s === undefined) return;
+        somme += s * (l.poids || 1);
+        poids += (l.poids || 1);
+      });
+      out[a] = poids ? { valeur: somme / poids, base: poids } : null;
+    });
+    return out;
+  }
+
+  function celluleSinistre(sc, a) {
+    var v = sc.verdicts[a];
+    var st = STATUTS_CONTRAT[v ? v.statut : "not_found"] || { t: "non trouvé", c: "nf" };
+    var td = el("td", "sm-cell");
+    td.appendChild(el("span", "vstatut " + st.c, st.t));
+    if (v && v.plafond) td.appendChild(el("span", "sm-info", "Plafond : " + v.plafond));
+    if (v && v.franchise) td.appendChild(el("span", "sm-info", "Franchise : " + v.franchise));
+    if (v && v.citation) {
+      var det = el("details", "sm-det");
+      det.appendChild(el("summary", null, "Clause" + (v.page ? " p. " + v.page : "")));
+      det.appendChild(el("blockquote", "vcitation", "« " + v.citation + " »"));
+      td.appendChild(det);
+    }
+    return td;
+  }
+
+  function celluleGarantie(ref, a) {
+    var cell = ((window.MRH_KB.cellules || {})[a] || {})[ref] || { hits: 0 };
+    var td = el("td", "sm-cell " + (cell.hits ? "cell-ok" : "cell-nf"));
+    if (!cell.hits) td.appendChild(el("span", "sm-info", "absent du document"));
+    else {
+      td.appendChild(el("span", "mat-hits", cell.hits + " mentions"));
+      if (cell.first_page) td.appendChild(el("span", "mat-page", "dès la p. " + cell.first_page));
+    }
+    return td;
+  }
+
+  function celluleLibre(res, a) {
+    var r = res[a] || { occ: 0, page: null };
+    var td = el("td", "sm-cell " + (r.occ ? "cell-ok" : "cell-nf"));
+    if (!r.occ) td.appendChild(el("span", "sm-info", "rien dans les clauses lues"));
+    else {
+      td.appendChild(el("span", "mat-hits", r.occ + (r.occ > 1 ? " occurrences" : " occurrence")));
+      if (r.page) td.appendChild(el("span", "mat-page", "d'abord p. " + r.page));
+    }
+    return td;
+  }
+
+  function rendreSurMesure() {
+    var z = $("#ctr-tableau");
+    if (!z) return;
+    z.innerHTML = "";
+    var cols = colonnesSM();
+
+    z.appendChild(barreOutilsSM());
+
+    if (!surMesure.lignes.length) {
+      var vide = el("div", "card sm-vide");
+      vide.appendChild(el("p", null,
+        "Le tableau est vide. Demandez une garantie dans le chat ci-dessus, ou choisissez " +
+        "ci-dessous les lignes à comparer."));
+      z.appendChild(vide);
+      z.appendChild(choixCriteresSM());
+      return;
+    }
+
+    var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table sm-table");
+    var thead = el("thead"), tr0 = el("tr");
+    tr0.appendChild(el("th", null, "Ligne comparée"));
+    cols.forEach(function (a) { tr0.appendChild(el("th", "num", a)); });
+    tr0.appendChild(el("th", "sm-x", ""));
+    thead.appendChild(tr0); tab.appendChild(thead);
+
+    var tb = el("tbody");
+    surMesure.lignes.forEach(function (l) {
+      var tr = el("tr");
+      var tdl = el("td", "sm-lib");
+      tdl.appendChild(el("strong", null, l.label));
+      tdl.appendChild(el("span", "sm-type",
+        l.type === "sinistre" ? "cas réel, clause citée" :
+        l.type === "garantie" ? "présence dans le document" : "recherche libre dans les clauses"));
+      if (l.type === "sinistre") {
+        var sel = el("select", "sm-poids");
+        [[1, "importance normale"], [2, "important"], [3, "décisif"]].forEach(function (o) {
+          var op = el("option", null, o[1]);
+          op.value = String(o[0]);
+          if ((l.poids || 1) === o[0]) op.selected = true;
+          sel.appendChild(op);
+        });
+        sel.addEventListener("change", function () {
+          l.poids = parseInt(sel.value, 10) || 1;
+          sauverSM(); rendreSurMesure();
+        });
+        tdl.appendChild(sel);
+      }
+      tr.appendChild(tdl);
+
+      var e = entreeSM(l.id);
+      var libre = l.type === "libre" ? chercherLibre(l.terme || l.label) : null;
+      cols.forEach(function (a) {
+        if (l.type === "sinistre" && e && e.sc) tr.appendChild(celluleSinistre(e.sc, a));
+        else if (l.type === "garantie" && e) tr.appendChild(celluleGarantie(e.ref, a));
+        else tr.appendChild(celluleLibre(libre || {}, a));
+      });
+
+      var tdx = el("td", "sm-x");
+      var bx = el("button", "sm-retirer", "×");
+      bx.title = "Retirer cette ligne";
+      bx.setAttribute("aria-label", "Retirer la ligne " + l.label);
+      bx.addEventListener("click", function () { retirerLigneSM(l.id); });
+      tdx.appendChild(bx);
+      tr.appendChild(tdx);
+      tb.appendChild(tr);
+    });
+
+    // Ligne de score, uniquement sur les cas reels : la matrice de presence
+    // ne dit pas si un sinistre est paye, elle ne peut pas entrer dans un score.
+    var sc = scoresSM();
+    var avecScore = colonnesSM().filter(function (a) { return sc[a]; }).length;
+    if (avecScore) {
+      var trs = el("tr", "sm-score");
+      var t0 = el("td", "sm-lib");
+      t0.appendChild(el("strong", null, "Score sur les cas retenus"));
+      t0.appendChild(el("span", "sm-type", "moyenne pondérée des statuts, hors lignes documentaires"));
+      trs.appendChild(t0);
+      var meilleur = 0;
+      cols.forEach(function (a) { if (sc[a] && sc[a].valeur > meilleur) meilleur = sc[a].valeur; });
+      cols.forEach(function (a) {
+        var td = el("td", "num sm-cell");
+        if (!sc[a]) td.appendChild(el("span", "sm-info", "pas de cas noté"));
+        else {
+          var pct = Math.round(sc[a].valeur * 100);
+          // On ne distingue un meilleur contrat que s'il y a vraiment un ecart :
+          // quand les quatre sont a zero, aucun ne gagne.
+          var gagne = meilleur > 0 && sc[a].valeur >= meilleur - 0.001;
+          var b = el("strong", "sm-pct" + (gagne ? " sm-top" : ""), pct + " %");
+          td.appendChild(b);
+        }
+        trs.appendChild(td);
+      });
+      trs.appendChild(el("td", "sm-x", ""));
+      tb.appendChild(trs);
+    }
+
+    tab.appendChild(tb); wrap.appendChild(tab); z.appendChild(wrap);
+    // Sur un ecran etroit, le tableau defile dans son cadre : il faut le dire.
+    z.appendChild(el("p", "hint sm-glisser",
+      "Faites glisser le tableau vers la gauche pour voir les autres contrats."));
+    z.appendChild(el("p", "hint",
+      "Les statuts viennent de la lecture des conditions générales, chaque cellule porte sa clause " +
+      "et sa page. « Absent » veut dire que le mot ne figure pas dans le document analysé, ce qui " +
+      "n'est pas la même chose qu'un refus de prise en charge : c'est une question à poser par écrit."));
+    z.appendChild(choixCriteresSM());
+  }
+
+  function barreOutilsSM() {
+    var d = el("div", "sm-barre");
+    var g = el("div", "sm-cols");
+    g.appendChild(el("span", "sm-cols-t", "Contrats affichés"));
+    tousAssureurs().forEach(function (a) {
+      var actif = colonnesSM().indexOf(a) !== -1;
+      var b = el("button", "chip" + (actif ? " actif" : ""), a);
+      b.setAttribute("aria-pressed", String(actif));
+      b.addEventListener("click", function () {
+        var cur = colonnesSM();
+        var suite = actif ? cur.filter(function (x) { return x !== a; }) : cur.concat([a]);
+        if (!suite.length) return;
+        surMesure.colonnes = suite.length === tousAssureurs().length ? null : suite;
+        sauverSM(); rendreSurMesure();
+      });
+      g.appendChild(b);
+    });
+    d.appendChild(g);
+
+    var act = el("div", "sm-actions");
+    if (surMesure.lignes.length) {
+      var bc = el("button", "chip", "Copier le tableau");
+      bc.addEventListener("click", function () { copierSM(bc); });
+      act.appendChild(bc);
+      var bt = el("button", "chip", "Trier par divergence");
+      bt.addEventListener("click", function () { trierDivergence(); });
+      act.appendChild(bt);
+      var bv = el("button", "chip", "Vider");
+      bv.addEventListener("click", function () {
+        surMesure.lignes = []; sauverSM(); rendreSurMesure();
+        bulleCtr("Tableau vidé. Dites-moi ce que vous voulez comparer.", "bot");
+      });
+      act.appendChild(bv);
+    }
+    d.appendChild(act);
+    return d;
+  }
+
+  // Les lignes ou les contrats repondent le plus differemment remontent :
+  // c'est la que le choix se joue.
+  function trierDivergence() {
+    var cols = colonnesSM();
+    surMesure.lignes.sort(function (x, y) { return div(y) - div(x); });
+    sauverSM(); rendreSurMesure();
+    bulleCtr("Trié : les lignes où les contrats divergent le plus sont en haut. " +
+      "C'est là que le choix se joue, le reste est commun à tous.", "bot");
+
+    function div(l) {
+      var e = entreeSM(l.id);
+      if (l.type === "sinistre" && e && e.sc) {
+        var vus = {};
+        cols.forEach(function (a) {
+          var v = e.sc.verdicts[a];
+          vus[v ? v.statut : "not_found"] = 1;
+        });
+        return Object.keys(vus).length * 10;
+      }
+      if (l.type === "garantie" && e) {
+        var pres = 0;
+        cols.forEach(function (a) {
+          if (((window.MRH_KB.cellules[a] || {})[e.ref] || {}).hits) pres++;
+        });
+        return pres && pres < cols.length ? 15 : 5;
+      }
+      return 1;
+    }
+  }
+
+  function copierSM(bouton) {
+    var cols = colonnesSM(), lignes = [];
+    lignes.push("| Ligne comparée | " + cols.join(" | ") + " |");
+    lignes.push("| --- |" + cols.map(function () { return " --- |"; }).join(""));
+    surMesure.lignes.forEach(function (l) {
+      var e = entreeSM(l.id);
+      var libre = l.type === "libre" ? chercherLibre(l.terme || l.label) : null;
+      var cases = cols.map(function (a) {
+        if (l.type === "sinistre" && e && e.sc) {
+          var v = e.sc.verdicts[a];
+          var st = STATUTS_CONTRAT[v ? v.statut : "not_found"];
+          return (st ? st.t : "?") + (v && v.plafond ? " (" + v.plafond + ")" : "");
+        }
+        if (l.type === "garantie" && e) {
+          var c = ((window.MRH_KB.cellules[a] || {})[e.ref] || {});
+          return c.hits ? c.hits + " mentions, p. " + (c.first_page || "?") : "absent";
+        }
+        var r = (libre || {})[a] || { occ: 0 };
+        return r.occ ? r.occ + " occurrences" : "rien trouvé";
+      });
+      lignes.push("| " + l.label + " | " + cases.join(" | ") + " |");
+    });
+    var txt = lignes.join("\n") + "\n\nAssureurs anonymisés, lecture de conditions générales " +
+      "publiques du marché luxembourgeois. Comparaison indicative, à confirmer par écrit.";
+    var fini = function () {
+      var av = bouton.textContent;
+      bouton.textContent = "Copié";
+      setTimeout(function () { bouton.textContent = av; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(fini, function () { fini(); });
+    } else fini();
+  }
+
+  function choixCriteresSM() {
+    var det = el("details", "sm-choix");
+    det.appendChild(el("summary", null, "Choisir les lignes à la main"));
+    var corps = el("div", "sm-choix-corps");
+    [["Garanties du document", "garantie"], ["Sinistres analysés", "sinistre"]].forEach(function (bloc) {
+      corps.appendChild(el("h4", null, bloc[0]));
+      var c = el("div", "chips");
+      catalogueSM().filter(function (e) { return e.type === bloc[1]; }).forEach(function (e) {
+        var pris = surMesure.lignes.filter(function (l) { return l.id === e.id; }).length > 0;
+        var b = el("button", "chip" + (pris ? " actif" : ""), e.label);
+        b.setAttribute("aria-pressed", String(pris));
+        b.addEventListener("click", function () {
+          if (pris) retirerLigneSM(e.id); else ajouterLigneSM(e);
+        });
+        c.appendChild(b);
+      });
+      corps.appendChild(c);
+    });
+    det.appendChild(corps);
+    return det;
+  }
+
+  // ---------- Le chat qui pilote ----------
+
+  // Passage de relais depuis l'assistant general : on ouvre le tableau sur
+  // mesure et on lui donne la question, sans repeter la reponse deja lue.
+  function passerAuComparateur(q) {
+    ouvrirSurMesure();
+    setTimeout(function () {
+      repondreContrat(q);
+      var z = $("#ctr-tableau");
+      if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 220);
+  }
+
+  function ouvrirSurMesure() {
+    var onglet = $$("#mrh-tabs button").filter(function (x) { return x.dataset.mrh === "surmesure"; })[0];
+    if (onglet) onglet.click();
+  }
+
+  function chipsCtr(items) {
+    var c = el("div", "chips");
+    items.forEach(function (it) {
+      var b = el("button", "chip", it.label);
+      b.addEventListener("click", it.action);
+      c.appendChild(b);
+    });
+    return c;
+  }
+
   function repondreContrat(q) {
     bulleCtr(q, "me");
     var attente = bulleCtr("", "bot");
@@ -1648,49 +2120,174 @@
     }
     setTimeout(function () {
       if (attente) attente.remove();
-      var sc = chercherScenario(q);
-      if (!sc) {
-        var groupes = [];
-        (window.CONTRATS_KB ? window.CONTRATS_KB.scenarios : []).forEach(function (s) {
-          if (groupes.indexOf(s.groupe) === -1) groupes.push(s.groupe);
-        });
-        bulleCtr("Ce cas ne figure pas dans les sinistres analysés, je préfère le dire " +
-          "plutôt que d'improviser une réponse. Les sujets couverts : " +
-          groupes.join(", ") + ". Reformulez, ou cliquez sur une question suggérée.", "bot");
+      piloterComparateur(q);
+    }, 400 + Math.random() * 400);
+  }
+
+  // Une demande, une action sur le tableau. On dit toujours ce qu'on a fait
+  // et sur quoi on s'est appuye.
+  function piloterComparateur(q) {
+    var n = normaliserCtr(q);
+
+    if (/\b(vide|vider|efface|effacer|remets? a zero|reinitialise|recommence)\b/.test(n)) {
+      surMesure.lignes = []; surMesure.colonnes = null; sauverSM(); rendreSurMesure();
+      bulleCtr("Tableau remis à zéro, les quatre contrats sont de nouveau affichés.", "bot");
+      return;
+    }
+
+    // Restreindre les colonnes : « seulement l'assureur A et l'assureur C »
+    var vises = [];
+    var re = /(?:assureur|contrat)\s+([abcd])\b/gi, m;
+    while ((m = re.exec(q)) !== null) {
+      var nom = "Assureur " + m[1].toUpperCase();
+      if (tousAssureurs().indexOf(nom) !== -1 && vises.indexOf(nom) === -1) vises.push(nom);
+    }
+    if (/\b(tous les (contrats|assureurs)|les quatre)\b/.test(n)) {
+      surMesure.colonnes = null;
+      sauverSM();
+      rendreSurMesure();
+      bulleCtr("Les quatre contrats sont affichés.", "bot");
+      // Sauf si la phrase demande aussi une garantie, la commande s'arrete la.
+      if (!fragmenterSM(q).filter(function (f) { return trouverCritere(f); }).length) return;
+    } else if (vises.length) {
+      surMesure.colonnes = vises.length === tousAssureurs().length ? null : vises;
+      sauverSM();
+    }
+
+    // Retirer une ligne
+    if (/\b(enleve|enlever|retire|retirer|supprime|supprimer|sans)\b/.test(n)) {
+      var cible = trouverCritere(q);
+      if (cible && surMesure.lignes.filter(function (l) { return l.id === cible.id; }).length) {
+        retirerLigneSM(cible.id);
+        bulleCtr("Ligne retirée : " + cible.label + ".", "bot");
         return;
       }
-      var m = bulleCtr("Cas analysé : " + sc.groupe + ", " + sc.titre.toLowerCase() +
-        ". Voici comment les quatre contrats répondent, clause citée à l'appui.", "bot");
-      if (!m) return;
-      var grille = el("div", "vgrid");
-      (window.CONTRATS_KB.assureurs || Object.keys(sc.verdicts)).forEach(function (nom) {
-        if (sc.verdicts[nom]) grille.appendChild(carteVerdict(nom, sc.verdicts[nom]));
-      });
-      m.appendChild(grille);
-      m.appendChild(el("p", "vsuite",
-        "Là où les contrats divergent, tout se joue sur un mot, un seuil ou une exclusion. " +
-        "Posez un autre cas, ou ouvrez l'analyse complète."));
-      var voisins = window.CONTRATS_KB.scenarios.filter(function (s) {
-        return s.groupe === sc.groupe && s.titre !== sc.titre;
-      }).slice(0, 2);
-      var c = el("div", "chips");
-      voisins.forEach(function (s) {
-        var b = el("button", "chip", s.groupe + " : " + s.titre.toLowerCase());
-        b.addEventListener("click", function () { repondreContrat(s.question); });
-        c.appendChild(b);
-      });
-      var ba = el("button", "chip", "Voir ce que ça donne pour ma situation");
-      ba.addEventListener("click", function () {
-        var onglet = $$("#mrh-tabs button").filter(function (x) { return x.dataset.mrh === "reco"; })[0];
-        if (onglet) onglet.click();
-        var z = $("#mrh-reco");
-        if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      c.appendChild(ba);
-      m.appendChild(c);
-      var log = $("#ctr-log");
-      if (log) log.scrollTop = log.scrollHeight;
-    }, 450 + Math.random() * 500);
+    }
+
+    if (/\b(trie|trier|classe|classer|ordonne)\b/.test(n) && surMesure.lignes.length) {
+      trierDivergence();
+      return;
+    }
+
+    // Ajout de criteres : chaque morceau de la phrase devient une ligne
+    var frags = fragmenterSM(q), ajoutes = [], inconnus = [];
+    frags.forEach(function (f) {
+      var e = trouverCritere(f);
+      if (e) { if (ajouterLigneSM(e, true)) ajoutes.push(e); }
+      else inconnus.push(f);
+    });
+    // Une phrase entiere qui ne se decoupe pas peut quand meme viser un critere
+    if (!ajoutes.length && frags.length > 1) {
+      var glob = trouverCritere(q);
+      if (glob && ajouterLigneSM(glob, true)) { ajoutes.push(glob); inconnus = []; }
+    }
+
+    if (ajoutes.length) {
+      sauverSM();
+      rendreSurMesure();
+      ouvrirSurMesure();
+      var noms = ajoutes.map(function (e) { return e.label; });
+      var msg = bulleCtr(
+        (ajoutes.length === 1 ? "Ligne ajoutée au tableau : " : "Lignes ajoutées au tableau : ") +
+        noms.join(", ") + ". " +
+        (colonnesSM().length < tousAssureurs().length
+          ? "Affichage restreint à " + colonnesSM().join(" et ") + ". " : "") +
+        "Le tableau est juste en dessous.", "bot");
+      // Le detail complet des verdicts reste disponible pour les cas reels
+      var sc0 = ajoutes.filter(function (e) { return e.type === "sinistre"; })[0];
+      if (msg && sc0) {
+        var grille = el("div", "vgrid");
+        colonnesSM().forEach(function (a) {
+          if (sc0.sc.verdicts[a]) grille.appendChild(carteVerdict(a, sc0.sc.verdicts[a]));
+        });
+        var det = el("details", "sm-det");
+        det.appendChild(el("summary", null, "Voir le détail des clauses pour « " + sc0.label + " »"));
+        det.appendChild(grille);
+        msg.appendChild(det);
+      }
+      if (msg) {
+        msg.appendChild(chipsCtr([
+          { label: "Trier par divergence", action: trierDivergence },
+          { label: "Voir le tableau", action: function () {
+            ouvrirSurMesure();
+            var z = $("#ctr-tableau");
+            if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
+          } }
+        ]));
+      }
+      if (inconnus.length) chercherCritereLibre(inconnus.join(" "));
+      var log0 = $("#ctr-log");
+      if (log0) log0.scrollTop = log0.scrollHeight;
+      return;
+    }
+
+    if (vises.length) {
+      rendreSurMesure();
+      bulleCtr("Affichage restreint à " + vises.join(" et ") + ".", "bot");
+      return;
+    }
+
+    chercherCritereLibre(q);
+  }
+
+  // Rien dans la grille ne correspond : on cherche le mot dans les clauses
+  // citees et on rapporte le resultat tel quel, y compris quand il est vide.
+  // Mots de commande : ils disent quoi faire, ils ne designent pas une
+  // garantie. Sans ce filtre, « ajoute un critere sur la plainte » ferait
+  // chercher le mot « critere » dans les contrats.
+  var MOTS_COMMANDE = ["ajoute", "ajouter", "montre", "montrer", "affiche", "afficher",
+    "compare", "comparer", "critere", "criteres", "ligne", "lignes", "tableau", "colonne",
+    "colonnes", "garantie", "garanties", "assureur", "assureurs", "contrats", "seulement",
+    "aussi", "encore", "peux", "peut", "faire", "voir", "savoir", "dire", "sinistre", "cas",
+    "tous", "toutes", "tout", "quatre", "plus", "moins", "bien", "quand", "comment",
+    "pourquoi", "chez", "meme", "quelque", "quelques", "vraiment", "juste"];
+
+  function chercherCritereLibre(q) {
+    var termes = motsCtr(q)
+      .filter(function (t) { return t.length >= 4 && MOTS_COMMANDE.indexOf(t) === -1; })
+      .sort(function (a, b) { return b.length - a.length; });
+    // On retient le premier mot qui apparait vraiment dans les clauses lues.
+    // Les autres sont dits absents, sans en tirer de conclusion.
+    var terme = null, absents = [];
+    termes.forEach(function (t) {
+      var essai = chercherLibre(t);
+      var vu = tousAssureurs().filter(function (a) { return essai[a].occ > 0; }).length;
+      if (vu && !terme) terme = t;
+      else if (!vu) absents.push(t);
+    });
+    if (!terme && !absents.length) {
+      bulleCtr("Je n'ai pas saisi la garantie visée. Dites par exemple : " +
+        "« compare le bris de glace et le vol », ou choisissez une ligne sous le tableau.", "bot");
+      return;
+    }
+    if (!terme) {
+      var mot = absents[0];
+      var msg0 = bulleCtr("Le mot « " + mot + " » n'apparaît dans aucune des clauses lues pour " +
+        "les treize sinistres analysés. Je ne vais pas en déduire que ce n'est pas couvert : " +
+        "je constate seulement que le sujet n'est pas traité dans ces extraits. C'est exactement " +
+        "le genre de point à faire préciser par écrit avant de signer.", "bot");
+      if (msg0) {
+        msg0.appendChild(chipsCtr([{
+          label: "Ajouter quand même la ligne au tableau",
+          action: function () {
+            ajouterLigneSM({ id: "l:" + mot, type: "libre", label: "« " + mot + " » (recherche libre)", terme: mot });
+            ouvrirSurMesure();
+          }
+        }]));
+      }
+      return;
+    }
+    var res = chercherLibre(terme);
+    var trouves = tousAssureurs().filter(function (a) { return res[a].occ > 0; });
+    ajouterLigneSM({ id: "l:" + terme, type: "libre",
+      label: "« " + terme + " » (recherche libre)", terme: terme });
+    ouvrirSurMesure();
+    bulleCtr(
+      (absents.length ? "Aucune clause lue ne contient « " + absents.join(" », « ") + " ». " : "") +
+      "« " + terme + " » n'est pas une garantie de la grille, je l'ai cherché dans les clauses " +
+      "citées : le mot apparaît chez " + trouves.join(", ") + ". La ligne est ajoutée au tableau " +
+      "avec le nombre d'occurrences et la première page. C'est un indice de présence, pas une " +
+      "garantie de prise en charge.", "bot");
   }
 
   // ---------- Comparateur habitation : les cinq volets ----------
@@ -1967,7 +2564,7 @@
 
   function initMrh() {
     if (!window.MRH_KB || !window.CONTRATS_KB || !$("#mrh-tabs")) return;
-    var vues = ["reco", "sinistres", "matrice", "constats", "methode"];
+    var vues = ["reco", "surmesure", "sinistres", "matrice", "constats", "methode"];
     $$("#mrh-tabs button").forEach(function (b) {
       b.addEventListener("click", function () {
         $$("#mrh-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
@@ -1976,6 +2573,7 @@
         if (v === "matrice") rendreMatrice();
         if (v === "sinistres") rendreSinistresTable();
         if (v === "constats") rendreConstats();
+        if (v === "surmesure") rendreSurMesure();
       });
     });
     rendreBiens();
@@ -1986,19 +2584,25 @@
     rendreVerticales();
     initMrh();
     if (!window.CONTRATS_KB || !$("#ctr-log")) return;
-    // Questions suggerees : le premier cas de chaque famille de sinistres
+    chargerSM();
+    rendreSurMesure();
+    // Demandes suggerees : elles montrent que le chat agit sur le tableau,
+    // au lieu de repeter ce que l'assistant general sait deja faire.
     var sug = $("#ctr-suggestions");
-    var vus = {};
-    window.CONTRATS_KB.scenarios.forEach(function (sc) {
-      if (vus[sc.groupe]) return;
-      vus[sc.groupe] = 1;
-      var b = el("button", "chip", sc.groupe + " : " + sc.titre.toLowerCase());
-      b.addEventListener("click", function () { repondreContrat(sc.question); });
+    [
+      "Compare le vol et le dégât des eaux",
+      "Ajoute le bris de glace et les panneaux solaires",
+      "Montre seulement l'assureur A et l'assureur C",
+      "Est-ce que le jardin est couvert ?",
+      "Trie par divergence"
+    ].forEach(function (t) {
+      var b = el("button", "chip", t);
+      b.addEventListener("click", function () { repondreContrat(t); });
       sug.appendChild(b);
     });
-    bulleCtr("Bonjour. Décrivez un sinistre ou choisissez une question suggérée : je montre " +
-      "la réponse des quatre contrats, avec la clause exacte et sa page. C'est en posant vos " +
-      "propres cas qu'on comprend un contrat.", "bot");
+    bulleCtr("Ce chat construit le tableau. Dites les garanties à comparer, les contrats à " +
+      "afficher, ou un critère qui n'est pas dans la grille : je le cherche dans les clauses " +
+      "lues et j'ajoute la ligne. Le tableau se réécrit juste en dessous.", "bot");
     $("#ctr-send").addEventListener("click", function () {
       var i = $("#ctr-input");
       if (i.value.trim()) { repondreContrat(i.value.trim()); i.value = ""; }

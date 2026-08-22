@@ -85,14 +85,21 @@ header.top {
   -webkit-backdrop-filter: saturate(190%) blur(18px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
+/* L'en-tete tient sur une seule ligne a toutes les largeurs. Quand la place
+   manque, c'est le nom du site qui cede en premier (il se tronque, puis il
+   disparait), et seulement ensuite les onglets qui defilent horizontalement.
+   Rien ne passe jamais a la ligne : une barre de navigation sur deux ou trois
+   lignes deplace le contenu de la page a chaque redimensionnement. */
 .top-in {
   max-width: var(--max); margin: 0 auto; padding: 13px 24px;
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 18px; flex-wrap: nowrap;
 }
 .brand {
   font-family: var(--serif); font-size: 21px; letter-spacing: -.1px;
   display: flex; align-items: center; gap: 11px; white-space: nowrap;
+  flex: 0 8 auto; min-width: 28px; overflow: hidden;
 }
+.brand-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brand .mark {
   width: 28px; height: 28px; border-radius: 9px; flex: none; position: relative;
   background: linear-gradient(140deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
@@ -102,11 +109,24 @@ header.top {
   content: ""; position: absolute; inset: 6px 6px auto 6px; height: 3px;
   border-radius: 3px; background: rgba(255,255,255,.85);
 }
-nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+nav.tabs {
+  display: flex; gap: 2px; flex-wrap: nowrap; margin-left: auto;
+  flex: 0 1 auto; min-width: 0;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+nav.tabs::-webkit-scrollbar { height: 0; width: 0; }
+/* Fondu aux bords quand des onglets sortent du cadre : on voit qu'il y a
+   la suite. L'attribut est pose par nav.js au chargement et au defilement. */
+nav.tabs[data-defile="droite"] { mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%); }
+nav.tabs[data-defile="gauche"] { mask-image: linear-gradient(90deg, transparent 0, #000 26px); }
+nav.tabs[data-defile="deux"] { mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%); }
 nav.tabs button {
   border: 0; background: none; color: var(--muted); position: relative;
   padding: 9px 14px; border-radius: 10px; cursor: pointer;
   font: inherit; font-size: 14.5px; font-weight: 500;
+  flex: none; white-space: nowrap;
   transition: color .18s, background .18s;
 }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
@@ -474,7 +494,6 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 
 @media (max-width: 720px) {
   .msg { max-width: 92%; }
-  nav.tabs { width: 100%; margin-left: 0; overflow-x: auto; }
   .hero { min-height: 500px; border-radius: 0 0 var(--r-m) var(--r-m); }
   .hero-in { padding: 60px 24px 34px; }
   .hero-stats { gap: 26px; }
@@ -765,6 +784,67 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 .mrh-sources-liste { color: var(--text-2); font-size: 14px; }
 .mrh-sources-liste li { margin: 5px 0; }
 
+/* ---------- Tableau sur mesure ---------- */
+
+.sm-barre {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px; margin: 20px 0 12px;
+}
+.sm-cols, .sm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.sm-cols-t {
+  font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); font-weight: 650; margin-right: 3px;
+}
+.chip.actif {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-soft); font-weight: 600;
+}
+table.sm-table { border-collapse: collapse; }
+table.sm-table th, table.sm-table td {
+  vertical-align: top; border-bottom: 1px solid var(--border); padding: 11px 12px;
+}
+table.sm-table thead th {
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+  font-size: 12px; letter-spacing: .4px; text-transform: uppercase; color: var(--muted);
+}
+.sm-lib { min-width: 190px; max-width: 260px; }
+.sm-lib strong { display: block; font-size: 14px; line-height: 1.4; }
+.sm-type { display: block; font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.sm-poids {
+  margin-top: 8px; font-size: 12px; padding: 4px 6px; width: auto;
+  border: 1px solid var(--border); border-radius: var(--r-s);
+  background: var(--surface-2); color: var(--text-2);
+}
+.sm-cell { min-width: 150px; font-size: 13px; }
+.sm-info { display: block; font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+.sm-det { margin-top: 7px; }
+.sm-det summary {
+  cursor: pointer; font-size: 11.5px; color: var(--accent); list-style: none;
+}
+.sm-det summary::-webkit-details-marker { display: none; }
+.sm-det summary::before { content: "▸ "; }
+.sm-det[open] summary::before { content: "▾ "; }
+.sm-det .vcitation { font-size: 11.5px; margin-top: 6px; }
+.sm-x { width: 38px; text-align: right; }
+.sm-retirer {
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 8px; cursor: pointer; font-size: 14px; line-height: 1;
+}
+.sm-retirer:hover { color: #be123c; border-color: #be123c; }
+tr.sm-score td { background: var(--surface-2); border-top: 2px solid var(--border-fort); }
+.sm-pct { font-size: 19px; font-family: var(--serif); font-weight: 400; }
+.sm-pct.sm-top { color: var(--ok); }
+.sm-vide { margin-top: 4px; }
+.sm-glisser { display: none; }
+@media (max-width: 900px) { .sm-glisser { display: block; } }
+.sm-choix { margin-top: 18px; }
+.sm-choix summary { cursor: pointer; font-size: 13.5px; color: var(--accent); font-weight: 550; }
+.sm-choix-corps { margin-top: 12px; }
+.sm-choix-corps h4 {
+  margin: 14px 0 7px; font-size: 10.5px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); font-weight: 650;
+}
+
 .sin-groupe { margin: 26px 0 8px; font-size: 17px; font-weight: 600; font-family: var(--sans); }
 .sin-item {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-s);
@@ -912,14 +992,25 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 /* Les rangees d'onglets secondaires passent a la ligne au lieu de deborder */
 .sous-onglets { flex-wrap: wrap; }
 
+/* Sous 1200 px, les onglets se resserrent : les neuf entrees tiennent encore
+   sur une ligne au lieu de partir en defilement des le premier pixel manquant. */
+@media (max-width: 1199px) {
+  .top-in { gap: 14px; }
+  nav.tabs button { padding: 8px 10px; font-size: 13.5px; }
+  nav.tabs button.tab-admin { margin-left: 6px; padding-left: 10px; }
+}
+
+/* En dessous de 1050 px, le nom du site tronque en « S'installer au... » ne
+   dit plus rien et prend la place de deux onglets. On garde le seul logo, la
+   page porte deja son titre. */
+@media (max-width: 1050px) {
+  .brand-txt { display: none; }
+}
+
 @media (max-width: 700px) {
-  .top-in { padding: 11px 16px; gap: 12px; }
-  .brand { font-size: 18px; }
-  nav.tabs { margin-left: 0; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
-  nav.tabs::-webkit-scrollbar { height: 0; }
-  nav.tabs button { white-space: nowrap; padding: 8px 11px; font-size: 13.5px; }
-  nav.tabs button.tab-admin { margin-left: 4px; padding-left: 11px; }
-  .theme-btn { position: absolute; top: 11px; right: 16px; }
+  .top-in { padding: 11px 14px; gap: 10px; }
+  .brand { font-size: 18px; gap: 9px; }
+  .theme-btn { margin-left: 4px; }
 
   main { padding: 0 16px 70px; }
   .ask { padding: 22px 16px 18px; border-radius: var(--r-m); }
@@ -940,6 +1031,8 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
   /* Les tableaux larges defilent dans leur cadre, la page ne bouge pas */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table.mrh-table { min-width: 560px; }
+  table.sm-table { min-width: 680px; }
+  .sm-barre { flex-direction: column; align-items: stretch; }
   .detail-corps { grid-template-columns: 1fr; }
 }
 
