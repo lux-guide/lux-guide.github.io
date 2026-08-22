@@ -98,11 +98,18 @@
     nav.setAttribute("data-defile", g && d ? "deux" : (g ? "gauche" : "droite"));
   }
 
+  // Une animation de defilement n'est pas un ornement pour tout le monde :
+  // certains la ressentent physiquement. On la coupe quand le systeme le demande.
+  function doux() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto" : "smooth";
+  }
+
   function amenerOngletEnVue(nom) {
     var nav = $("#tabs");
     if (!nav || nav.scrollWidth <= nav.clientWidth + 2) return;
     var b = $$("#tabs button").filter(function (x) { return x.dataset.panel === nom; })[0];
-    if (b && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    if (b && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest", behavior: doux() });
   }
 
   function initOnglets() {
@@ -113,10 +120,45 @@
     $$("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.go); });
     });
+    // Le logo ramene a l'accueil : c'est ce que tout le monde essaie.
+    var marque = $("#brand");
+    if (marque) marque.addEventListener("click", function () { ouvrir("accueil"); });
+    // L'administration n'est pas une section du guide, c'est un outil.
+    var adm = $("#admin-btn");
+    if (adm) adm.addEventListener("click", function () { ouvrir("admin"); });
+
     var nav = $("#tabs");
     if (!nav) return;
     nav.addEventListener("scroll", majDefilementOnglets, { passive: true });
     window.addEventListener("resize", majDefilementOnglets);
+
+    // role="tablist" est une promesse : les fleches doivent circuler entre les
+    // onglets, et un seul onglet doit etre un arret de tabulation. Le role etait
+    // declare sans que rien de cela fonctionne, ce qui trompe le lecteur d'ecran.
+    nav.addEventListener("keydown", function (e) {
+      var t = $$("#tabs button");
+      var i = t.indexOf(document.activeElement);
+      if (i === -1) return;
+      var j = null;
+      if (e.key === "ArrowRight") j = (i + 1) % t.length;
+      else if (e.key === "ArrowLeft") j = (i - 1 + t.length) % t.length;
+      else if (e.key === "Home") j = 0;
+      else if (e.key === "End") j = t.length - 1;
+      if (j === null) return;
+      e.preventDefault();
+      ouvrir(t[j].dataset.panel);
+      t[j].focus();
+    });
+
+    // La molette verticale fait defiler la bande a la souris, ou le geste
+    // horizontal n'existe pas.
+    nav.addEventListener("wheel", function (e) {
+      if (nav.scrollWidth <= nav.clientWidth + 2) return;
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      nav.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }, { passive: false });
+
     majDefilementOnglets();
   }
 
@@ -133,9 +175,22 @@
       // La carte a pu etre creee dans un panneau cache : recaler sa taille
       if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 60);
     }
+    // Tabulation itinerante : la bande entiere est un seul arret de tabulation,
+    // on y circule ensuite aux fleches. C'est ce qu'attend role="tablist".
     $$("#tabs button").forEach(function (b) {
-      b.setAttribute("aria-selected", String(b.dataset.panel === nom));
+      var actif = b.dataset.panel === nom;
+      b.setAttribute("aria-selected", String(actif));
+      b.tabIndex = actif ? 0 : -1;
     });
+    // Si aucune section n'est active (administration), le premier onglet reste
+    // atteignable au clavier.
+    if ($$("#tabs button").filter(function (b) { return b.tabIndex === 0; }).length === 0) {
+      var p0 = $$("#tabs button")[0];
+      if (p0) p0.tabIndex = 0;
+    }
+    var adm = $("#admin-btn");
+    if (adm) adm.setAttribute("aria-pressed", String(nom === "admin"));
+    setTimeout(majBulle, 0);
     amenerOngletEnVue(nom);
     setTimeout(majDefilementOnglets, 320);
     $$(".panel").forEach(function (p) { p.hidden = p.id !== "panel-" + nom; });
@@ -744,7 +799,11 @@
           sauverCoches(c);
           rendreTimeline();
         });
-        li.appendChild(cb);
+        // La case reste petite a l'oeil, mais sa zone cliquable atteint 44 px
+        // au doigt : c'est la commande la plus utilisee de l'application.
+        var zone = el("label", "tl-case");
+        zone.appendChild(cb);
+        li.appendChild(zone);
         if (item && item.fiche) {
           var lien = el("button", "tl-lien", texte);
           lien.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(item.fiche); });
@@ -1283,10 +1342,25 @@
     var w = $("#widget"), wb = $("#widget-btn");
     if (!w || !wb) return;
     w.hidden = true;
-    wb.hidden = false;
+    wb.hidden = !bulleUtile();
     document.body.classList.remove("rail-ouvert");
     try { localStorage.setItem(STORAGE_RAIL, "0"); } catch (e) {}
     if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 260);
+  }
+
+  // Sur la page Assistant, la bulle ouvrirait la conversation deja affichee.
+  // Elle ne sert a rien et, sur un petit ecran, elle recouvre le bouton
+  // d'envoi. On la retire de cette page seulement.
+  function bulleUtile() {
+    var p = $("#panel-assistant");
+    return !p || p.hidden;
+  }
+
+  function majBulle() {
+    var w = $("#widget"), wb = $("#widget-btn");
+    if (!w || !wb) return;
+    if (!w.hidden) { wb.hidden = true; return; }
+    wb.hidden = !bulleUtile();
   }
 
   var STORAGE_RAIL = "luxguide.rail.v1";
@@ -1402,7 +1476,7 @@
       if (!premier) premier = m;
     });
     if (premier) {
-      premier.scrollIntoView({ behavior: "smooth", block: "center" });
+      premier.scrollIntoView({ behavior: doux(), block: "center" });
       premier.classList.add("pulse");
       setTimeout(function () { premier.classList.remove("pulse"); }, 1600);
     }
@@ -1437,7 +1511,7 @@
     mrh.addEventListener("click", function () {
       fermerVerticale();
       var c = $("#ctr-mrh");
-      if (c) c.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (c) c.scrollIntoView({ behavior: doux(), block: "start" });
     });
     g.appendChild(mrh);
 
@@ -1524,7 +1598,7 @@
     card.appendChild(zone);
     vue.appendChild(card);
     demarrerAffinage(v, zone);
-    vue.scrollIntoView({ behavior: "smooth", block: "start" });
+    vue.scrollIntoView({ behavior: doux(), block: "start" });
   }
 
   function demarrerAffinage(v, zone) {
@@ -2201,7 +2275,7 @@
     setTimeout(function () {
       repondreContrat(q);
       var z = $("#ctr-tableau");
-      if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (z) z.scrollIntoView({ behavior: doux(), block: "start" });
     }, 220);
   }
 
@@ -2314,7 +2388,7 @@
           { label: "Voir le tableau", action: function () {
             ouvrirSurMesure();
             var z = $("#ctr-tableau");
-            if (z) z.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (z) z.scrollIntoView({ behavior: doux(), block: "start" });
           } }
         ]));
       }

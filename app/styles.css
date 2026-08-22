@@ -28,6 +28,9 @@
   --r-m: 18px;
   --r-l: 28px;
   --max: 1200px;
+  /* Taille des etiquettes en capitales (categories, badges, intitules de
+     colonnes). Un seul reglage, releve sur ecran tactile. */
+  --micro: 11px;
   --serif: "Instrument Serif", "Iowan Old Style", Georgia, "Times New Roman", serif;
   --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -85,52 +88,108 @@ header.top {
   -webkit-backdrop-filter: saturate(190%) blur(18px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-/* L'en-tete tient sur une seule ligne a toutes les largeurs. Quand la place
-   manque, c'est le nom du site qui cede en premier (il se tronque, puis il
-   disparait), et seulement ensuite les onglets qui defilent horizontalement.
-   Rien ne passe jamais a la ligne : une barre de navigation sur deux ou trois
-   lignes deplace le contenu de la page a chaque redimensionnement. */
+/* L'en-tete tient sur une seule ligne a toutes les largeurs, en trois paliers.
+   Rien ne passe jamais a la ligne : une barre sur deux ou trois lignes deplace
+   le contenu de la page a chaque redimensionnement.
+
+   1. A partir de 1100 px : le logo complet, marque et nom, les huit sections,
+      les deux outils.
+   2. De 760 a 1099 px : la marque seule. Elle est dessinee pour tenir seule,
+      c'est le principe d'une marque reduite ; le nom du site est de toute
+      facon repete par le titre de la page juste en dessous. Les huit sections
+      restent toutes visibles, ce qui compte davantage que le nom.
+   3. En dessous de 760 px : la bande de sections defile, avec un fondu du cote
+      ou il en reste. C'est le geste attendu au doigt.
+
+   La hauteur de l'en-tete ne varie qu'entre paliers, jamais a l'interieur :
+   un en-tete colle qui change de hauteur fait sauter le contenu. */
+
+:root { --h-top: 68px; }
+
 .top-in {
-  max-width: var(--max); margin: 0 auto; padding: 13px 24px;
+  max-width: var(--max); margin: 0 auto;
+  height: var(--h-top);
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
   display: flex; align-items: center; gap: 18px; flex-wrap: nowrap;
 }
+
 .brand {
   font-family: var(--serif); font-size: 21px; letter-spacing: -.1px;
   display: flex; align-items: center; gap: 11px; white-space: nowrap;
-  flex: 0 8 auto; min-width: 28px; overflow: hidden;
+  flex: none; min-width: 0;
+  border: 0; background: none; color: inherit; padding: 0; cursor: pointer;
+  border-radius: 12px;
 }
 .brand-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brand .mark {
-  width: 28px; height: 28px; border-radius: 9px; flex: none; position: relative;
+  width: 32px; height: 32px; border-radius: 10px; flex: none;
+  display: grid; place-items: center; color: #fff;
   background: linear-gradient(140deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
   box-shadow: 0 3px 12px -3px color-mix(in srgb, var(--accent) 70%, transparent);
+  transition: transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .18s;
 }
-.brand .mark::after {
-  content: ""; position: absolute; inset: 6px 6px auto 6px; height: 3px;
-  border-radius: 3px; background: rgba(255,255,255,.85);
+.brand .mark svg { width: 19px; height: 19px; display: block; }
+.brand:hover .mark {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--accent) 78%, transparent);
 }
+
+/* Outils : ils ne sont pas des sections du guide, ils ne sont donc pas des
+   onglets. Le reglage du theme et l'administration du contenu vivent ensemble
+   a droite, en icones. */
+.top-outils { display: flex; align-items: center; gap: 6px; flex: none; margin-left: 6px; }
+.outil {
+  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
+  width: 34px; height: 34px; border-radius: 10px; cursor: pointer; flex: none;
+  display: grid; place-items: center; font-size: 15px; line-height: 1; padding: 0;
+  transition: color .16s, border-color .16s, background .16s;
+}
+.outil svg { width: 17px; height: 17px; display: block; }
+.outil:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.outil[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 nav.tabs {
   display: flex; gap: 2px; flex-wrap: nowrap; margin-left: auto;
-  flex: 0 1 auto; min-width: 0;
+  flex: 0 1 auto; min-width: 0; align-self: stretch; align-items: center;
   overflow-x: auto; overscroll-behavior-x: contain;
   scrollbar-width: none; -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity; scroll-padding-inline: 28px;
 }
 nav.tabs::-webkit-scrollbar { height: 0; width: 0; }
 /* Fondu aux bords quand des onglets sortent du cadre : on voit qu'il y a
    la suite. L'attribut est pose par nav.js au chargement et au defilement. */
-nav.tabs[data-defile="droite"] { mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%); }
-nav.tabs[data-defile="gauche"] { mask-image: linear-gradient(90deg, transparent 0, #000 26px); }
-nav.tabs[data-defile="deux"] { mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%); }
+nav.tabs[data-defile="droite"] {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+}
+nav.tabs[data-defile="gauche"] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 26px);
+}
+nav.tabs[data-defile="deux"] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+}
 nav.tabs button {
   border: 0; background: none; color: var(--muted); position: relative;
   padding: 9px 14px; border-radius: 10px; cursor: pointer;
   font: inherit; font-size: 14.5px; font-weight: 500;
-  flex: none; white-space: nowrap;
+  flex: none; white-space: nowrap; scroll-snap-align: center;
   transition: color .18s, background .18s;
 }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
 nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+
+/* Focus visible : un utilisateur au clavier doit voir ou il est. Il n'y avait
+   aucun anneau de focus dans la feuille, la navigation se faisait a l'aveugle. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.brand:focus-visible, nav.tabs button:focus-visible, .outil:focus-visible { outline-offset: 3px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 1px; }
 
 /* ---------- Structure ---------- */
 
@@ -248,7 +307,7 @@ p { color: var(--text-2); }
 }
 .tuile .visuel .etiquette {
   position: absolute; left: 14px; bottom: 13px; z-index: 2;
-  color: #fff; font-size: 10.5px; font-weight: 650;
+  color: #fff; font-size: var(--micro); font-weight: 650;
   text-transform: uppercase; letter-spacing: 1.1px;
   background: rgba(8,16,30,.42); backdrop-filter: blur(10px);
   padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22);
@@ -262,7 +321,7 @@ p { color: var(--text-2); }
 }
 
 .cat {
-  display: inline-block; font-size: 10.5px; font-weight: 680;
+  display: inline-block; font-size: var(--micro); font-weight: 680;
   text-transform: uppercase; letter-spacing: 1.1px;
   color: var(--accent); background: var(--accent-soft);
   padding: 5px 11px; border-radius: 999px; margin-bottom: 12px;
@@ -311,7 +370,7 @@ table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
 th, td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--border); }
 tbody tr:last-child td { border-bottom: 0; }
 th {
-  font-weight: 620; color: var(--muted); font-size: 11px;
+  font-weight: 620; color: var(--muted); font-size: var(--micro);
   text-transform: uppercase; letter-spacing: 1px; background: var(--surface-2);
 }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -332,9 +391,13 @@ input:focus, select:focus, textarea:focus {
 }
 textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 .row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
-.check { display: flex; align-items: center; gap: 10px; }
-.check input { width: 18px; height: 18px; accent-color: var(--accent); }
-.check label { margin: 0; color: var(--text-2); font-size: 14.5px; }
+.check { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.check input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
+.check label {
+  margin: 0; color: var(--text-2); font-size: 14.5px;
+  flex: 1 1 14ch; min-width: 0; align-self: stretch;
+  display: flex; align-items: center; cursor: pointer;
+}
 .search-bar { position: relative; margin-bottom: 26px; max-width: 580px; }
 .search-bar input { padding-left: 44px; height: 50px; border-radius: 14px; }
 .search-bar::before {
@@ -349,7 +412,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-m); padding: 18px 20px; box-shadow: var(--ombre-s);
 }
-.kpi .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.kpi .k { font-size: var(--micro); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 .kpi .v { font-family: var(--serif); font-size: 31px; line-height: 1.1; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .kpi.hl {
   background: linear-gradient(145deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 30%, var(--surface)));
@@ -383,7 +446,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
   color: #fff; border-bottom-right-radius: 6px; align-self: flex-end; box-shadow: var(--ombre-s);
 }
 .msg .srcs { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--border); font-size: 12.5px; }
-.msg .srcs strong { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: 10px; margin-bottom: 5px; }
+.msg .srcs strong { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: var(--micro); margin-bottom: 5px; }
 .msg .srcs a { display: block; margin: 3px 0; }
 .points span {
   display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%;
@@ -399,10 +462,14 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
   font: inherit; font-size: 13.5px; transition: all .16s;
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); transform: translateY(-2px); }
-.chat-bar { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface); }
-.chat-bar input { flex: 1; }
+.chat-bar {
+  display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 20px;
+  border-top: 1px solid var(--border); background: var(--surface);
+}
+.chat-bar input { flex: 1 1 12rem; min-width: 0; }
+.chat-bar .btn { flex: 0 0 auto; }
 .badge {
-  font-size: 10.5px; padding: 4px 11px; border-radius: 999px; font-weight: 620;
+  font-size: var(--micro); padding: 4px 11px; border-radius: 999px; font-weight: 620;
   background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
   vertical-align: middle; text-transform: uppercase; letter-spacing: .8px;
 }
@@ -457,7 +524,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
   border-radius: var(--r-m); padding: 19px 21px; box-shadow: var(--ombre-s);
 }
 .detail-cote .bloc h4 {
-  margin: 0 0 12px; font-size: 10.5px; text-transform: uppercase;
+  margin: 0 0 12px; font-size: var(--micro); text-transform: uppercase;
   letter-spacing: 1.2px; color: var(--muted); font-weight: 650;
 }
 .detail-cote ul { margin: 0; padding-left: 18px; }
@@ -483,13 +550,13 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
   margin-top: 34px; padding: 18px 20px; border: 1px solid var(--border);
   border-radius: var(--r-m); background: var(--surface-2); font-size: 14px;
 }
-.srcbox strong { color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: 10.5px; }
+.srcbox strong { color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: var(--micro); }
 
 /* ---------- Divers ---------- */
 
 .muted { color: var(--muted); }
 .small { font-size: 13.5px; }
-.hint { font-size: 13px; color: var(--muted); margin-top: 9px; }
+.hint { font-size: 13px; color: var(--muted); margin-top: 9px; max-width: 64ch; }
 .credits { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
 
 @media (max-width: 720px) {
@@ -511,8 +578,9 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 }
 .tl ul.tl-items { list-style: none; padding-left: 0; }
 .tl-item { display: flex; align-items: flex-start; gap: 11px; margin: 9px 0; }
+.tl-case { display: inline-flex; flex: none; cursor: pointer; margin-top: 1px; }
 .tl-item input[type="checkbox"] {
-  width: 17px; height: 17px; margin-top: 3px; flex: none; accent-color: var(--accent); cursor: pointer;
+  width: 17px; height: 17px; margin: 2px 0 0; flex: none; accent-color: var(--accent); cursor: pointer;
 }
 .tl-item.fait .tl-lien, .tl-item.fait span { text-decoration: line-through; color: var(--muted); }
 .tl-lien {
@@ -536,7 +604,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 }
 .vhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 7px; }
 .vstatut {
-  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .6px;
+  font-size: var(--micro); font-weight: 650; text-transform: uppercase; letter-spacing: .6px;
   padding: 3px 9px; border-radius: 999px; white-space: nowrap;
 }
 .vstatut.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, transparent); }
@@ -614,6 +682,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 }
 
 /* Lien discret vers une fiche depuis un formulaire */
+.check .lien-fiche-inline { flex: 1 0 100%; margin-left: 28px; }
 .lien-fiche-inline { font-size: 12.5px; color: var(--muted); margin-left: 6px; }
 .lien-fiche-inline:hover { color: var(--accent); }
 
@@ -654,7 +723,7 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 
 .vert-carte { cursor: pointer; }
 .vert-badge {
-  display: inline-block; font-size: 10.5px; font-weight: 650;
+  display: inline-block; font-size: var(--micro); font-weight: 650;
   letter-spacing: .6px; text-transform: uppercase;
   padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
 }
@@ -673,15 +742,6 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 .cl-barre { flex: 1; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; min-width: 70px; }
 .cl-barre i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 .cl-ligne.gagnant .cl-nom { font-weight: 650; color: var(--ok); }
-
-/* ---------- Navigation revue ---------- */
-
-nav.tabs button.tab-admin {
-  color: var(--muted); font-size: 12.5px; font-weight: 400;
-  margin-left: 10px; padding-left: 16px;
-  border-left: 1px solid var(--border); border-radius: 0 10px 10px 0;
-}
-nav.tabs button.tab-admin[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
 
 /* ---------- Harmonie du widget ---------- */
 
@@ -719,16 +779,6 @@ h2.faq-groupe:first-child { margin-top: 24px; }
 .faq-corps p { margin: 0 0 6px; color: var(--text-2); font-size: 14.5px; line-height: 1.65; }
 .faq-corps .chips { margin-top: 10px; }
 .faq-sources { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
-
-/* ---------- Selecteur de theme ---------- */
-
-.theme-btn {
-  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
-  width: 34px; height: 34px; border-radius: 10px; cursor: pointer; flex: none;
-  font-size: 15px; line-height: 1; margin-left: 6px;
-  transition: color .16s, border-color .16s, background .16s;
-}
-.theme-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
 /* Suggestions de questions sous la recherche de l'accueil */
 .ask-faq { grid-column: 1 / -1; margin-top: 4px; }
@@ -790,7 +840,7 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 
 .ctr-cmd { margin-top: 4px; }
 .ctr-cmd-label {
-  display: block; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  display: block; font-size: var(--micro); letter-spacing: 1px; text-transform: uppercase;
   color: var(--muted); font-weight: 650; margin-bottom: 8px;
 }
 .ctr-cmd .chat-bar { margin: 0; }
@@ -815,7 +865,7 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 
 .etapes-tete { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
 .etapes-num {
-  font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  font-size: var(--micro); letter-spacing: 1px; text-transform: uppercase;
   color: var(--muted); font-weight: 650; white-space: nowrap;
 }
 .etapes-jauge { flex: 1; height: 4px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
@@ -839,7 +889,7 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 }
 .sm-cols, .sm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .sm-cols-t {
-  font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  font-size: var(--micro); letter-spacing: 1px; text-transform: uppercase;
   color: var(--muted); font-weight: 650; margin-right: 3px;
 }
 .chip.actif {
@@ -864,7 +914,7 @@ table.sm-table thead th {
 }
 .sm-cell { min-width: 150px; font-size: 13px; }
 .sm-edition {
-  font-size: 10.5px; font-weight: 400; letter-spacing: 0; text-transform: none;
+  font-size: var(--micro); font-weight: 400; letter-spacing: 0; text-transform: none;
   color: var(--muted); margin-top: 3px;
 }
 .sm-sum-ok { color: var(--ok) !important; }
@@ -896,7 +946,7 @@ tr.sm-score td { background: var(--surface-2); border-top: 2px solid var(--borde
 .sm-choix summary { cursor: pointer; font-size: 13.5px; color: var(--accent); font-weight: 550; }
 .sm-choix-corps { margin-top: 12px; }
 .sm-choix-corps h4 {
-  margin: 14px 0 7px; font-size: 10.5px; letter-spacing: 1px;
+  margin: 14px 0 7px; font-size: var(--micro); letter-spacing: 1px;
   text-transform: uppercase; color: var(--muted); font-weight: 650;
 }
 
@@ -1047,26 +1097,40 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 /* Les rangees d'onglets secondaires passent a la ligne au lieu de deborder */
 .sous-onglets { flex-wrap: wrap; }
 
-/* Sous 1200 px, les onglets se resserrent : les neuf entrees tiennent encore
-   sur une ligne au lieu de partir en defilement des le premier pixel manquant. */
-@media (max-width: 1199px) {
-  .top-in { gap: 14px; }
-  nav.tabs button { padding: 8px 10px; font-size: 13.5px; }
-  nav.tabs button.tab-admin { margin-left: 6px; padding-left: 10px; }
+/* Palier 2 : les sections se resserrent. Le nom du site reste, il n'a pas
+   besoin de disparaitre ici, c'est la respiration des onglets qui manque. */
+@media (max-width: 1099px) {
+  :root { --h-top: 62px; }
+  .top-in { gap: 12px; }
+  nav.tabs button { padding: 8px 11px; font-size: 13.5px; }
+  .top-outils { margin-left: 2px; }
 }
 
-/* En dessous de 1050 px, le nom du site tronque en « S'installer au... » ne
-   dit plus rien et prend la place de deux onglets. On garde le seul logo, la
-   page porte deja son titre. */
-@media (max-width: 1050px) {
+/* Le nom ne cede qu'ici, quand il n'y a plus le choix. La marque est dessinee
+   pour tenir seule, et le titre de la page repete le nom juste en dessous. */
+@media (max-width: 1039px) {
+  :root { --h-top: 60px; }
   .brand-txt { display: none; }
+  .brand .mark { width: 30px; height: 30px; }
+  .brand .mark svg { width: 18px; height: 18px; }
 }
 
-@media (max-width: 700px) {
-  .top-in { padding: 11px 14px; gap: 10px; }
-  .brand { font-size: 18px; gap: 9px; }
-  .theme-btn { margin-left: 4px; }
+/* Palier 3 : l'en-tete se resserre encore, ce qui garde les huit sections
+   visibles jusque vers 760 px au lieu de 790. Les marges suivent l'encoche en
+   paysage. Ce palier ne concerne que l'en-tete : la mise en page du contenu a
+   son propre seuil plus bas, une tablette de 780 px n'est pas un telephone. */
+@media (max-width: 799px) {
+  .top-in {
+    gap: 10px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+  nav.tabs { margin-left: 8px; }
+  nav.tabs button { padding: 8px 9px; }
+  .top-outils { gap: 5px; margin-left: 0; }
+}
 
+@media (max-width: 759px) {
   main { padding: 0 16px 70px; }
   .ask { padding: 22px 16px 18px; border-radius: var(--r-m); }
   .hero { min-height: min(64vh, 460px); border-radius: var(--r-m); }
@@ -1112,27 +1176,35 @@ html, body { overflow-x: hidden; }
     border-radius: var(--r-s); gap: 12px;
   }
   .check input[type="checkbox"] { width: 22px; height: 22px; }
-  .check label { font-size: 15px; }
+  .check label { font-size: 15px; min-height: 44px; }
 
   .bien { min-height: 52px; padding: 12px; }
   .bien input[type="checkbox"] { width: 22px; height: 22px; margin-top: 1px; }
 
   .tl-item { margin: 2px 0; }
-  .tl-item input[type="checkbox"] { width: 24px; height: 24px; margin-top: 8px; }
+  /* La case garde sa taille, c'est son entourage qui devient prenable */
+  .tl-case { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; margin: -10px 0 -10px -10px; }
+  .tl-item input[type="checkbox"] { width: 24px; height: 24px; margin: 0; }
   .tl-lien, .tl-item span { min-height: 40px; display: flex; align-items: center; }
 
   /* Liens de sources et de fiches : une ligne de texte seule est trop fine */
-  .faq-sources a, .detail-cote .bloc a, .lien-fiche, .msg .srcs a {
+  .faq-sources a, .detail-cote .bloc a, .lien-fiche, .lien-fiche-inline, .msg .srcs a {
     display: inline-block; padding: 8px 0; min-height: 40px;
   }
   .faq-item summary { min-height: 52px; display: flex; align-items: center; }
   .sin-item summary { min-height: 52px; }
+  /* Tout resume repliable est une commande, il lui faut sa hauteur au doigt */
+  summary { min-height: 44px; display: flex; align-items: center; }
 
   .chip { min-height: 40px; padding: 10px 16px; }
   .btn { min-height: 46px; }
   nav.tabs button { min-height: 44px; }
   .sous-onglets button { min-height: 44px; }
-  .theme-btn { width: 40px; height: 40px; }
+  .outil { width: 42px; height: 42px; }
+  .brand .mark { width: 34px; height: 34px; }
+
+  /* A bout de bras, une capitale de 11 px se devine plus qu'elle ne se lit */
+  :root { --micro: 12px; }
 
   /* La zone de saisie ne doit pas declencher le zoom sur iOS : 16 px minimum */
   input, select, textarea { font-size: 16px; }
