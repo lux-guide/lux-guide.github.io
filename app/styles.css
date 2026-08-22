@@ -891,3 +891,50 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 .w-actions { display: inline-flex; align-items: center; gap: 2px; }
 #widget-plein { font-size: 16px; }
 @media (max-width: 1099px) { #widget-plein { display: none; } }
+
+/* ---------- Responsive : ecrans etroits ---------- */
+
+/* Les rangees d'onglets secondaires passent a la ligne au lieu de deborder */
+.sous-onglets { flex-wrap: wrap; }
+
+@media (max-width: 700px) {
+  .top-in { padding: 11px 16px; gap: 12px; }
+  .brand { font-size: 18px; }
+  nav.tabs { margin-left: 0; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  nav.tabs::-webkit-scrollbar { height: 0; }
+  nav.tabs button { white-space: nowrap; padding: 8px 11px; font-size: 13.5px; }
+  nav.tabs button.tab-admin { margin-left: 4px; padding-left: 11px; }
+  .theme-btn { position: absolute; top: 11px; right: 16px; }
+
+  main { padding: 0 16px 70px; }
+  .ask { padding: 22px 16px 18px; border-radius: var(--r-m); }
+  .hero { min-height: min(64vh, 460px); border-radius: var(--r-m); }
+  .hero-in { padding: 60px 18px 30px; }
+  .hero-stats { gap: 22px; margin-top: 28px; padding-top: 18px; }
+  .hero-stats .s .n { font-size: 26px; }
+
+  .row { flex-direction: column; align-items: stretch; }
+  .row > div { width: 100%; }
+  .card { padding: 16px; }
+  .sous-onglets button { padding: 8px 14px; font-size: 13.5px; }
+  .biens-grille { grid-template-columns: 1fr; }
+  .vgrid { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  #carte-map { height: min(52vh, 380px); }
+
+  /* Les tableaux larges defilent dans leur cadre, la page ne bouge pas */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.mrh-table { min-width: 560px; }
+  .detail-corps { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 460px) {
+  .kpis { grid-template-columns: 1fr; }
+  .ask-titre { font-size: 24px; }
+  .hero h1 { font-size: 34px; }
+  .sin-item summary { padding: 12px 13px; }
+  .sin-titre { min-width: 0; }
+}
+
+/* Garde-fou general : aucun element ne pousse la page horizontalement */
+html, body { overflow-x: hidden; }

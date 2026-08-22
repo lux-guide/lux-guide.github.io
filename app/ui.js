@@ -101,6 +101,9 @@
     // Retenue pour revenir au contenu quand on rebascule en panneau lateral.
     var courante = $$(".panel").filter(function (p) { return !p.hidden; })[0];
     if (courante) pagePrecedente = courante.id.replace("panel-", "");
+    // La conversation ne s'affiche pas deux fois : ouvrir l'assistant en pleine
+    // page referme le panneau lateral.
+    if (nom === "assistant" && document.body.classList.contains("rail-ouvert")) cacherWidget();
     if (nom === "carte") {
       initCarte();
       // La carte a pu etre creee dans un panneau cache : recaler sa taille
