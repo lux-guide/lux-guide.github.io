@@ -1209,6 +1209,8 @@
       }
     });
 
+    initLargeurRail();
+
     // Le panneau reste ouvert d'une visite a l'autre s'il l'etait.
     try {
       if (localStorage.getItem(STORAGE_RAIL) === "1" && railPossible()) montrerWidget();
@@ -1257,6 +1259,79 @@
   }
 
   var STORAGE_RAIL = "luxguide.rail.v1";
+  var STORAGE_RAIL_L = "luxguide.rail.largeur.v1";
+  var RAIL_MIN = 320, RAIL_MAX = 680;
+
+  // Largeur du panneau : reglable a la souris ou au clavier, conservee.
+  function bornerLargeur(px) {
+    var maxi = Math.min(RAIL_MAX, Math.round(window.innerWidth * 0.55));
+    return Math.max(RAIL_MIN, Math.min(maxi, Math.round(px)));
+  }
+
+  function appliquerLargeurRail(px, sauver) {
+    var l = bornerLargeur(px);
+    document.documentElement.style.setProperty("--rail-w", l + "px");
+    if (sauver) { try { localStorage.setItem(STORAGE_RAIL_L, String(l)); } catch (e) {} }
+    if (carteObj) carteObj.invalidateSize();
+    return l;
+  }
+
+  function initLargeurRail() {
+    try {
+      var v = parseInt(localStorage.getItem(STORAGE_RAIL_L), 10);
+      if (v) appliquerLargeurRail(v, false);
+    } catch (e) { /* stockage indisponible */ }
+
+    var p = $("#widget-poignee");
+    if (!p) return;
+
+    function glisser(xDepart, largeurDepart, evenementsFin) {
+      document.body.classList.add("rail-redim");
+      function bouger(x) { appliquerLargeurRail(largeurDepart + (xDepart - x), false); }
+      function finir() {
+        document.body.classList.remove("rail-redim");
+        var actuelle = $("#widget").getBoundingClientRect().width;
+        appliquerLargeurRail(actuelle, true);
+        evenementsFin();
+      }
+      return { bouger: bouger, finir: finir };
+    }
+
+    p.addEventListener("mousedown", function (e) {
+      e.preventDefault();
+      var g = glisser(e.clientX, $("#widget").getBoundingClientRect().width, function () {
+        document.removeEventListener("mousemove", surSouris);
+        document.removeEventListener("mouseup", surRelache);
+      });
+      function surSouris(ev) { g.bouger(ev.clientX); }
+      function surRelache() { g.finir(); }
+      document.addEventListener("mousemove", surSouris);
+      document.addEventListener("mouseup", surRelache);
+    });
+
+    p.addEventListener("touchstart", function (e) {
+      var t = e.touches[0];
+      var g = glisser(t.clientX, $("#widget").getBoundingClientRect().width, function () {
+        document.removeEventListener("touchmove", surTouche);
+        document.removeEventListener("touchend", surFin);
+      });
+      function surTouche(ev) {
+        if (ev.touches[0]) { ev.preventDefault(); g.bouger(ev.touches[0].clientX); }
+      }
+      function surFin() { g.finir(); }
+      document.addEventListener("touchmove", surTouche, { passive: false });
+      document.addEventListener("touchend", surFin);
+    }, { passive: true });
+
+    // Au clavier : fleches gauche et droite, et double-clic pour revenir au defaut.
+    p.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      var actuelle = $("#widget").getBoundingClientRect().width;
+      appliquerLargeurRail(actuelle + (e.key === "ArrowLeft" ? 24 : -24), true);
+    });
+    p.addEventListener("dblclick", function () { appliquerLargeurRail(400, true); });
+  }
 
   // Surligne dans la page les mots de la question, et fait defiler jusqu'au
   // premier passage trouve. C'est ce que le panneau ancre rend possible :

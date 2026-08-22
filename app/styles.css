@@ -834,18 +834,33 @@ td.sous-ligne { color: var(--muted); font-size: 12.5px; }
 @media (min-width: 1100px) {
   #widget {
     top: 0; right: 0; bottom: 0; left: auto;
-    width: 400px; height: 100vh; max-height: none;
+    width: var(--rail-w, 400px); height: 100vh; max-height: none;
     border-radius: 0; border-width: 0 0 0 1px;
     box-shadow: -14px 0 34px -22px rgba(11,18,32,.28);
     animation: rail .22s cubic-bezier(.2,.8,.3,1) both;
   }
+  /* Poignee de redimensionnement sur le bord gauche du panneau */
+  #widget-poignee {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
+    margin-left: -5px; cursor: col-resize; z-index: 3;
+    display: block; background: transparent;
+  }
+  #widget-poignee::after {
+    content: ""; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 2px; height: 42px; border-radius: 2px; background: var(--border-fort);
+    opacity: 0; transition: opacity .15s;
+  }
+  #widget-poignee:hover::after, body.rail-redim #widget-poignee::after { opacity: 1; }
+  body.rail-redim { cursor: col-resize; user-select: none; }
+  /* Pendant le glissement, aucune transition : le suivi doit etre immediat */
+  body.rail-redim, body.rail-redim #widget { transition: none !important; }
   @keyframes rail { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 
   /* Le contenu se decale : rien n'est masque par le panneau. La marge sur le
      corps retrecit la page entiere, et main, centre par ses marges auto, se
      recentre dans la place restante. Le panneau, en position fixe, reste
      colle au bord de la fenetre. */
-  body.rail-ouvert { margin-right: 400px; }
+  body.rail-ouvert { margin-right: var(--rail-w, 400px); }
   body.rail-ouvert #widget-btn { display: none; }
 
   /* La barre de titre du panneau reprend le fond de la page, plus sobre
@@ -938,3 +953,49 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 
 /* Garde-fou general : aucun element ne pousse la page horizontalement */
 html, body { overflow-x: hidden; }
+
+/* ---------- Cibles tactiles ---------- */
+/* Au doigt, une case a cocher de 17 px se rate. On agrandit la case et surtout
+   la zone cliquable autour, sans toucher au rendu a la souris. */
+
+@media (pointer: coarse) {
+  .check {
+    min-height: 44px; padding: 6px 8px; margin: 0 -8px;
+    border-radius: var(--r-s); gap: 12px;
+  }
+  .check input[type="checkbox"] { width: 22px; height: 22px; }
+  .check label { font-size: 15px; }
+
+  .bien { min-height: 52px; padding: 12px; }
+  .bien input[type="checkbox"] { width: 22px; height: 22px; margin-top: 1px; }
+
+  .tl-item { margin: 2px 0; }
+  .tl-item input[type="checkbox"] { width: 24px; height: 24px; margin-top: 8px; }
+  .tl-lien, .tl-item span { min-height: 40px; display: flex; align-items: center; }
+
+  /* Liens de sources et de fiches : une ligne de texte seule est trop fine */
+  .faq-sources a, .detail-cote .bloc a, .lien-fiche, .msg .srcs a {
+    display: inline-block; padding: 8px 0; min-height: 40px;
+  }
+  .faq-item summary { min-height: 52px; display: flex; align-items: center; }
+  .sin-item summary { min-height: 52px; }
+
+  .chip { min-height: 40px; padding: 10px 16px; }
+  .btn { min-height: 46px; }
+  nav.tabs button { min-height: 44px; }
+  .sous-onglets button { min-height: 44px; }
+  .theme-btn { width: 40px; height: 40px; }
+
+  /* La zone de saisie ne doit pas declencher le zoom sur iOS : 16 px minimum */
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Cibles tactiles restantes de l'onglet Carte */
+@media (pointer: coarse) {
+  .outil-lien { min-height: 40px; display: flex; align-items: center; }
+  .leaflet-control-zoom-in,
+  .leaflet-control-zoom-out {
+    width: 42px !important; height: 42px !important;
+    line-height: 40px !important; font-size: 21px !important;
+  }
+}
