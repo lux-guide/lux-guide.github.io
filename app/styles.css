@@ -75,6 +75,11 @@ body {
   font: 16px/1.68 var(--sans);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
+/* L'attribut hidden a une specificite nulle : la moindre regle display le
+   neutralise sans bruit, et l'element reste a l'ecran. On le rend inviolable
+   une fois pour toutes, au lieu de le rattraper au cas par cas. */
+[hidden] { display: none !important; }
+
 a { color: var(--accent); text-underline-offset: 3px; }
 img { max-width: 100%; display: block; }
 ::selection { background: color-mix(in srgb, var(--accent) 24%, transparent); }
@@ -833,6 +838,15 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 .mat-page { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
 .mrh-sources-liste { color: var(--text-2); font-size: 14px; }
 .mrh-sources-liste li { margin: 5px 0; }
+
+/* Ce que contient une comparaison, dit avant d'y entrer. */
+.vert-quoi {
+  display: block; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.vert-carte { display: flex; flex-direction: column; }
+.vert-carte p { flex: 1; }
 
 /* ---------- Commande du tableau ---------- */
 /* Volontairement different d'une conversation : l'application n'a qu'un seul

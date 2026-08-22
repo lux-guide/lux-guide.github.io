@@ -1504,43 +1504,63 @@
 
     var mrh = el("div", "qcard vert-carte");
     mrh.appendChild(el("span", "vert-badge reel", "Données réelles"));
-    mrh.appendChild(el("h3", null, "Assurance habitation (MRH)"));
+    mrh.appendChild(el("h3", null, "Assurance habitation"));
     mrh.appendChild(el("p", null,
-      "Treize sinistres réels posés à quatre contrats du marché, clause citée à l'appui, " +
-      "un classement selon votre situation et un tableau que vous construisez vous-même."));
-    mrh.addEventListener("click", function () {
-      fermerVerticale();
-      var c = $("#ctr-mrh");
-      if (c) c.scrollIntoView({ behavior: doux(), block: "start" });
-    });
+      "Treize sinistres concrets posés à quatre contrats du marché, la clause exacte citée " +
+      "avec sa page, un classement selon ce qui vous concerne, et un tableau que vous " +
+      "construisez vous-même."));
+    mrh.appendChild(el("span", "vert-quoi", "6 volets · 4 contrats · 17 garanties"));
+    mrh.addEventListener("click", ouvrirMrh);
     g.appendChild(mrh);
 
     window.OFFRES_KB.verticales.forEach(function (v) {
       var c = el("div", "qcard vert-carte");
       c.appendChild(el("span", "vert-badge demo", "Démo, données fictives"));
       c.appendChild(el("h3", null, v.titre));
-      c.appendChild(el("p", null, v.sousTitre + ". Une grille standard, puis quelques questions pour affiner."));
+      c.appendChild(el("p", null, v.sousTitre + ". Une grille des critères qui comptent, puis " +
+        "quelques questions pour voir laquelle des trois logiques colle à votre situation."));
+      c.appendChild(el("span", "vert-quoi",
+        v.criteres.length + " critères · " + v.offres.length + " offres · " +
+        v.questions.length + " questions"));
       c.addEventListener("click", function () { ouvrirVerticale(v); });
       g.appendChild(c);
     });
   }
 
-  function fermerVerticale() {
-    var vue = $("#ctr-vue");
-    if (vue) { vue.hidden = true; vue.innerHTML = ""; }
-    var mrh = $("#ctr-mrh");
-    if (mrh) mrh.hidden = false;
+  // Le comparateur s'ouvre sur le choix, pas sur une comparaison deja depliee.
+  function montrerChoix() {
+    var v = $("#ctr-vue"), m = $("#ctr-mrh"), r = $("#ctr-registres"), g = $("#ctr-verticales");
+    if (v) { v.hidden = true; v.innerHTML = ""; }
+    if (m) m.hidden = true;
+    if (r) r.hidden = false;
+    if (g) g.hidden = false;
   }
+
+  function ouvrirMrh() {
+    var v = $("#ctr-vue"), m = $("#ctr-mrh"), r = $("#ctr-registres"), g = $("#ctr-verticales");
+    if (v) { v.hidden = true; v.innerHTML = ""; }
+    if (r) r.hidden = true;
+    if (g) g.hidden = true;
+    if (m) {
+      m.hidden = false;
+      m.scrollIntoView({ behavior: doux(), block: "start" });
+    }
+  }
+
+  function fermerVerticale() { montrerChoix(); }
 
   function ouvrirVerticale(v) {
     var vue = $("#ctr-vue");
     if (!vue) return;
     vue.innerHTML = "";
     vue.hidden = false;
-    // Une comparaison a la fois : la comparaison habitation, qui est longue,
-    // ne reste pas empilee sous la verticale qu'on vient d'ouvrir.
+    // Une comparaison a la fois. Le choix et les autres comparaisons
+    // s'effacent pendant qu'on regarde celle-ci.
     var mrh = $("#ctr-mrh");
     if (mrh) mrh.hidden = true;
+    var reg = $("#ctr-registres"), g = $("#ctr-verticales");
+    if (reg) reg.hidden = true;
+    if (g) g.hidden = true;
 
     var head = el("div", "vert-head");
     head.appendChild(el("h2", null, v.titre));
@@ -2280,6 +2300,9 @@
   }
 
   function ouvrirSurMesure() {
+    // Le comparateur s'ouvre desormais sur le choix : on deplie la comparaison
+    // habitation avant d'aller a son onglet, sinon on ecrit dans un bloc cache.
+    ouvrirMrh();
     var onglet = $$("#mrh-tabs button").filter(function (x) { return x.dataset.mrh === "surmesure"; })[0];
     if (onglet) onglet.click();
   }
@@ -2768,6 +2791,9 @@
 
   function initComparateur() {
     rendreVerticales();
+    montrerChoix();
+    var ret = $("#ctr-mrh-retour");
+    if (ret) ret.addEventListener("click", montrerChoix);
     initMrh();
     if (!window.CONTRATS_KB || !$("#ctr-journal")) return;
     chargerSM();

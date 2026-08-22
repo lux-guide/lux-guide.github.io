@@ -233,24 +233,23 @@ window.KB = {
       id: "emmenagement",
       titre: "Emménager et meubler",
       cat: "Logement",
-      resume: "Mesurer l'ascenseur avant de commander, prévoir la montée, et demander l'accord écrit avant de percer.",
-      tags: ["emménagement", "meuble", "livraison", "ascenseur", "montage", "percer", "mur", "déménagement", "achat"],
+      resume: "Mesurer l'ascenseur avant de commander, prévoir la montée, et acheter des luminaires : le logement se loue souvent sans.",
+      tags: ["emménagement", "meuble", "livraison", "ascenseur", "montage", "luminaire", "lumière", "déménagement", "achat"],
       corps: [
         "Les mauvaises surprises de l'emménagement sont rarement dramatiques, mais elles coûtent du temps et de l'argent. Trois d'entre elles reviennent systématiquement.",
         { h: "Mesurer avant de commander" },
         "Les meubles en kit sont livrés dans des cartons dont la longueur peut dépasser la profondeur d'une cabine d'ascenseur. Une armoire haute, par exemple, se vend souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant. Mesurez la cabine, la porte palière et les paliers d'escalier avant de commander, pas après. Vérifiez également la largeur des portes intérieures pour les meubles livrés montés.",
         { h: "La livraison s'arrête souvent au rez-de-chaussée" },
         "Beaucoup de livreurs déposent au pied de l'immeuble, ou au premier obstacle. La montée et le montage sont alors à votre charge, et il faut soit s'en occuper, soit recourir à un service d'aide à domicile ou à un monteur indépendant. Anticipez ce poste dans le budget, et vérifiez ce que couvre exactement l'option de livraison proposée.",
-        { h: "Percer suppose un accord écrit" },
-        "En location, la plupart des baux interdisent les percements sans accord écrit du bailleur. L'interdiction n'est pas absolue : c'est un accord qu'il faut demander, et un courriel suffit généralement à l'obtenir, en s'engageant à reboucher au départ. Demandez-le avant d'acheter des meubles à fixer au mur.",
-        "Sans percer, les solutions existent mais supportent peu de charge : barres de tension entre deux murs pour une penderie dans une niche, poteaux télescopiques du sol au plafond pour exploiter la hauteur, crochets adhésifs pour les objets légers. Méfiez-vous en revanche des meubles hauts posés sans fixation murale, que les fabricants imposent justement de fixer pour éviter le basculement.",
+        { h: "Le logement se loue souvent sans luminaires" },
+        "Beaucoup de logements sont remis avec des fils qui pendent au plafond et aucun point lumineux monté. Ce n'est pas un défaut ni un oubli du bailleur, c'est l'usage courant ici, alors que dans plusieurs pays voisins une douille équipée reste en place. Prévoyez les luminaires et leur pose dès le premier jour, sans quoi les premières soirées se passent à la lampe de chantier. Le point est à vérifier à l'état des lieux, pas après.",
         { h: "Acheter de part et d'autre de la frontière" },
         "Les enseignes de mobilier et d'électroménager sont implantées des deux côtés de la frontière, et leurs promotions ne sont pas synchronisées d'un pays à l'autre. Sur un achat conséquent, comparer les prix dans les magasins voisins de Belgique, de France ou d'Allemagne vaut souvent le déplacement, à condition d'intégrer le coût de la livraison transfrontalière, parfois dissuasif."
       ],
       aRetenir: [
         "Mesurer la cabine d'ascenseur avant de commander un meuble haut.",
         "Vérifier si la livraison monte à l'étage ou s'arrête en bas.",
-        "Demander par écrit l'accord de percer, il est souvent accordé."
+        "Prévoir les luminaires : ils sont rarement en place à la remise des clés."
       ],
       sources: [{ t: "Guichet.lu, bail à loyer", u: "https://guichet.public.lu/fr/citoyens/logement/location.html" }]
     },
@@ -853,7 +852,7 @@ window.KB = {
     { q: "Comment éviter qu'une installation échoue ?", a: "Signalez par écrit l'adresse exacte, l'étage et le nom figurant sur l'interphone, qui diffère souvent du nom du contrat. Prévenez qu'un appel masqué ne peut pas être rappelé, et exigez la confirmation écrite du créneau.", fiche: "rdv_technique" },
     { q: "On me facture des frais d'absence alors que j'étais là", a: "Lisez la fiche d'intervention : elle indique souvent que le client n'est pas responsable tout en facturant les frais, ce qui est un argument solide. Vérifiez aussi l'adresse portée sur la fiche et l'heure des appels, puis contestez par écrit.", fiche: "rdv_technique" },
     { q: "Comment contester une facture ?", a: "Par écrit, toujours. Un appel téléphonique ne vaut pas réclamation, et la médiation exige cette réclamation écrite préalable. Appuyez-vous en priorité sur les documents produits par le professionnel lui-même.", fiche: "reclamation" },
-    { q: "Puis-je percer les murs de mon logement loué ?", a: "En général seulement avec l'accord écrit du bailleur, que le bail exige mais qui s'obtient souvent par un simple courriel. Demandez-le avant d'acheter des meubles à fixer au mur.", fiche: "emmenagement" },
+    { q: "Le logement est-il livré avec les luminaires ?", a: "Souvent non. L'usage courant au Luxembourg est de remettre le logement avec les fils au plafond et sans point lumineux monté, là où plusieurs pays voisins laissent une douille équipée. Prévoyez les luminaires et leur pose dès le premier jour, et vérifiez le point à l'état des lieux.", fiche: "emmenagement" },
     { q: "Mes meubles vont-ils passer dans l'ascenseur ?", a: "Mesurez la cabine, la porte palière et les paliers avant de commander. Les armoires hautes existent souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant.", fiche: "emmenagement" },
     { q: "Ai-je besoin d'une complémentaire santé ?", a: "Elle est facultative et couvre surtout la chambre seule, le dentaire et l'optique. Si vous en prenez une, souscrivez dès l'arrivée : la plupart des contrats prévoient des délais de carence de plusieurs mois sur ces postes.", fiche: "assurance_sante" },
     { q: "Quels documents demander à un assureur ?", a: "Le document d'information standardisé de deux pages, les conditions générales et les conditions particulières. Le devis ne suffit pas : ce sont les exclusions et les franchises qui décident de ce qui sera refusé le jour du sinistre.", fiche: "assurance_habitation" },

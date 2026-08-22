@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=16">
+<link rel="stylesheet" href="app/styles.css?v=17">
 </head>
 <body>
 
@@ -256,17 +256,29 @@
   <section class="panel" role="tabpanel" aria-labelledby="tab-comparateur" id="panel-comparateur" hidden>
     <h1>Comparateur</h1>
     <p class="lead">
-      Des comparaisons standardisées, poste par poste : d'abord une grille claire de ce qui
-      distingue vraiment les offres, puis un tableau que vous réécrivez vous-même, en français
-      courant, avec vos propres critères.
+      En arrivant au Luxembourg, quatre contrats se signent presque en même temps : l'assurance
+      habitation, l'assurance auto, le forfait mobile et le contrat d'électricité. Choisissez le
+      poste que vous voulez regarder. Chacun s'ouvre sur une grille des critères qui distinguent
+      vraiment les offres, et non sur une liste de prix.
     </p>
+
+    <div class="notice small" id="ctr-registres">
+      <strong>Deux registres, indiqués sur chaque carte.</strong>
+      L'assurance habitation repose sur des <em>documents réels</em> : quatre contrats du marché
+      luxembourgeois lus intégralement, assureurs anonymisés. Les trois autres sont des
+      <em>démonstrations</em> : les critères sont réels, les offres et les chiffres sont inventés
+      et affichés comme tels. Rien n'y est un conseil d'achat.
+    </div>
 
     <div class="grid serre" id="ctr-verticales"></div>
 
     <div id="ctr-vue" hidden></div>
 
-    <div id="ctr-mrh">
-    <h2>Assurance habitation : la comparaison complète</h2>
+    <div id="ctr-mrh" hidden>
+    <div class="vert-head">
+      <h2>Assurance habitation : la comparaison complète</h2>
+      <button class="chip" id="ctr-mrh-retour">← Toutes les comparaisons</button>
+    </div>
     <p class="lead">
       <span class="badge on">données réelles</span>
       Quatre contrats du marché luxembourgeois lus intégralement, treize sinistres concrets posés
@@ -574,15 +586,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=16"></script>
-<script src="app/kb.js?v=16"></script>
-<script src="app/simulateur.js?v=16"></script>
-<script src="comparateur/contrats_kb.js?v=16"></script>
-<script src="comparateur/mrh_kb.js?v=16"></script>
-<script src="comparateur/offres_kb.js?v=16"></script>
-<script src="app/chat.js?v=16"></script>
-<script src="app/ui.js?v=16"></script>
-<script src="app/communaute.js?v=16"></script>
+<script src="app/bareme.js?v=17"></script>
+<script src="app/kb.js?v=17"></script>
+<script src="app/simulateur.js?v=17"></script>
+<script src="comparateur/contrats_kb.js?v=17"></script>
+<script src="comparateur/mrh_kb.js?v=17"></script>
+<script src="comparateur/offres_kb.js?v=17"></script>
+<script src="app/chat.js?v=17"></script>
+<script src="app/ui.js?v=17"></script>
+<script src="app/communaute.js?v=17"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
