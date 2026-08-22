@@ -1849,89 +1849,392 @@
     k.appendChild(el("p", "muted", txt));
   }
 
-  function afficherAlentours(lat, lon) {
+  // Les adresses comparées et le repère de trajet vivent dans ce navigateur
+  // uniquement : rien n'est envoyé à un serveur du guide, rien n'est versionné.
+  var STORAGE_CARTE = "luxguide.carte.v1";
+  var adresses = [], repere = null;
+  var COULEURS = ["#0a4fa8", "#b45309", "#7c3aed", "#0c6b3e"];
+
+  // Catégories cherchées autour de chaque adresse.
+  var CATS = [
+    { id: "ecoles", label: "Écoles", couleur: "#2563eb", case: "#c-ecoles",
+      requete: 'nwr["amenity"="school"]',
+      test: function (t) { return t.amenity === "school"; } },
+    { id: "creches", label: "Crèches", couleur: "#7c3aed", case: "#c-creches",
+      requete: 'nwr["amenity"~"^(kindergarten|childcare)$"]',
+      test: function (t) { return t.amenity === "kindergarten" || t.amenity === "childcare"; } },
+    { id: "arrets", label: "Bus, tram, train", couleur: "#059669", case: "#c-arrets",
+      requete: 'node["highway"="bus_stop"]',
+      requete2: 'node["railway"~"^(tram_stop|station|halt)$"]',
+      test: function (t) {
+        return t.highway === "bus_stop" || t.railway === "tram_stop" ||
+               t.railway === "station" || t.railway === "halt";
+      } },
+    { id: "commerces", label: "Commerces", couleur: "#b45309", case: "#c-commerces",
+      requete: 'nwr["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]',
+      test: function (t) {
+        return ["supermarket", "convenience", "bakery", "butcher", "greengrocer", "general"]
+          .indexOf(t.shop) !== -1;
+      } },
+    { id: "sante", label: "Santé", couleur: "#be123c", case: "#c-sante",
+      requete: 'nwr["amenity"~"^(pharmacy|doctors|hospital|clinic)$"]',
+      test: function (t) {
+        return ["pharmacy", "doctors", "hospital", "clinic"].indexOf(t.amenity) !== -1;
+      } }
+  ];
+
+  function catsActives() {
+    return CATS.filter(function (c) {
+      var e = $(c.case);
+      return e && e.checked;
+    });
+  }
+
+  function sauverCarte() {
+    try {
+      localStorage.setItem(STORAGE_CARTE, JSON.stringify({
+        adresses: adresses.map(function (a) {
+          return { nom: a.nom, lat: a.lat, lon: a.lon, commune: a.commune };
+        }),
+        repere: repere ? { nom: repere.nom, lat: repere.lat, lon: repere.lon } : null
+      }));
+    } catch (e) { /* stockage indisponible */ }
+  }
+
+  function chargerCarte() {
+    try {
+      var d = JSON.parse(localStorage.getItem(STORAGE_CARTE) || "null");
+      if (!d) return;
+      adresses = d.adresses || [];
+      repere = d.repere || null;
+      if (repere && $("#c-travail")) $("#c-travail").value = repere.nom;
+    } catch (e) { adresses = []; repere = null; }
+  }
+
+  // Distance à vol d'oiseau, en mètres (formule de haversine).
+  function distance(a, b) {
+    var R = 6371000, r = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+  }
+
+  function formaterDistance(m) {
+    if (m === null || m === undefined) return "—";
+    if (m < 1000) return m + " m";
+    return (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km";
+  }
+
+  // Marche à pied, à 4,5 km/h, sur la distance à vol d'oiseau : un ordre de grandeur.
+  function minutesAPied(m) {
+    if (m === null || m === undefined) return null;
+    return Math.max(1, Math.round(m / 75));
+  }
+
+  function statsCarteMessage(txt) {
+    var k = $("#c-stats");
+    if (!k) return;
+    k.innerHTML = "";
+    k.appendChild(el("p", "muted", txt));
+  }
+
+  // Géocodage d'un libellé : coordonnées + commune, via OpenStreetMap.
+  function geocoder(q) {
+    return fetch("https://nominatim.openstreetmap.org/search?format=json&addressdetails=1" +
+      "&limit=1&countrycodes=lu&q=" + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res || !res.length) return null;
+        var a = res[0].address || {};
+        return {
+          nom: q,
+          lat: Number(res[0].lat),
+          lon: Number(res[0].lon),
+          commune: a.town || a.village || a.city || a.municipality || a.county || ""
+        };
+      });
+  }
+
+  // Les points d'intérêt autour d'une adresse, toutes catégories cochées.
+  function alentours(adr) {
     var rayon = Number($("#c-rayon").value) || 1000;
-    var voulu = {
-      ecoles: $("#c-ecoles").checked,
-      creches: $("#c-creches").checked,
-      arrets: $("#c-arrets").checked
-    };
+    var cats = catsActives();
+    if (!cats.length) return Promise.resolve([]);
     var blocs = [];
-    if (voulu.ecoles) blocs.push('nwr["amenity"="school"](around:' + rayon + "," + lat + "," + lon + ");");
-    if (voulu.creches) blocs.push('nwr["amenity"~"kindergarten|childcare"](around:' + rayon + "," + lat + "," + lon + ");");
-    if (voulu.arrets) {
-      blocs.push('node["highway"="bus_stop"](around:' + rayon + "," + lat + "," + lon + ");");
-      blocs.push('node["railway"~"tram_stop|station|halt"](around:' + rayon + "," + lat + "," + lon + ");");
+    cats.forEach(function (c) {
+      blocs.push(c.requete + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
+      if (c.requete2) blocs.push(c.requete2 + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
+    });
+    var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 400;";
+    // Le service Overpass repond souvent 504 quand il est charge : on retente
+    // une fois avant d'abandonner la colonne.
+    function appel() {
+      return fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(q)
+      }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
     }
-    if (!blocs.length) { statsCarteMessage("Cochez au moins une catégorie."); return; }
-    statsCarteMessage("Chargement des environs (OpenStreetMap)...");
-    var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 600;";
-    fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(q)
-    }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
+    return appel().catch(function () {
+      return new Promise(function (res) { setTimeout(res, 2500); }).then(appel);
     }).then(function (j) {
-      carteCouche.clearLayers();
-      L.circle([lat, lon], { radius: rayon, color: "#64748b", weight: 1, fillOpacity: 0.04 }).addTo(carteCouche);
-      L.circleMarker([lat, lon], { radius: 7, color: "#0f172a", fillColor: "#0f172a", fillOpacity: 1 })
-        .bindPopup("Adresse cherchée").addTo(carteCouche);
-      var comptes = { ecoles: 0, creches: 0, arrets: 0 };
+      var pts = [];
       (j.elements || []).forEach(function (e) {
         var la = e.lat !== undefined ? e.lat : (e.center && e.center.lat);
         var lo = e.lon !== undefined ? e.lon : (e.center && e.center.lon);
         if (la === undefined || lo === undefined) return;
-        var tags = e.tags || {};
-        var type, couleur;
-        if (tags.amenity === "school") { type = "École"; couleur = "#2563eb"; comptes.ecoles++; }
-        else if (tags.amenity === "kindergarten" || tags.amenity === "childcare") { type = "Crèche"; couleur = "#7c3aed"; comptes.creches++; }
-        else if (tags.highway === "bus_stop") { type = "Arrêt de bus"; couleur = "#059669"; comptes.arrets++; }
-        else if (tags.railway === "tram_stop") { type = "Arrêt de tram"; couleur = "#0d9488"; comptes.arrets++; }
-        else if (tags.railway === "station" || tags.railway === "halt") { type = "Gare"; couleur = "#b45309"; comptes.arrets++; }
-        else return;
-        L.circleMarker([la, lo], { radius: 6, color: couleur, fillColor: couleur, fillOpacity: 0.85, weight: 1 })
-          .bindPopup("<b>" + type + "</b>" + (tags.name ? "<br>" + tags.name : ""))
-          .addTo(carteCouche);
+        var t = e.tags || {};
+        var cat = cats.filter(function (c) { return c.test(t); })[0];
+        if (!cat) return;
+        pts.push({ lat: la, lon: lo, nom: t.name || "", cat: cat.id, couleur: cat.couleur,
+                   d: distance(adr, { lat: la, lon: lo }) });
       });
-      var k = $("#c-stats");
-      k.innerHTML = "";
-      [["Écoles", comptes.ecoles, voulu.ecoles],
-       ["Crèches", comptes.creches, voulu.creches],
-       ["Bus, tram, train", comptes.arrets, voulu.arrets]
-      ].forEach(function (x) {
-        if (!x[2]) return;
-        var d = el("div", "kpi");
-        d.appendChild(el("div", "k", x[0] + " dans le rayon"));
-        d.appendChild(el("div", "v", String(x[1])));
-        k.appendChild(d);
-      });
-    }).catch(function (e) {
-      statsCarteMessage("Les environs n'ont pas pu être chargés (" + e.message + "). Réessayez dans un instant.");
+      return pts;
     });
   }
 
-  function chercherAdresse() {
-    var q = $("#c-adresse").value.trim();
-    if (!q || !window.L || !carteObj) return;
-    statsCarteMessage("Recherche de l'adresse...");
-    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=lu&q=" +
-      encodeURIComponent(q))
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (!res || !res.length) {
-          statsCarteMessage("Adresse introuvable au Luxembourg. Essayez avec la commune ou le quartier.");
-          return;
-        }
-        var lat = Number(res[0].lat), lon = Number(res[0].lon);
-        var rayon = Number($("#c-rayon").value) || 1000;
-        carteObj.setView([lat, lon], rayon <= 500 ? 15 : (rayon <= 1000 ? 14 : 13));
-        afficherAlentours(lat, lon);
-      })
-      .catch(function (e) {
-        statsCarteMessage("La recherche d'adresse a échoué (" + e.message + ").");
+  // Recalcule et redessine tout : appelée à chaque ajout et à chaque changement
+  // de catégorie ou de rayon.
+  function rafraichirCarte() {
+    if (!window.L || !carteObj) return;
+    if (!adresses.length) {
+      carteCouche.clearLayers();
+      if (repere) marquerRepere();
+      statsCarteMessage(repere
+        ? "Ajoutez un logement à comparer : ses distances au repère et à ce qui l'entoure s'afficheront ici."
+        : "Ajoutez une ou plusieurs adresses pour les comparer.");
+      rendreListeAdresses();
+      return;
+    }
+    statsCarteMessage("Calcul des environs (OpenStreetMap)...");
+    rendreListeAdresses();
+    // Les requetes sont enchainees et non lancees en parallele : le service
+    // Overpass refuse les rafales, ce qui laissait des colonnes vides.
+    var echecs = [];
+    adresses.reduce(function (p, a, i) {
+      return p.then(function () {
+        return (i ? new Promise(function (r) { setTimeout(r, 900); }) : Promise.resolve())
+          .then(function () { return alentours(a); })
+          .then(function (pts) { a.pts = pts; })
+          .catch(function (e) { a.pts = null; echecs.push(a.nom + " (" + e.message + ")"); });
       });
+    }, Promise.resolve()).then(function () {
+      dessinerCarte();
+      rendreComparaison();
+      if (echecs.length) {
+        var z = $("#c-stats");
+        z.appendChild(el("p", "hint",
+          "Les environs n'ont pas pu être chargés pour : " + echecs.join(", ") +
+          ". Le service de cartographie limite le nombre d'appels ; réessayez dans un instant."));
+      }
+    });
+  }
+
+  function marquerRepere() {
+    if (!repere) return;
+    L.marker([repere.lat, repere.lon]).addTo(carteCouche)
+      .bindPopup("<b>Repère : " + repere.nom + "</b>");
+  }
+
+  function dessinerCarte() {
+    var rayon = Number($("#c-rayon").value) || 1000;
+    carteCouche.clearLayers();
+    marquerRepere();
+    var bornes = [];
+    adresses.forEach(function (a, i) {
+      var col = COULEURS[i % COULEURS.length];
+      bornes.push([a.lat, a.lon]);
+      L.circle([a.lat, a.lon], { radius: rayon, color: col, weight: 1.5, fillOpacity: .05 })
+        .addTo(carteCouche);
+      L.circleMarker([a.lat, a.lon], {
+        radius: 9, color: "#fff", fillColor: col, fillOpacity: 1, weight: 2
+      }).addTo(carteCouche).bindPopup("<b>" + (i + 1) + ". " + a.nom + "</b>" +
+        (a.commune ? "<br>" + a.commune : ""));
+      (a.pts || []).forEach(function (p) {
+        L.circleMarker([p.lat, p.lon], {
+          radius: 5, color: p.couleur, fillColor: p.couleur, fillOpacity: .8, weight: 1
+        }).addTo(carteCouche).bindPopup("<b>" + (p.nom || "Sans nom") + "</b><br>" +
+          formaterDistance(p.d) + " de " + a.nom);
+      });
+    });
+    if (repere) bornes.push([repere.lat, repere.lon]);
+    if (bornes.length > 1) carteObj.fitBounds(bornes, { padding: [40, 40] });
+    else if (bornes.length === 1) {
+      carteObj.setView(bornes[0], rayon <= 500 ? 15 : (rayon <= 1000 ? 14 : 13));
+    }
+  }
+
+  function rendreListeAdresses() {
+    var l = $("#c-liste");
+    if (!l) return;
+    l.innerHTML = "";
+    adresses.forEach(function (a, i) {
+      var b = el("button", "chip adr-chip");
+      var p = el("span", "adr-pastille");
+      p.style.background = COULEURS[i % COULEURS.length];
+      p.textContent = String(i + 1);
+      b.appendChild(p);
+      b.appendChild(document.createTextNode(a.nom + " ✕"));
+      b.title = "Retirer cette adresse";
+      b.addEventListener("click", function () {
+        adresses.splice(i, 1);
+        sauverCarte();
+        rafraichirCarte();
+      });
+      l.appendChild(b);
+    });
+  }
+
+  // Le tableau de comparaison : une colonne par adresse, une ligne par critère.
+  function rendreComparaison() {
+    var z = $("#c-stats");
+    z.innerHTML = "";
+    var cats = catsActives();
+    if (!cats.length) {
+      z.appendChild(el("p", "muted", "Cochez au moins une catégorie pour comparer."));
+      return;
+    }
+
+    z.appendChild(el("h3", null, adresses.length > 1
+      ? "Comparaison des " + adresses.length + " adresses"
+      : "Autour de cette adresse"));
+
+    var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table carte-table");
+    var thead = el("thead"), tr0 = el("tr");
+    tr0.appendChild(el("th", null, ""));
+    adresses.forEach(function (a, i) {
+      var th = el("th", "num");
+      var p = el("span", "adr-pastille");
+      p.style.background = COULEURS[i % COULEURS.length];
+      p.textContent = String(i + 1);
+      th.appendChild(p);
+      th.appendChild(el("div", null, a.nom));
+      if (a.commune) th.appendChild(el("div", "carte-commune", a.commune));
+      tr0.appendChild(th);
+    });
+    thead.appendChild(tr0); tab.appendChild(thead);
+    var tb = el("tbody");
+
+    // Distance au repère de trajet
+    if (repere) {
+      var trR = el("tr");
+      trR.appendChild(el("td", null, "Distance à " + repere.nom));
+      var dists = adresses.map(function (a) { return distance(a, repere); });
+      var mini = Math.min.apply(null, dists);
+      dists.forEach(function (d) {
+        var td = el("td", "num" + (d === mini && adresses.length > 1 ? " cell-ok" : ""));
+        td.appendChild(el("span", null, formaterDistance(d)));
+        trR.appendChild(td);
+      });
+      tb.appendChild(trR);
+    }
+
+    // Une ligne de comptage et une ligne de proximité par catégorie
+    cats.forEach(function (c) {
+      var trN = el("tr");
+      trN.appendChild(el("td", null, c.label + " dans le rayon"));
+      var nb = adresses.map(function (a) {
+        if (!a.pts) return null;
+        return a.pts.filter(function (p) { return p.cat === c.id; }).length;
+      });
+      var max = Math.max.apply(null, nb.map(function (x) { return x === null ? -1 : x; }));
+      nb.forEach(function (n) {
+        var td = el("td", "num" + (n !== null && n === max && max > 0 && adresses.length > 1 ? " cell-ok" : ""),
+          n === null ? "—" : String(n));
+        trN.appendChild(td);
+      });
+      tb.appendChild(trN);
+
+      var trD = el("tr");
+      trD.appendChild(el("td", "sous-ligne", "Le plus proche"));
+      var pp = adresses.map(function (a) {
+        if (!a.pts) return null;
+        var sel = a.pts.filter(function (p) { return p.cat === c.id; });
+        if (!sel.length) return null;
+        return sel.reduce(function (m, p) { return p.d < m.d ? p : m; });
+      });
+      var minD = Math.min.apply(null, pp.map(function (p) { return p ? p.d : Infinity; }));
+      pp.forEach(function (p) {
+        var td = el("td", "num sous-ligne" + (p && p.d === minD && adresses.length > 1 ? " cell-ok" : ""));
+        if (!p) { td.textContent = "aucun"; }
+        else {
+          td.appendChild(el("span", null, formaterDistance(p.d) + ", " + minutesAPied(p.d) + " min à pied"));
+          if (p.nom) td.appendChild(el("div", "carte-poi", p.nom));
+        }
+        trD.appendChild(td);
+      });
+      tb.appendChild(trD);
+    });
+
+    tab.appendChild(tb); wrap.appendChild(tab); z.appendChild(wrap);
+    z.appendChild(el("p", "hint",
+      "Les cases en vert signalent la meilleure valeur de la ligne. Les distances sont à vol " +
+      "d'oiseau et les minutes une marche à 4,5 km/h : un ordre de grandeur pour départager, " +
+      "pas un temps de trajet réel. Un arrêt proche ne dit rien de la fréquence des bus, " +
+      "que mobiliteit.lu donne."));
+  }
+
+  function ajouterAdresse(q) {
+    if (!q || !window.L || !carteObj) return;
+    if (adresses.length >= 4) {
+      statsCarteMessage("Quatre adresses au maximum : retirez-en une pour en ajouter une autre.");
+      return;
+    }
+    statsCarteMessage("Recherche de l'adresse...");
+    geocoder(q).then(function (a) {
+      if (!a) {
+        statsCarteMessage("Adresse introuvable au Luxembourg. Essayez avec la commune ou le quartier.");
+        return;
+      }
+      adresses.push(a);
+      sauverCarte();
+      rafraichirCarte();
+    }).catch(function (e) {
+      statsCarteMessage("La recherche d'adresse a échoué (" + e.message + ").");
+    });
+  }
+
+  function fixerRepere(q) {
+    if (!q) { repere = null; sauverCarte(); rafraichirCarte(); return; }
+    statsCarteMessage("Recherche du repère...");
+    geocoder(q).then(function (a) {
+      if (!a) { statsCarteMessage("Repère introuvable au Luxembourg."); return; }
+      repere = a;
+      sauverCarte();
+      rafraichirCarte();
+    }).catch(function (e) {
+      statsCarteMessage("La recherche a échoué (" + e.message + ").");
+    });
+  }
+
+  // Exemple : trois quartiers ou communes publics et un pôle d'emploi connu.
+  // Aucune adresse personnelle, ici comme ailleurs dans ce guide.
+  function exempleCarte() {
+    statsCarteMessage("Chargement de l'exemple...");
+    adresses = [];
+    $("#c-travail").value = "Kirchberg, Luxembourg";
+    var lieux = ["Belair, Luxembourg", "Esch-sur-Alzette", "Mersch"];
+    geocoder("Kirchberg, Luxembourg").then(function (r) {
+      repere = r;
+      // Les requêtes sont enchaînées : le service de cartographie demande
+      // de ne pas l'interroger en rafale.
+      return lieux.reduce(function (p, lieu) {
+        return p.then(function () {
+          return new Promise(function (res) { setTimeout(res, 1100); })
+            .then(function () { return geocoder(lieu); })
+            .then(function (a) { if (a) adresses.push(a); });
+        });
+      }, Promise.resolve());
+    }).then(function () {
+      sauverCarte();
+      rafraichirCarte();
+    }).catch(function (e) {
+      statsCarteMessage("L'exemple n'a pas pu être chargé (" + e.message + ").");
+    });
   }
 
   // Les applications et sites officiels, que cette carte ne remplace pas.
@@ -1972,18 +2275,48 @@
     rendreOutilsCarte();
     if (carteDemarree) return;
     carteDemarree = true;
+    chargerCarte();
     chargerLeaflet(function () {
-      carteObj = L.map("carte-map").setView([49.6116, 6.1319], 12);
+      carteObj = L.map("carte-map").setView([49.6116, 6.1319], 11);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "© les contributeurs OpenStreetMap"
       }).addTo(carteObj);
       carteCouche = L.layerGroup().addTo(carteObj);
+      rafraichirCarte();
     });
-    $("#c-chercher").addEventListener("click", chercherAdresse);
+
+    $("#c-chercher").addEventListener("click", function () {
+      var i = $("#c-adresse");
+      if (i.value.trim()) { ajouterAdresse(i.value.trim()); i.value = ""; }
+    });
     $("#c-adresse").addEventListener("keydown", function (e) {
-      if (e.key === "Enter") chercherAdresse();
+      if (e.key === "Enter" && e.target.value.trim()) {
+        ajouterAdresse(e.target.value.trim());
+        e.target.value = "";
+      }
     });
+    $("#c-fixer").addEventListener("click", function () {
+      fixerRepere($("#c-travail").value.trim());
+    });
+    $("#c-travail").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") fixerRepere(e.target.value.trim());
+    });
+    $("#c-exemple").addEventListener("click", exempleCarte);
+    $("#c-vider").addEventListener("click", function () {
+      adresses = []; repere = null;
+      $("#c-travail").value = "";
+      $("#c-adresse").value = "";
+      sauverCarte();
+      rafraichirCarte();
+    });
+
+    // Changer une categorie ou le rayon recalcule tout, sans retaper les adresses.
+    CATS.forEach(function (c) {
+      var e = $(c.case);
+      if (e) e.addEventListener("change", rafraichirCarte);
+    });
+    $("#c-rayon").addEventListener("change", rafraichirCarte);
   }
 
   // ---------- Administration ----------

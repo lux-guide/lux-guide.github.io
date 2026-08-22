@@ -808,3 +808,21 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 #mrh-methode h3 { margin-top: 22px; }
 #mrh-methode p { font-size: 14.5px; line-height: 1.7; }
 .lead .badge { margin-right: 8px; }
+
+/* ---------- Carte : comparaison d'adresses ---------- */
+
+.c-sep { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+#c-liste { margin-top: 14px; }
+.adr-chip { display: inline-flex; align-items: center; gap: 8px; }
+.adr-pastille {
+  width: 20px; height: 20px; border-radius: 6px; flex: none; color: #fff;
+  font-size: 11.5px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#c-stats { margin-top: 26px; }
+#c-stats h3 { margin-top: 0; }
+table.carte-table th.num { vertical-align: bottom; }
+table.carte-table th .adr-pastille { margin-bottom: 5px; }
+.carte-commune { font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; }
+.carte-poi { font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; }
+td.sous-ligne { color: var(--muted); font-size: 12.5px; }
