@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=13">
+<link rel="stylesheet" href="app/styles.css?v=14">
 </head>
 <body>
 
@@ -243,8 +243,8 @@
     <h1>Comparateur</h1>
     <p class="lead">
       Des comparaisons standardisées, poste par poste : d'abord une grille claire de ce qui
-      distingue vraiment les offres, puis un chat qui réécrit le tableau selon votre situation,
-      avec vos propres critères.
+      distingue vraiment les offres, puis un tableau que vous réécrivez vous-même, en français
+      courant, avec vos propres critères.
     </p>
 
     <div class="grid serre" id="ctr-verticales"></div>
@@ -294,17 +294,18 @@
     <!-- Tableau sur mesure : le chat construit et modifie la comparaison -->
     <div id="mrh-surmesure" hidden>
       <p class="lead small">
-        Ici le chat ne se contente pas de répondre : il construit le tableau. Demandez les
-        garanties qui vous intéressent, restreignez aux contrats que vous avez en main, ajoutez
-        un critère qui n'est pas dans la grille, et la comparaison se réécrit sous vos yeux.
+        Ce n'est pas un second assistant : c'est la commande du tableau. Écrivez ce que vous voulez
+        comparer, en français courant, et la grille se réécrit. Chaque demande et ce qu'elle a
+        changé restent notés dans le journal, pour que rien ne bouge sans explication.
       </p>
-      <div class="card ctr-wrap">
-        <div class="chips" id="ctr-suggestions"></div>
-        <div class="chat-log" id="ctr-log"></div>
+      <div class="card ctr-cmd">
+        <label class="ctr-cmd-label" for="ctr-input">Commander le tableau</label>
         <div class="chat-bar">
           <input type="text" id="ctr-input" placeholder="Ex : compare le vol et le dégât des eaux, seulement chez l'assureur A et l'assureur C" autocomplete="off">
-          <button class="btn" id="ctr-send">Envoyer</button>
+          <button class="btn" id="ctr-send">Appliquer</button>
         </div>
+        <div class="chips" id="ctr-suggestions"></div>
+        <div class="ctr-journal" id="ctr-journal"></div>
       </div>
       <div id="ctr-tableau"></div>
     </div>
@@ -559,15 +560,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=13"></script>
-<script src="app/kb.js?v=13"></script>
-<script src="app/simulateur.js?v=13"></script>
-<script src="comparateur/contrats_kb.js?v=13"></script>
-<script src="comparateur/mrh_kb.js?v=13"></script>
-<script src="comparateur/offres_kb.js?v=13"></script>
-<script src="app/chat.js?v=13"></script>
-<script src="app/ui.js?v=13"></script>
-<script src="app/communaute.js?v=13"></script>
+<script src="app/bareme.js?v=14"></script>
+<script src="app/kb.js?v=14"></script>
+<script src="app/simulateur.js?v=14"></script>
+<script src="comparateur/contrats_kb.js?v=14"></script>
+<script src="comparateur/mrh_kb.js?v=14"></script>
+<script src="comparateur/offres_kb.js?v=14"></script>
+<script src="app/chat.js?v=14"></script>
+<script src="app/ui.js?v=14"></script>
+<script src="app/communaute.js?v=14"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

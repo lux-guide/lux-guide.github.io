@@ -1433,7 +1433,7 @@
     mrh.appendChild(el("h3", null, "Assurance habitation (MRH)"));
     mrh.appendChild(el("p", null,
       "Treize sinistres réels posés à quatre contrats du marché, clause citée à l'appui, " +
-      "un classement selon votre situation et un chat pour vos propres cas."));
+      "un classement selon votre situation et un tableau que vous construisez vous-même."));
     mrh.addEventListener("click", function () {
       fermerVerticale();
       var c = $("#ctr-mrh");
@@ -1454,6 +1454,8 @@
   function fermerVerticale() {
     var vue = $("#ctr-vue");
     if (vue) { vue.hidden = true; vue.innerHTML = ""; }
+    var mrh = $("#ctr-mrh");
+    if (mrh) mrh.hidden = false;
   }
 
   function ouvrirVerticale(v) {
@@ -1461,6 +1463,10 @@
     if (!vue) return;
     vue.innerHTML = "";
     vue.hidden = false;
+    // Une comparaison a la fois : la comparaison habitation, qui est longue,
+    // ne reste pas empilee sous la verticale qu'on vient d'ouvrir.
+    var mrh = $("#ctr-mrh");
+    if (mrh) mrh.hidden = true;
 
     var head = el("div", "vert-head");
     head.appendChild(el("h2", null, v.titre));
@@ -1508,59 +1514,94 @@
       }
     }
 
-    var card = el("div", "card ctr-wrap");
+    // Un questionnaire guide, pas un chat : etape numerotee, question unique
+    // a l'ecran, reponses precedentes rappelees. L'application ne montre qu'une
+    // seule fenetre de conversation, celle de l'assistant.
+    var card = el("div", "card etapes");
     card.appendChild(el("h3", null, "Affiner selon votre situation"));
-    var log = el("div", "chat-log");
-    log.id = "vert-log";
-    card.appendChild(log);
+    var zone = el("div");
+    zone.id = "vert-etapes";
+    card.appendChild(zone);
     vue.appendChild(card);
-    demarrerAffinage(v, log);
+    demarrerAffinage(v, zone);
     vue.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function bulleVert(log, texte, qui) {
-    var m = el("div", "msg " + qui);
-    if (texte) m.appendChild(document.createTextNode(texte));
-    log.appendChild(m);
-    log.scrollTop = log.scrollHeight;
-    return m;
-  }
-
-  function demarrerAffinage(v, log) {
+  function demarrerAffinage(v, zone) {
     var scores = v.offres.map(function () { return 0; });
-    var raisons = [];
+    var raisons = [], reponses = [];
     var etape = 0;
 
-    bulleVert(log,
-      "Quelques questions, et je vous dis quelle colonne du tableau colle à votre situation, et pourquoi.",
-      "bot");
+    poser();
+
+    function rappel() {
+      if (!reponses.length) return null;
+      var d = el("div", "etapes-rappel");
+      reponses.forEach(function (r, i) {
+        var l = el("div", "etapes-rl");
+        l.appendChild(el("span", "etapes-rq", r.question));
+        l.appendChild(el("span", "etapes-ra", r.label));
+        var b = el("button", "etapes-refaire", "modifier");
+        b.addEventListener("click", function () { revenir(i); });
+        l.appendChild(b);
+        d.appendChild(l);
+      });
+      return d;
+    }
+
+    // Revenir sur une reponse : on rejoue proprement les precedentes plutot
+    // que de defaire des points a la main.
+    function revenir(i) {
+      var gardees = reponses.slice(0, i);
+      scores = v.offres.map(function () { return 0; });
+      raisons = []; reponses = [];
+      gardees.forEach(function (r) {
+        r.points.forEach(function (p, k) { scores[k] += p; });
+        raisons.push(r.raison);
+        reponses.push(r);
+      });
+      etape = i;
+      $$("#vert-table td.col-gagnante").forEach(function (c) { c.classList.remove("col-gagnante"); });
+      poser();
+    }
 
     function poser() {
+      zone.innerHTML = "";
+      var r = rappel();
+      if (r) zone.appendChild(r);
       if (etape >= v.questions.length) { conclure(); return; }
       var q = v.questions[etape];
-      var m = bulleVert(log, q.question, "bot");
+      var t = el("div", "etapes-tete");
+      t.appendChild(el("span", "etapes-num", "Question " + (etape + 1) + " sur " + v.questions.length));
+      var jauge = el("span", "etapes-jauge");
+      var rempli = el("i");
+      rempli.style.width = Math.round(100 * etape / v.questions.length) + "%";
+      jauge.appendChild(rempli);
+      t.appendChild(jauge);
+      zone.appendChild(t);
+      zone.appendChild(el("p", "etapes-q", q.question));
       var c = el("div", "chips");
       q.options.forEach(function (o) {
         var b = el("button", "chip", o.label);
         b.addEventListener("click", function () {
-          c.remove();
-          bulleVert(log, o.label, "me");
           o.points.forEach(function (p, i) { scores[i] += p; });
           raisons.push(o.raison);
+          reponses.push({ question: q.question, label: o.label, points: o.points, raison: o.raison });
           etape++;
-          setTimeout(poser, 260);
+          poser();
         });
         c.appendChild(b);
       });
-      m.appendChild(c);
-      log.scrollTop = log.scrollHeight;
+      zone.appendChild(c);
     }
 
     function conclure() {
       var max = Math.max.apply(null, scores);
       var classement = v.offres.map(function (o, i) { return { nom: o, score: scores[i], i: i }; })
         .sort(function (a, b) { return b.score - a.score; });
-      var m = bulleVert(log, "Pour votre situation, voici le classement :", "bot");
+      var m = el("div", "etapes-fin");
+      zone.appendChild(m);
+      m.appendChild(el("h4", null, "Pour votre situation, voici le classement"));
       var cl = el("div", "classement");
       classement.forEach(function (x, rang) {
         var ligne = el("div", "cl-ligne" + (rang === 0 ? " gagnant" : ""));
@@ -1592,10 +1633,7 @@
       autres.addEventListener("click", fermerVerticale);
       c.appendChild(autres);
       m.appendChild(c);
-      log.scrollTop = log.scrollHeight;
     }
-
-    setTimeout(poser, 300);
   }
 
   // ---------- Comparateur de contrats ----------
@@ -1638,10 +1676,13 @@
     return bestScore >= 2 || (bestScore >= 1 && termes.length === 1) ? best : null;
   }
 
+  // Journal de commandes, pas une conversation. L'application n'a qu'un seul
+  // chatbot, l'assistant. Ici on ecrit une demande, on lit ce qu'elle a change :
+  // deux registres visuels distincts, aucune bulle, aucun tour de parole.
   function bulleCtr(texte, qui) {
-    var log = $("#ctr-log");
+    var log = $("#ctr-journal");
     if (!log) return null;
-    var m = el("div", "msg " + qui);
+    var m = el("div", "jr " + (qui === "me" ? "jr-cmd" : "jr-res"));
     if (texte) m.appendChild(document.createTextNode(texte));
     log.appendChild(m);
     log.scrollTop = log.scrollHeight;
@@ -1822,8 +1863,15 @@
     if (v && v.franchise) td.appendChild(el("span", "sm-info", "Franchise : " + v.franchise));
     if (v && v.citation) {
       var det = el("details", "sm-det");
-      det.appendChild(el("summary", null, "Clause" + (v.page ? " p. " + v.page : "")));
+      // La citation a-t-elle ete retrouvee telle quelle dans le PDF ? Sur les
+      // 52 verdicts, 18 seulement le sont. Le dire cellule par cellule evite
+      // de donner le meme poids a une clause verifiee et a une clause reprise.
+      det.appendChild(el("summary", "sm-sum-" + (v.verifiee ? "ok" : "arev"),
+        "Clause" + (v.page ? " p. " + v.page : "") + (v.verifiee ? " ✓" : " ·")));
       det.appendChild(el("blockquote", "vcitation", "« " + v.citation + " »"));
+      det.appendChild(el("p", "sm-verif", v.verifiee
+        ? "Citation retrouvée telle quelle dans le document."
+        : "Citation non revérifiée dans le document : à confronter au PDF avant de s'en servir."));
       td.appendChild(det);
     }
     return td;
@@ -1834,7 +1882,7 @@
     var td = el("td", "sm-cell " + (cell.hits ? "cell-ok" : "cell-nf"));
     if (!cell.hits) td.appendChild(el("span", "sm-info", "absent du document"));
     else {
-      td.appendChild(el("span", "mat-hits", cell.hits + " mentions"));
+      td.appendChild(el("span", "mat-hits", cell.hits + (cell.hits > 1 ? " mentions" : " mention")));
       if (cell.first_page) td.appendChild(el("span", "mat-page", "dès la p. " + cell.first_page));
     }
     return td;
@@ -1872,7 +1920,18 @@
     var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table sm-table");
     var thead = el("thead"), tr0 = el("tr");
     tr0.appendChild(el("th", null, "Ligne comparée"));
-    cols.forEach(function (a) { tr0.appendChild(el("th", "num", a)); });
+    cols.forEach(function (a) {
+      var th = el("th", "num");
+      th.appendChild(el("div", null, a));
+      // L'edition du document est une information de comparaison, pas un detail :
+      // une edition 2017 et une edition 2023 ne decrivent pas le meme marche.
+      var src = (window.MRH_KB.sources || []).filter(function (s) { return s.nom === a; })[0];
+      if (src) {
+        th.appendChild(el("div", "sm-edition",
+          src.edition ? "édition " + src.edition : "édition non datée"));
+      }
+      tr0.appendChild(th);
+    });
     tr0.appendChild(el("th", "sm-x", ""));
     thead.appendChild(tr0); tab.appendChild(thead);
 
@@ -1955,7 +2014,58 @@
       "Les statuts viennent de la lecture des conditions générales, chaque cellule porte sa clause " +
       "et sa page. « Absent » veut dire que le mot ne figure pas dans le document analysé, ce qui " +
       "n'est pas la même chose qu'un refus de prise en charge : c'est une question à poser par écrit."));
+    z.appendChild(reservesSM(cols));
     z.appendChild(choixCriteresSM());
+  }
+
+  // Les deux reserves qui limitent vraiment la lecture du tableau, comptees sur
+  // les lignes affichees plutot qu'annoncees en general.
+  function reservesSM(cols) {
+    var d = el("div", "notice small sm-reserves");
+    d.appendChild(el("strong", null, "Ce que ce tableau ne dit pas. "));
+
+    var annees = [];
+    cols.forEach(function (a) {
+      var s = (window.MRH_KB.sources || []).filter(function (x) { return x.nom === a; })[0];
+      var an = s && s.edition ? parseInt(String(s.edition).slice(-4), 10) : null;
+      if (an) annees.push(an);
+    });
+    var nonDatees = cols.length - annees.length;
+    if (annees.length > 1) {
+      var mini = Math.min.apply(null, annees), maxi = Math.max.apply(null, annees);
+      if (maxi > mini) {
+        d.appendChild(document.createTextNode(
+          "Les documents comparés ne sont pas de la même année : " + mini + " pour le plus " +
+          "ancien, " + maxi + " pour le plus récent" +
+          (nonDatees ? ", et " + nonDatees + (nonDatees > 1 ? " non datés" : " non daté") : "") +
+          ". Un écart de " + (maxi - mini) + " ans peut venir d'une évolution du produit autant " +
+          "que d'une différence entre assureurs. "));
+      }
+    }
+
+    // Part des citations effectivement retrouvees dans les PDF, sur les seules
+    // lignes de sinistres affichees.
+    var tot = 0, ok = 0;
+    surMesure.lignes.forEach(function (l) {
+      if (l.type !== "sinistre") return;
+      var e = entreeSM(l.id);
+      if (!e || !e.sc) return;
+      cols.forEach(function (a) {
+        var v = e.sc.verdicts[a];
+        if (!v || !v.citation) return;
+        tot++;
+        if (v.verifiee) ok++;
+      });
+    });
+    if (tot) {
+      d.appendChild(document.createTextNode(
+        ok + " des " + tot + " clauses affichées ont été retrouvées telles quelles dans le " +
+        "document source. Les autres sont marquées d'un point et restent à confronter au PDF " +
+        "avant de fonder une décision dessus. "));
+    }
+    d.appendChild(document.createTextNode(
+      "Aucun prix n'entre dans cette comparaison : à garanties égales, la prime peut inverser le choix."));
+    return d;
   }
 
   function barreOutilsSM() {
@@ -2110,18 +2220,11 @@
     return c;
   }
 
+  // Une commande s'applique tout de suite. Pas de temps de reflexion simule :
+  // ce serait mimer une conversation alors que le calcul est instantane.
   function repondreContrat(q) {
     bulleCtr(q, "me");
-    var attente = bulleCtr("", "bot");
-    if (attente) {
-      var pts = el("span", "points");
-      pts.innerHTML = "<span></span><span></span><span></span>";
-      attente.appendChild(pts);
-    }
-    setTimeout(function () {
-      if (attente) attente.remove();
-      piloterComparateur(q);
-    }, 400 + Math.random() * 400);
+    piloterComparateur(q);
   }
 
   // Une demande, une action sur le tableau. On dit toujours ce qu'on a fait
@@ -2216,7 +2319,7 @@
         ]));
       }
       if (inconnus.length) chercherCritereLibre(inconnus.join(" "));
-      var log0 = $("#ctr-log");
+      var log0 = $("#ctr-journal");
       if (log0) log0.scrollTop = log0.scrollHeight;
       return;
     }
@@ -2400,8 +2503,11 @@
         c.appendChild(el("p", "reco-ok", "Aucune lacune sur ce que vous avez coché."));
       } else {
         var det = el("details", "reco-lacunes");
+        // Pas de « points a negocier » : des conditions generales ne se
+        // negocient pas. Ce sont des lacunes, le levier est ailleurs.
         det.appendChild(el("summary", null,
-          s.lacunes.length + (s.lacunes.length > 1 ? " points à négocier" : " point à négocier")));
+          s.lacunes.length + (s.lacunes.length > 1
+            ? " lacunes sur ce que vous avez coché" : " lacune sur ce que vous avez coché")));
         s.lacunes.forEach(function (g) {
           var d = el("div", "lacune");
           var t = el("p", "lacune-t");
@@ -2424,6 +2530,11 @@
       "Le pourcentage mesure la part de vos besoins réellement payée par le contrat : 100 % veut " +
       "dire payé plein sur tout ce que vous avez coché, un chiffre plus bas signale des conditions, " +
       "des plafonds réduits ou des exclusions. Cocher une situation différente change le classement."));
+    zone.appendChild(el("p", "hint",
+      "Une lacune ne se corrige pas en discutant : les conditions générales sont un texte type, " +
+      "identique pour tous les assurés du contrat. Les deux vrais leviers sont le choix d'un autre " +
+      "contrat, et ce qui figure aux conditions particulières, capital déclaré, options souscrites, " +
+      "extensions. Le reste consiste à faire confirmer par écrit ce que le document ne dit pas."));
 
     // Détail : chaque situation cochée, notée contrat par contrat
     zone2.appendChild(el("h3", null, "Le détail derrière le classement"));
@@ -2485,7 +2596,7 @@
         var td = el("td", "num " + (cell.hits ? "cell-ok" : "cell-nf"));
         if (!cell.hits) td.textContent = "absent";
         else {
-          td.appendChild(el("span", "mat-hits", cell.hits + " mentions"));
+          td.appendChild(el("span", "mat-hits", cell.hits + (cell.hits > 1 ? " mentions" : " mention")));
           if (cell.first_page) td.appendChild(el("span", "mat-page", "dès la p. " + cell.first_page));
         }
         tr.appendChild(td);
@@ -2500,7 +2611,8 @@
     var ul = el("ul", "mrh-sources-liste");
     K.sources.forEach(function (src) {
       ul.appendChild(el("li", null,
-        src.nom + " : conditions générales de " + src.pages + " pages, lues intégralement."));
+        src.nom + " : conditions générales de " + src.pages + " pages, lues intégralement, " +
+        (src.edition ? "édition " + src.edition + "." : "sans date d'édition dans le document.")));
     });
     s.appendChild(ul);
     s.appendChild(el("p", "hint",
@@ -2583,7 +2695,7 @@
   function initComparateur() {
     rendreVerticales();
     initMrh();
-    if (!window.CONTRATS_KB || !$("#ctr-log")) return;
+    if (!window.CONTRATS_KB || !$("#ctr-journal")) return;
     chargerSM();
     rendreSurMesure();
     // Demandes suggerees : elles montrent que le chat agit sur le tableau,
@@ -2600,9 +2712,9 @@
       b.addEventListener("click", function () { repondreContrat(t); });
       sug.appendChild(b);
     });
-    bulleCtr("Ce chat construit le tableau. Dites les garanties à comparer, les contrats à " +
-      "afficher, ou un critère qui n'est pas dans la grille : je le cherche dans les clauses " +
-      "lues et j'ajoute la ligne. Le tableau se réécrit juste en dessous.", "bot");
+    bulleCtr("Trois familles de commandes sont comprises : les garanties et les sinistres à " +
+      "comparer, les contrats à afficher, et l'ordre des lignes. Un mot absent de la grille est " +
+      "cherché dans les clauses lues, et ajouté en ligne de recherche libre.", "bot");
     $("#ctr-send").addEventListener("click", function () {
       var i = $("#ctr-input");
       if (i.value.trim()) { repondreContrat(i.value.trim()); i.value = ""; }

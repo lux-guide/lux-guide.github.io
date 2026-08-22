@@ -784,6 +784,53 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 .mrh-sources-liste { color: var(--text-2); font-size: 14px; }
 .mrh-sources-liste li { margin: 5px 0; }
 
+/* ---------- Commande du tableau ---------- */
+/* Volontairement different d'une conversation : l'application n'a qu'un seul
+   chatbot, l'assistant. Ici, une ligne de commande et un journal. */
+
+.ctr-cmd { margin-top: 4px; }
+.ctr-cmd-label {
+  display: block; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); font-weight: 650; margin-bottom: 8px;
+}
+.ctr-cmd .chat-bar { margin: 0; }
+.ctr-cmd .chips { margin-top: 10px; }
+.ctr-journal {
+  margin-top: 14px; max-height: 260px; overflow-y: auto;
+  border-left: 2px solid var(--border); padding-left: 14px;
+}
+.ctr-journal:empty { display: none; }
+.jr { font-size: 13.5px; line-height: 1.6; }
+.jr-cmd {
+  margin-top: 14px; color: var(--text); font-weight: 600;
+  font-size: 13px; letter-spacing: .1px;
+}
+.jr-cmd::before { content: "› "; color: var(--accent); font-weight: 700; }
+.jr-cmd:first-child { margin-top: 0; }
+.jr-res { color: var(--text-2); margin-top: 4px; }
+.jr-res .chips { margin-top: 8px; }
+.jr-res .vgrid { margin-top: 10px; }
+
+/* ---------- Questionnaire des verticales ---------- */
+
+.etapes-tete { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
+.etapes-num {
+  font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); font-weight: 650; white-space: nowrap;
+}
+.etapes-jauge { flex: 1; height: 4px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.etapes-jauge i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.etapes-q { font-size: 16px; color: var(--text); margin: 0 0 14px; font-weight: 550; }
+.etapes-rappel { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.etapes-rl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 13px; margin: 4px 0; }
+.etapes-rq { color: var(--muted); }
+.etapes-ra { color: var(--text); font-weight: 600; }
+.etapes-refaire {
+  border: 0; background: none; color: var(--accent); cursor: pointer;
+  font: inherit; font-size: 12px; padding: 0; text-decoration: underline;
+}
+.etapes-fin h4 { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
+
 /* ---------- Tableau sur mesure ---------- */
 
 .sm-barre {
@@ -816,6 +863,14 @@ table.sm-table thead th {
   background: var(--surface-2); color: var(--text-2);
 }
 .sm-cell { min-width: 150px; font-size: 13px; }
+.sm-edition {
+  font-size: 10.5px; font-weight: 400; letter-spacing: 0; text-transform: none;
+  color: var(--muted); margin-top: 3px;
+}
+.sm-sum-ok { color: var(--ok) !important; }
+.sm-sum-arev { color: var(--muted) !important; }
+.sm-verif { font-size: 11px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.sm-reserves { margin-top: 14px; }
 .sm-info { display: block; font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
 .sm-det { margin-top: 7px; }
 .sm-det summary {

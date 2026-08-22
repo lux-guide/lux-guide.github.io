@@ -12,19 +12,23 @@ window.MRH_KB = {
   "sources": [
     {
       "nom": "Assureur A",
-      "pages": 116
+      "pages": 116,
+      "edition": "2022"
     },
     {
       "nom": "Assureur B",
-      "pages": 117
+      "pages": 117,
+      "edition": "05/2017"
     },
     {
       "nom": "Assureur C",
-      "pages": 60
+      "pages": 60,
+      "edition": null
     },
     {
       "nom": "Assureur D",
-      "pages": 139
+      "pages": 139,
+      "edition": "11/2023"
     }
   ],
   "criteres": [
