@@ -1967,20 +1967,35 @@
       if (c.requete2) blocs.push(c.requete2 + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
     });
     var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 400;";
-    // Le service Overpass repond souvent 504 quand il est charge : on retente
-    // une fois avant d'abandonner la colonne.
+    // Overpass repond souvent 504 quand il est charge, et 429 quand on l'a
+    // trop sollicite. On retente une fois, plus longuement sur un 429, et on
+    // borne l'attente : une requete qui traine ne doit pas figer le tableau.
     function appel() {
+      var stop = new AbortController();
+      var minuteur = setTimeout(function () { stop.abort(); }, 30000);
       return fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(q)
+        body: "data=" + encodeURIComponent(q),
+        signal: stop.signal
       }).then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
+        clearTimeout(minuteur);
+        if (!r.ok) {
+          var e = new Error(r.status === 429
+            ? "service momentanément saturé"
+            : "HTTP " + r.status);
+          e.trop = r.status === 429;
+          throw e;
+        }
         return r.json();
+      }, function (e) {
+        clearTimeout(minuteur);
+        throw new Error(e.name === "AbortError" ? "délai dépassé" : e.message);
       });
     }
-    return appel().catch(function () {
-      return new Promise(function (res) { setTimeout(res, 2500); }).then(appel);
+    return appel().catch(function (e) {
+      var attente = e.trop ? 8000 : 2500;
+      return new Promise(function (res) { setTimeout(res, attente); }).then(appel);
     }).then(function (j) {
       var pts = [];
       (j.elements || []).forEach(function (e) {
