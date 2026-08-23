@@ -1009,6 +1009,25 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 
 #fiches-themes { margin: -8px 0 22px; }
 
+/* ---------- Classe d'impot et simulateurs officiels ---------- */
+
+.cl-titre {
+  font-family: var(--serif); font-size: 27px; margin: 0 0 10px;
+  color: var(--text); letter-spacing: -.3px;
+}
+.off-groupe { margin: 30px 0 14px; font-size: 17px; font-weight: 650; }
+.off-groupe:first-child { margin-top: 6px; }
+.off-carte { display: block; text-decoration: none; color: inherit; }
+.off-carte h3 { color: var(--text); }
+.off-carte:hover h3 { color: var(--accent); }
+.off-org {
+  display: block; font-size: var(--micro); font-weight: 650;
+  text-transform: uppercase; letter-spacing: 1.1px;
+  color: var(--muted); margin-bottom: 8px;
+}
+/* Ces liens sortent du guide : on le montre plutot que de le laisser decouvrir. */
+.off-carte h3::after { content: " ↗"; color: var(--muted); font-weight: 400; }
+
 /* ---------- Parametres ---------- */
 
 table.par-stock { font-size: 13.5px; }

@@ -1327,13 +1327,239 @@
     });
   }
 
+  // ---------- Quelle classe d'impot ----------
+  //
+  // Un arbre de decision, pas un calcul : la classe se deduit d'une regle, il
+  // n'y a donc rien a estimer et aucune marge d'erreur a annoncer. Chaque
+  // reponse renvoie a la fiche Classes d'impot, qui porte la source officielle.
+
+  var CL_ARBRE = {
+    depart: {
+      q: "Êtes-vous marié ou lié par un partenariat enregistré ?",
+      r: [
+        ["Oui", "residence"],
+        ["Non, je vis seul ou en union libre", "enfant"]
+      ]
+    },
+    residence: {
+      q: "Votre conjoint ou partenaire réside-t-il au Luxembourg ?",
+      r: [
+        ["Oui, nous résidons tous les deux au Luxembourg", "classe2"],
+        ["Non, il ou elle réside encore à l'étranger", "nonresident"],
+        ["Je ne sais pas encore", "nonresident"]
+      ]
+    },
+    enfant: {
+      q: "Avez-vous un enfant à votre charge, ou avez-vous plus de 64 ans ?",
+      r: [
+        ["Non, ni l'un ni l'autre", "classe1"],
+        ["Oui, j'élève seul un enfant à charge", "classe1a"],
+        ["Oui, j'ai plus de 64 ans", "classe1a"],
+        ["Je suis veuf ou veuve", "classe1a"]
+      ]
+    }
+  };
+
+  var CL_FINS = {
+    classe2: {
+      titre: "Classe 2",
+      texte: "Les couples mariés ou partenaires imposés collectivement relèvent de la classe 2, " +
+        "avec le mécanisme de splitting qui allège fortement l'impôt.",
+      alerte: "Si vous êtes deux à travailler, le point à surveiller n'est pas la classe mais le " +
+        "second salaire. Il relève d'une fiche additionnelle portant un taux fixe de 15 % en " +
+        "classe 2, et ce taux ne dépend jamais du revenu réel du ménage. Il sous-prélève donc " +
+        "souvent, et l'écart apparaît d'un coup à la première déclaration commune."
+    },
+    classe1: {
+      titre: "Classe 1",
+      texte: "Les célibataires sans enfant à charge relèvent de la classe 1.",
+      alerte: null
+    },
+    classe1a: {
+      titre: "Classe 1a",
+      texte: "Les parents isolés, les veufs et les personnes de plus de soixante-quatre ans " +
+        "relèvent de la classe 1a, un barème intermédiaire dont l'avantage se réduit à mesure " +
+        "que le revenu augmente.",
+      alerte: null
+    },
+    nonresident: {
+      titre: "Classe 1 par défaut, et c'est le cas à faire chiffrer",
+      texte: "Un couple dont l'un des membres réside encore à l'étranger relève par défaut de la " +
+        "classe 1, nettement moins favorable que la classe 2.",
+      alerte: "L'option pour l'imposition collective existe et mérite d'être étudiée chiffres en " +
+        "main : selon les revenus respectifs, elle peut représenter plusieurs milliers d'euros " +
+        "par an, dans un sens comme dans l'autre. L'Administration des contributions directes " +
+        "propose une simulation en ligne pour trancher."
+    }
+  };
+
+  var clNoeud = "depart", clChemin = [];
+
+  function rendreClasse() {
+    var z = $("#cl-etapes"), r = $("#cl-resultat");
+    if (!z || !r) return;
+    z.innerHTML = ""; r.innerHTML = "";
+
+    if (clChemin.length) {
+      var rap = el("div", "etapes-rappel");
+      clChemin.forEach(function (c, i) {
+        var l = el("div", "etapes-rl");
+        l.appendChild(el("span", "etapes-rq", c.q));
+        l.appendChild(el("span", "etapes-ra", c.a));
+        var b = el("button", "etapes-refaire", "modifier");
+        b.addEventListener("click", function () {
+          clChemin = clChemin.slice(0, i);
+          clNoeud = i === 0 ? "depart" : clChemin[i - 1].suite;
+          rendreClasse();
+        });
+        l.appendChild(b);
+        rap.appendChild(l);
+      });
+      z.appendChild(rap);
+    }
+
+    var fin = CL_FINS[clNoeud];
+    if (fin) {
+      var t = el("div", "etapes-tete");
+      t.appendChild(el("span", "etapes-num", "Résultat"));
+      z.appendChild(t);
+      z.appendChild(el("p", "cl-titre", fin.titre));
+      z.appendChild(el("p", null, fin.texte));
+      if (fin.alerte) {
+        var n = el("div", "notice small");
+        n.appendChild(el("strong", null, "Le point qui coûte cher. "));
+        n.appendChild(document.createTextNode(fin.alerte));
+        z.appendChild(n);
+      }
+      var c = el("div", "chips");
+      var bf = el("button", "chip", "Ouvrir la fiche Classes d'impôt");
+      bf.addEventListener("click", function () { ouvrir("fiches"); montrerFiche("impots_classes"); });
+      c.appendChild(bf);
+      var bs = el("button", "chip", "Calculer mon salaire net avec cette classe");
+      bs.addEventListener("click", function () {
+        var sel = $("#s-classe");
+        if (sel) sel.value = clNoeud === "classe2" ? "classe2" : (clNoeud === "classe1a" ? "classe1a" : "classe1");
+        majSimulateur();
+        $$("#sim-tabs button").filter(function (x) { return x.dataset.sim === "salaire"; })[0].click();
+      });
+      c.appendChild(bs);
+      var br = el("button", "chip", "Recommencer");
+      br.addEventListener("click", function () { clNoeud = "depart"; clChemin = []; rendreClasse(); });
+      c.appendChild(br);
+      z.appendChild(c);
+      z.appendChild(el("p", "hint",
+        "La classe est inscrite sur votre fiche de retenue, établie automatiquement par " +
+        "l'administration après l'affiliation à la sécurité sociale. Si elle ne correspond pas à " +
+        "ce résultat, elle se corrige auprès du bureau RTS, formulaire 164 R."));
+      return;
+    }
+
+    var n = CL_ARBRE[clNoeud];
+    if (!n) { clNoeud = "depart"; clChemin = []; rendreClasse(); return; }
+    var tete = el("div", "etapes-tete");
+    tete.appendChild(el("span", "etapes-num", "Question " + (clChemin.length + 1)));
+    var jauge = el("span", "etapes-jauge");
+    var i2 = el("i");
+    i2.style.width = Math.round(100 * clChemin.length / 2) + "%";
+    jauge.appendChild(i2);
+    tete.appendChild(jauge);
+    z.appendChild(tete);
+    z.appendChild(el("p", "etapes-q", n.q));
+    var ch = el("div", "chips");
+    n.r.forEach(function (o) {
+      var b = el("button", "chip", o[0]);
+      b.addEventListener("click", function () {
+        clChemin.push({ q: n.q, a: o[0], suite: o[1] });
+        clNoeud = o[1];
+        rendreClasse();
+      });
+      ch.appendChild(b);
+    });
+    z.appendChild(ch);
+  }
+
+  // ---------- Simulateurs officiels ----------
+  //
+  // Ce que le guide ne refait pas. Chaque lien a ete teste ; l'intitule est
+  // celui du service, aucune promesse n'est ajoutee sur ce qu'il calcule.
+
+  var OUTILS_OFFICIELS = [
+    { g: "Impôts", items: [
+      { t: "Calculatrice fiscale", o: "Ministère des Finances",
+        d: "Simule l'impôt avant et après la réforme, à partir du revenu et de la classe.",
+        u: "https://mfin.gouvernement.lu/fr/calculatrice-fiscale.html" },
+      { t: "Barèmes de retenue", o: "Administration des contributions directes",
+        d: "Les barèmes officiels, et de quoi calculer soi-même la retenue sur salaire ou pension.",
+        u: "https://impotsdirects.public.lu/fr/baremes.html" },
+      { t: "Imposition collective ou individuelle", o: "Administration des contributions directes",
+        d: "Pour les couples mariés : simuler, puis demander, le mode d'imposition le plus favorable.",
+        u: "https://impotsdirects.public.lu/fr/echanges_electroniques/mirrorNL_03102017.html" }
+    ] },
+    { g: "Logement", items: [
+      { t: "Simulateur de garantie locative", o: "Guichet.lu",
+        d: "Le montant de la garantie que le bailleur peut demander, depuis la réforme de 2024.",
+        u: "https://guichet.public.lu/fr/citoyens/outils/garantie-locative.html" },
+      { t: "Simulateur de subvention de loyer", o: "Guichet.lu",
+        d: "Estime l'aide au loyer selon les revenus et la composition du ménage.",
+        u: "https://guichet.public.lu/fr/citoyens/outils/subvention-loyer.html" },
+      { t: "Simulateur des loyers", o: "Observatoire de l'habitat",
+        d: "Le loyer que l'on peut attendre pour un logement donné, selon la commune et la surface.",
+        u: "https://logement.public.lu/fr/observatoire-habitat/prix-de-location/simulateur.html" }
+    ] },
+    { g: "Famille et aides", items: [
+      { t: "Revenu du congé parental", o: "Caisse pour l'avenir des enfants",
+        d: "L'indemnité versée pendant le congé parental, calculée sur les douze mois précédents.",
+        u: "https://cae.public.lu/fr/conge-parental/calculateur--revenu-nouveau-conge-parental-.html" },
+      { t: "Allocation de vie chère et prime énergie", o: "Fonds national de solidarité",
+        d: "Éligibilité et montant, selon le revenu et la taille du ménage.",
+        u: "https://fns.public.lu/fr/avc/calculateur.html" },
+      { t: "Calendrier des vacances scolaires", o: "Guichet.lu",
+        d: "Les dates officielles, utiles pour caler une arrivée sur une rentrée.",
+        u: "https://guichet.public.lu/fr/citoyens/outils/calendrier-scolaire.html" }
+    ] },
+    { g: "Références", items: [
+      { t: "Paramètres sociaux", o: "Guichet.lu",
+        d: "Salaire social minimum, plafonds de cotisation, indice : les valeurs en vigueur.",
+        u: "https://guichet.public.lu/fr/citoyens/outils/parametres-sociaux.html" },
+      { t: "Tous les outils de Guichet.lu", o: "Guichet.lu",
+        d: "La liste complète des calculateurs publics, mise à jour par l'administration.",
+        u: "https://guichet.public.lu/fr/citoyens/outils.html" }
+    ] }
+  ];
+
+  function rendreOutilsOfficiels() {
+    var z = $("#sim-outils");
+    if (!z || z.children.length) return;
+    OUTILS_OFFICIELS.forEach(function (bloc) {
+      z.appendChild(el("h3", "off-groupe", bloc.g));
+      var g = el("div", "grid serre");
+      bloc.items.forEach(function (o) {
+        var a = el("a", "qcard off-carte");
+        a.href = o.u;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.appendChild(el("span", "off-org", o.o));
+        a.appendChild(el("h3", null, o.t));
+        a.appendChild(el("p", null, o.d));
+        g.appendChild(a);
+      });
+      z.appendChild(g);
+    });
+  }
+
   function initSimulateur() {
-    // Deux sous-onglets : salaire net, capacite d'emprunt
+    // Quatre sous-onglets : salaire net, capacite d'emprunt, classe d'impot,
+    // et les simulateurs officiels que le guide ne refait pas.
+    var vues = ["salaire", "emprunt", "classe", "officiels"];
     $$("#sim-tabs button").forEach(function (b) {
       b.addEventListener("click", function () {
         $$("#sim-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
-        $("#sim-salaire").hidden = b.dataset.sim !== "salaire";
-        $("#sim-emprunt").hidden = b.dataset.sim !== "emprunt";
+        vues.forEach(function (v) {
+          var z = $("#sim-" + v);
+          if (z) z.hidden = v !== b.dataset.sim;
+        });
+        if (b.dataset.sim === "classe") rendreClasse();
+        if (b.dataset.sim === "officiels") rendreOutilsOfficiels();
       });
     });
     ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits"].forEach(function (s) {

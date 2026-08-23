@@ -175,33 +175,6 @@ window.KB = {
       sources: [{ t: "mobiliteit.lu, horaires et itinéraires", u: "https://www.mobiliteit.lu/" }]
     },
     {
-      id: "rdv_technique",
-      titre: "Réussir un rendez-vous technique",
-      cat: "Quotidien",
-      resume: "Installations et raccordements échouent souvent pour une adresse mal transmise ou un appel manqué. Quelques précautions évitent des semaines de retard.",
-      tags: ["rendez-vous", "technicien", "installation", "raccordement", "fibre", "interphone", "adresse", "absence", "frais"],
-      corps: [
-        "Le raccordement à internet, l'installation d'un compteur ou une intervention sur le réseau supposent la venue d'un technicien, et donc votre présence. Ces rendez-vous échouent plus souvent qu'on ne l'imagine, rarement pour des raisons techniques : le plus souvent, le technicien n'a pas trouvé la porte, ou n'a pas pu vous joindre. Chaque échec coûte plusieurs semaines, et parfois des frais de déplacement.",
-        { h: "L'adresse exacte, et ce qui figure sur l'interphone" },
-        "Dans un immeuble récent, l'adresse du logement et celle du local technique diffèrent parfois : le boîtier peut se trouver à un autre numéro de rue du même ensemble. Précisez donc les deux, par écrit, avant l'intervention. Indiquez également le nom inscrit sur l'interphone, qui n'est pas toujours celui du contrat, en particulier dans un couple aux noms différents ou lors d'une reprise de bail. Ajoutez l'étage, le bloc et le numéro d'appartement.",
-        "Faites-le par un canal qui laisse une trace : messagerie du portail de suivi, ou courriel. Un message oral au téléphone ne se retrouve pas, et ne vous servira à rien si vous devez contester ensuite.",
-        { h: "Se rendre joignable, vraiment" },
-        "Beaucoup de techniciens appellent depuis un numéro masqué. Un appel masqué ne peut être ni identifié, ni rappelé : dites-le explicitement au moment de la prise de rendez-vous, et demandez un numéro sur lequel vous pouvez rappeler. Donnez un second numéro si quelqu'un d'autre est présent sur place, et vérifiez que sonnette et interphone fonctionnent la veille.",
-        { h: "Faire confirmer le créneau par écrit" },
-        "Un rendez-vous fixé ou déplacé par téléphone ne laisse aucune trace. Demandez systématiquement une confirmation écrite de la date et du créneau horaire. C'est ce document qui vous protégera si le technicien se présente en dehors de la plage annoncée, ce qui arrive régulièrement.",
-        { h: "Quand deux intervenants sont nécessaires" },
-        "Certains raccordements exigent le passage successif de deux entreprises différentes, l'opérateur de réseau puis votre fournisseur. Elles ne sont pas toujours coordonnées, et l'échec de la première rend la seconde inutile. Demandez qui doit venir, dans quel ordre, et ce qui se passe si le premier passage échoue.",
-        { h: "Si des frais d'absence vous sont facturés" },
-        "Lisez la fiche d'intervention avant de payer. Elle mentionne souvent une rubrique de responsabilité, et il n'est pas rare qu'elle indique que le client n'est pas en cause tout en facturant des frais d'absence : la contradiction est un argument solide. Vérifiez aussi l'adresse portée sur la fiche, et l'heure des appels reçus. Contestez par écrit, en joignant vos captures d'écran."
-      ],
-      aRetenir: [
-        "Signaler par écrit l'adresse exacte, l'étage et le nom sur l'interphone.",
-        "Prévenir qu'un appel masqué ne peut pas être rappelé.",
-        "Exiger la confirmation écrite de la date et du créneau."
-      ],
-      sources: [{ t: "ILR, service de médiation", u: "https://www.ilr.lu/mediation/" }]
-    },
-    {
       id: "reclamation",
       titre: "Contester une facture ou un service",
       cat: "Quotidien",
@@ -211,18 +184,13 @@ window.KB = {
         "Que le désaccord porte sur une facture de télécoms, une prestation d'énergie ou un service financier, la mécanique est toujours la même, et elle commence par un écrit.",
         { h: "Écrire d'abord, toujours" },
         "Les organismes de médiation exigent, comme condition de recevabilité, une réclamation écrite préalable adressée au professionnel, restée sans réponse ou suivie d'une réponse insatisfaisante. Un échange téléphonique, même lorsqu'un conseiller vous a explicitement opposé un refus, ne remplit pas cette condition et ne laisse aucune trace. Écrivez donc systématiquement, même après un appel, ne serait-ce que pour acter par écrit ce qui vous a été dit.",
-        { h: "Ce qui rend une réclamation efficace" },
-        "Une réclamation convaincante tient en quelques éléments : des faits datés et horodatés, les pièces qui les établissent, et une demande précise. Évitez d'empiler les griefs : un argument documenté vaut mieux que cinq affirmations. Les meilleurs arguments sont souvent ceux que le professionnel a lui-même produits, un compte rendu d'intervention, un accusé de lecture, un horodatage.",
-        "Fixez un délai de réponse raisonnable, une à deux semaines, et annoncez la suite si rien ne vient. Cette annonce n'est pas une menace, c'est le déroulé normal de la procédure, et elle est souvent suffisante.",
-        { h: "Constituer ses preuves au fil de l'eau" },
-        "Conservez tout au moment où cela se produit, et non après coup : captures d'écran des messages et de leur horodatage, journal des appels, photographies, courriels. Ces éléments sont faciles à réunir sur le moment, et quasiment impossibles à reconstituer trois semaines plus tard.",
         { h: "Vers qui se tourner ensuite" },
         "Pour les communications électroniques, la médiation relève de l'Institut luxembourgeois de régulation, et elle est gratuite. Pour les autres litiges de consommation, le service national du Médiateur de la consommation est compétent. Dans les deux cas, la réclamation écrite et l'éventuelle réponse du professionnel font partie des pièces obligatoires du dossier."
       ],
       aRetenir: [
         "Un appel téléphonique ne vaut pas réclamation écrite.",
-        "Les meilleurs arguments sont les documents du professionnel lui-même.",
-        "Constituer les preuves le jour même, pas trois semaines après."
+        "Pour les télécoms, la médiation de l'ILR est gratuite.",
+        "Pour les autres litiges, le Médiateur de la consommation est compétent."
       ],
       sources: [
         { t: "ILR, service de médiation", u: "https://www.ilr.lu/mediation/" },
@@ -233,22 +201,17 @@ window.KB = {
       id: "emmenagement",
       titre: "Emménager et meubler",
       cat: "Logement",
-      resume: "Mesurer l'ascenseur avant de commander, prévoir la montée, et acheter des luminaires : le logement se loue souvent sans.",
-      tags: ["emménagement", "meuble", "livraison", "ascenseur", "montage", "luminaire", "lumière", "déménagement", "achat"],
+      resume: "Le logement se remet souvent sans luminaires montés, et les magasins de quatre pays sont à portée de voiture.",
+      tags: ["emménagement", "meuble", "luminaire", "lumière", "déménagement", "achat", "frontière", "électroménager"],
       corps: [
-        "Les mauvaises surprises de l'emménagement sont rarement dramatiques, mais elles coûtent du temps et de l'argent. Trois d'entre elles reviennent systématiquement.",
-        { h: "Mesurer avant de commander" },
-        "Les meubles en kit sont livrés dans des cartons dont la longueur peut dépasser la profondeur d'une cabine d'ascenseur. Une armoire haute, par exemple, se vend souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant. Mesurez la cabine, la porte palière et les paliers d'escalier avant de commander, pas après. Vérifiez également la largeur des portes intérieures pour les meubles livrés montés.",
-        { h: "La livraison s'arrête souvent au rez-de-chaussée" },
-        "Beaucoup de livreurs déposent au pied de l'immeuble, ou au premier obstacle. La montée et le montage sont alors à votre charge, et il faut soit s'en occuper, soit recourir à un service d'aide à domicile ou à un monteur indépendant. Anticipez ce poste dans le budget, et vérifiez ce que couvre exactement l'option de livraison proposée.",
+        "Deux choses surprennent en emménageant ici, et aucune des deux ne relève du bon sens général : ce que le logement contient à la remise des clés, et le fait que les magasins des quatre pays soient à portée de voiture.",
         { h: "Le logement se loue souvent sans luminaires" },
         "Beaucoup de logements sont remis avec des fils qui pendent au plafond et aucun point lumineux monté. Ce n'est pas un défaut ni un oubli du bailleur, c'est l'usage courant ici, alors que dans plusieurs pays voisins une douille équipée reste en place. Prévoyez les luminaires et leur pose dès le premier jour, sans quoi les premières soirées se passent à la lampe de chantier. Le point est à vérifier à l'état des lieux, pas après.",
         { h: "Acheter de part et d'autre de la frontière" },
         "Les enseignes de mobilier et d'électroménager sont implantées des deux côtés de la frontière, et leurs promotions ne sont pas synchronisées d'un pays à l'autre. Sur un achat conséquent, comparer les prix dans les magasins voisins de Belgique, de France ou d'Allemagne vaut souvent le déplacement, à condition d'intégrer le coût de la livraison transfrontalière, parfois dissuasif."
       ],
       aRetenir: [
-        "Mesurer la cabine d'ascenseur avant de commander un meuble haut.",
-        "Vérifier si la livraison monte à l'étage ou s'arrête en bas.",
+        "Comparer les prix des deux côtés de la frontière avant un achat conséquent.",
         "Prévoir les luminaires : ils sont rarement en place à la remise des clés."
       ],
       sources: [{ t: "Guichet.lu, bail à loyer", u: "https://guichet.public.lu/fr/citoyens/logement/location.html" }]
@@ -849,14 +812,10 @@ window.KB = {
 
   faq: [
     { q: "Comment choisir ma commune ?", a: "Pas sur la distance. En voiture, élargissez la zone et regardez le temps aux heures de pointe. En transports, vérifiez les horaires réels depuis l'arrêt le plus proche, y compris le week-end. Et cherchez autour de l'école, pas autour du bureau.", fiche: "choisir_commune" },
-    { q: "Comment éviter qu'une installation échoue ?", a: "Signalez par écrit l'adresse exacte, l'étage et le nom figurant sur l'interphone, qui diffère souvent du nom du contrat. Prévenez qu'un appel masqué ne peut pas être rappelé, et exigez la confirmation écrite du créneau.", fiche: "rdv_technique" },
-    { q: "On me facture des frais d'absence alors que j'étais là", a: "Lisez la fiche d'intervention : elle indique souvent que le client n'est pas responsable tout en facturant les frais, ce qui est un argument solide. Vérifiez aussi l'adresse portée sur la fiche et l'heure des appels, puis contestez par écrit.", fiche: "rdv_technique" },
-    { q: "Comment contester une facture ?", a: "Par écrit, toujours. Un appel téléphonique ne vaut pas réclamation, et la médiation exige cette réclamation écrite préalable. Appuyez-vous en priorité sur les documents produits par le professionnel lui-même.", fiche: "reclamation" },
+    { q: "Vers qui se tourner en cas de litige avec un professionnel ?", a: "Pour les communications électroniques, la médiation relève de l'Institut luxembourgeois de régulation et elle est gratuite. Pour les autres litiges de consommation, le service national du Médiateur de la consommation est compétent. Dans les deux cas, une réclamation écrite préalable au professionnel est une condition de recevabilité : un appel téléphonique ne suffit pas.", fiche: "reclamation" },
     { q: "Le logement est-il livré avec les luminaires ?", a: "Souvent non. L'usage courant au Luxembourg est de remettre le logement avec les fils au plafond et sans point lumineux monté, là où plusieurs pays voisins laissent une douille équipée. Prévoyez les luminaires et leur pose dès le premier jour, et vérifiez le point à l'état des lieux.", fiche: "emmenagement" },
-    { q: "Mes meubles vont-ils passer dans l'ascenseur ?", a: "Mesurez la cabine, la porte palière et les paliers avant de commander. Les armoires hautes existent souvent en deux hauteurs, et seule la plus petite passe dans un ascenseur d'immeuble courant.", fiche: "emmenagement" },
     { q: "Ai-je besoin d'une complémentaire santé ?", a: "Elle est facultative et couvre surtout la chambre seule, le dentaire et l'optique. Si vous en prenez une, souscrivez dès l'arrivée : la plupart des contrats prévoient des délais de carence de plusieurs mois sur ces postes.", fiche: "assurance_sante" },
     { q: "Quels documents demander à un assureur ?", a: "Le document d'information standardisé de deux pages, les conditions générales et les conditions particulières. Le devis ne suffit pas : ce sont les exclusions et les franchises qui décident de ce qui sera refusé le jour du sinistre.", fiche: "assurance_habitation" },
-    { q: "L'administration est-elle compliquée ?", a: "Plutôt le contraire : circuits courts, documents souvent délivrés au guichet, interlocuteurs joignables. Ce qui rallonge une installation, ce sont les enchaînements de démarches, chacune conditionnant la suivante.", fiche: "administration" },
     { q: "Mon employeur connaît-il le salaire de mon conjoint ?", a: "Non, et il ne peut pas le déduire. Le taux inscrit sur la fiche additionnelle du second salaire ne dépend que de la classe d'impôt : 15 % en classe 2, 21 % en classe 1a, 33 % en classe 1. Il ne contient aucune information sur le revenu du ménage.", fiche: "impots_classes" },
     { q: "Pourquoi ai-je un solde d'impôt à payer après la déclaration ?", a: "Parce que le taux forfaitaire appliqué au second salaire sous-prélève souvent. La déclaration commune recalcule l'impôt réellement dû sur le revenu cumulé. Les années suivantes, l'administration lisse l'écart par des avances trimestrielles.", fiche: "impots_classes" },
     { q: "Dans quel délai dois-je me déclarer à la commune ?", a: "Dans les huit jours suivant l'emménagement. Cette déclaration produit le certificat de résidence et le matricule, indispensables à toute la suite. Prenez rendez-vous en ligne avant même d'avoir les clés.", fiche: "arrivee" },
@@ -917,7 +876,6 @@ window.KB = {
       { t: "Ouvrir un compte bancaire local et demander LuxTrust dans la foulée.", fiche: "banque" },
       { t: "Souscrire l'assurance habitation, exigée avant la remise des clés.", fiche: "assurance_habitation" },
       { t: "Souscrire internet et réclamer une solution 4G provisoire.", fiche: "telecom" },
-      { t: "Pour tout rendez-vous technique, transmettre par écrit l'adresse exacte et le nom sur l'interphone.", fiche: "rdv_technique" },
       { t: "Repérer le calendrier de collecte des déchets et le centre de recyclage.", fiche: "dechets" }
     ]},
     { phase: "Mois 1", items: [

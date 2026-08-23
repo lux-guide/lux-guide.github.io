@@ -27,8 +27,6 @@
       "Installez l'application mobile plutôt que de dépendre d'un lecteur physique : c'est plus rapide au quotidien, et cela évite de chercher un appareil au moment de signer une démarche."
     ],
     recherche_logement: [
-      "Visitez aux heures où vous vivrez réellement dans le logement, en fin de journée par exemple. Un appartement calme à quatorze heures peut donner sur un axe passant à dix-huit heures.",
-      "Demandez le montant des charges de l'année précédente, et pas seulement la provision mensuelle annoncée. L'écart au décompte annuel surprend souvent.",
       "Si votre employeur propose un accompagnement à la relocation, utilisez-le pour la mise en relation, mais gardez la décision : personne ne connaît vos contraintes de trajet mieux que vous."
     ],
     choisir_commune: [
@@ -37,8 +35,6 @@
       "Une commune un peu plus loin mais sur une ligne directe bat souvent une commune proche nécessitant une correspondance."
     ],
     bail: [
-      "Filmez l'état des lieux d'entrée en plus des photographies, en commentant à voix haute pièce par pièce. C'est plus rapide à faire, et bien plus convaincant deux ans plus tard.",
-      "Relevez vous-même les compteurs le jour de la remise des clés, et envoyez les photos au bailleur le soir même.",
       "Un accord verbal du bailleur ne vaut rien au moment de l'état des lieux de sortie. Faites confirmer par courriel, même pour une étagère."
     ],
     assurance_habitation: [
@@ -52,21 +48,6 @@
     achat: [
       "Demandez au promoteur, par écrit, si le prix affiché intègre déjà la part de TVA à 17 %. La réponse change parfois le budget de plusieurs dizaines de milliers d'euros.",
       "Mettez l'assurance solde restant dû en concurrence, séparément du prêt. C'est le poste où l'écart entre établissements est le plus large, et il se négocie mal une fois le crédit signé."
-    ],
-    emmenagement: [
-      "Mesurez la cabine d'ascenseur et prenez-en une photo avec un mètre déroulé. Vous l'aurez sous la main au magasin, au moment de choisir entre deux hauteurs d'armoire.",
-      "Réservez le monteur avant la livraison, pas après. En période de déménagements, les délais s'allongent et les cartons restent dans le couloir.",
-      "Gardez quelques cartons et l'emballage d'origine des meubles fragiles : le prochain déménagement arrive plus vite qu'on ne le croit."
-    ],
-    rdv_technique: [
-      "Envoyez les précisions d'accès par le canal qui laisse une trace, portail ou courriel, et gardez la capture d'écran avec l'horodatage. C'est ce qui fait la différence si vous devez contester.",
-      "Prévenez qu'un appel masqué ne peut pas être rappelé, et demandez un numéro joignable. C'est la cause d'échec la plus fréquente, et la plus facile à éviter.",
-      "Si quelqu'un d'autre attend sur place, donnez son numéro et vérifiez la sonnette la veille."
-    ],
-    reclamation: [
-      "Après un appel au service client, envoyez un courriel récapitulant ce qui vous a été dit. Cela crée la trace écrite que l'appel ne laisse pas, et cela suffit souvent à faire bouger le dossier.",
-      "Citez en priorité les documents de l'entreprise elle-même, compte rendu d'intervention ou accusé de lecture. Un argument tiré de leurs propres pièces se conteste mal.",
-      "Annoncez calmement la suite, sans agressivité. La perspective d'une médiation gratuite règle beaucoup de dossiers avant qu'elle ne commence."
     ],
     telecom: [
       "Souscrivez avant même d'avoir emménagé si la date de bail est connue : le délai court à partir de la commande, pas de votre arrivée.",
@@ -103,7 +84,6 @@
       "Ne calez jamais un budget durable sur le net des premiers mois : il peut évoluer une fois la classe correctement appliquée."
     ],
     deductions: [
-      "Ouvrez un dossier, papier ou numérique, dès la première année, et rangez-y au fil de l'eau tout justificatif potentiellement déductible. Les reconstituer en mars est une corvée.",
       "Pour la première déclaration, se faire accompagner coûte moins cher que ce que l'on oublie de déclarer."
     ],
     impatries: [

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=26">
+<link rel="stylesheet" href="app/styles.css?v=28">
 </head>
 <body>
 
@@ -159,6 +159,8 @@
     <div class="sous-onglets" id="sim-tabs">
       <button data-sim="salaire" class="actif">Salaire net</button>
       <button data-sim="emprunt">Capacité d'emprunt</button>
+      <button data-sim="classe">Ma classe d'impôt</button>
+      <button data-sim="officiels">Simulateurs officiels</button>
     </div>
 
     <div id="sim-salaire">
@@ -257,6 +259,35 @@
       90 % pour une autre résidence principale, 80 % pour un investissement locatif. Les frais d'acte
       restent à financer sur fonds propres.
     </p>
+    </div>
+
+    <!-- Quelle classe d'impot : un arbre de decision, pas un calcul -->
+    <div id="sim-classe" hidden>
+      <p class="lead small">
+        La classe d'impôt pèse davantage sur votre net que bien des négociations salariales.
+        Ce n'est pas un calcul mais une règle : quelques questions suffisent à savoir laquelle
+        vous concerne, et surtout à repérer les deux cas où beaucoup de gens se trompent.
+      </p>
+      <div class="card">
+        <div id="cl-etapes"></div>
+      </div>
+      <div id="cl-resultat"></div>
+    </div>
+
+    <!-- Simulateurs officiels : ce que nous ne refaisons pas -->
+    <div id="sim-officiels" hidden>
+      <p class="lead small">
+        Le guide ne calcule que deux choses, le salaire net et la capacité d'emprunt, parce que ce
+        sont les deux dont on a besoin avant même d'arriver. Pour tout le reste, les administrations
+        publient leurs propres calculateurs : ils font foi, ils suivent les barèmes en temps réel,
+        et les réimplémenter ici reviendrait à en produire une copie qui vieillit.
+      </p>
+      <div class="notice small">
+        <strong>Liens vérifiés le 23 août 2026.</strong> Les administrations réorganisent
+        régulièrement leurs sites : si un lien ne répond plus, la page d'accueil du service reste
+        le point d'entrée.
+      </div>
+      <div id="sim-outils"></div>
     </div>
   </section>
 
@@ -680,15 +711,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=26"></script>
-<script src="app/kb.js?v=26"></script>
-<script src="app/simulateur.js?v=26"></script>
-<script src="comparateur/contrats_kb.js?v=26"></script>
-<script src="comparateur/mrh_kb.js?v=26"></script>
-<script src="comparateur/offres_kb.js?v=26"></script>
-<script src="app/chat.js?v=26"></script>
-<script src="app/ui.js?v=26"></script>
-<script src="app/communaute.js?v=26"></script>
+<script src="app/bareme.js?v=28"></script>
+<script src="app/kb.js?v=28"></script>
+<script src="app/simulateur.js?v=28"></script>
+<script src="comparateur/contrats_kb.js?v=28"></script>
+<script src="comparateur/mrh_kb.js?v=28"></script>
+<script src="comparateur/offres_kb.js?v=28"></script>
+<script src="app/chat.js?v=28"></script>
+<script src="app/ui.js?v=28"></script>
+<script src="app/communaute.js?v=28"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
