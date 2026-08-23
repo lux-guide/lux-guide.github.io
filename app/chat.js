@@ -23,7 +23,11 @@ window.CHAT = (function () {
     { cle: "vehicule", question: "Vous amenez un véhicule ?",
       options: ["Oui", "Non"] },
     { cle: "horizon", question: "Où en êtes-vous ?",
-      options: ["Je prepare mon depart", "Je viens d'arriver", "Je suis installe"] }
+      options: ["Je prepare mon depart", "Je viens d'arriver", "Je suis installe"] },
+    // D'ou vous venez change ce qui surprend : l'echange du permis, le titre
+    // de sejour, et les usages qui different d'un pays voisin a l'autre.
+    { cle: "origine", question: "Vous arrivez depuis quel pays ?",
+      options: ["France", "Belgique", "Allemagne", "Autre pays de l'UE", "Hors UE"] }
   ];
 
   // Les valeurs de profil restent sans accent : elles servent d'identifiants
@@ -328,6 +332,8 @@ window.CHAT = (function () {
     // Les mots porteurs de sens d'une question, sans accents : servent au
     // surlignage du passage correspondant dans la fiche ouverte.
     termesUtiles: function (q) { return mots(q); },
+    champs: function () { return CHAMPS; },
+    afficher: afficher,
     profilVide: profilVide,
     prochainChamp: prochainChamp,
     profilComplet: profilComplet,

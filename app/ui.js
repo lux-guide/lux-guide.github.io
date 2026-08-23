@@ -48,20 +48,36 @@
 
   var STORAGE_THEME = "luxguide.theme.v1";
   var THEMES = ["systeme", "clair", "sombre"];
-  var LIBELLE_THEME = { systeme: "Thème du système", clair: "Thème clair", sombre: "Thème sombre" };
+  var LIBELLE_THEME = { systeme: "Suivre le système", clair: "Clair", sombre: "Sombre" };
   var ICONE_THEME = { systeme: "◐", clair: "☀", sombre: "☾" };
+  var themeCourant = "systeme";
 
   function appliquerTheme(t) {
     var r = document.documentElement;
     if (t === "clair") r.setAttribute("data-theme", "light");
     else if (t === "sombre") r.setAttribute("data-theme", "dark");
     else r.removeAttribute("data-theme");
-    var b = $("#theme-btn");
-    if (b) {
-      b.textContent = ICONE_THEME[t];
-      b.title = LIBELLE_THEME[t] + " (cliquer pour changer)";
-      b.setAttribute("aria-label", LIBELLE_THEME[t]);
-    }
+    themeCourant = t;
+  }
+
+  // Le reglage n'est plus un bouton qui tourne dans l'en-tete, ou l'on ne
+  // savait jamais sur quel etat on allait tomber : trois choix nommes, dans
+  // les parametres, avec l'etat courant visible.
+  function rendreTheme() {
+    var z = $("#par-theme");
+    if (!z) return;
+    z.innerHTML = "";
+    THEMES.forEach(function (t) {
+      var b = el("button", "chip" + (t === themeCourant ? " actif" : ""),
+        ICONE_THEME[t] + "  " + LIBELLE_THEME[t]);
+      b.setAttribute("aria-pressed", String(t === themeCourant));
+      b.addEventListener("click", function () {
+        appliquerTheme(t);
+        try { localStorage.setItem(STORAGE_THEME, t); } catch (e) { /* prive */ }
+        rendreTheme();
+      });
+      z.appendChild(b);
+    });
   }
 
   function initTheme() {
@@ -71,13 +87,161 @@
       if (THEMES.indexOf(v) !== -1) t = v;
     } catch (e) { /* stockage indisponible */ }
     appliquerTheme(t);
-    var b = $("#theme-btn");
-    if (!b) return;
-    b.addEventListener("click", function () {
-      t = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length];
-      appliquerTheme(t);
-      try { localStorage.setItem(STORAGE_THEME, t); } catch (e) {}
+    rendreTheme();
+  }
+
+  // ---------- Parametres ----------
+  //
+  // Un seul endroit pour l'apparence, le profil, les donnees, le contenu et les
+  // parametres de calcul, en cinq onglets. « Administration » ne disait rien au
+  // visiteur, alors que la moitie de ce panneau le concerne directement.
+
+  var STORAGE_TOUT = "luxguide.tout.v1";
+  var toutAfficher = false;
+
+  // Toutes les cles ecrites par le guide, avec ce qu'elles contiennent.
+  // La liste sert a la fois a l'affichage et a l'effacement : rien ne peut
+  // etre oublie d'un cote et pas de l'autre.
+  var STOCKAGE = [
+    ["luxguide.chat.v1", "Votre profil et la conversation avec l'assistant"],
+    ["luxguide.parcours.v1", "Les étapes du parcours que vous avez cochées"],
+    ["luxguide.carte.v1", "Les adresses saisies dans l'onglet Carte"],
+    ["luxguide.surmesure.v1", "Les lignes de votre tableau de comparaison"],
+    ["luxguide.kb.v1", "Les fiches modifiées depuis les paramètres"],
+    ["luxguide.params.v1", "Les paramètres de calcul modifiés"],
+    ["luxguide.theme.v1", "Le thème choisi"],
+    ["luxguide.rail.v1", "L'assistant ouvert en panneau ou non"],
+    ["luxguide.rail.largeur.v1", "La largeur du panneau de l'assistant"],
+    ["luxguide.tout.v1", "L'affichage sans filtrage de profil"]
+  ];
+
+  function chargerTout() {
+    try { toutAfficher = localStorage.getItem(STORAGE_TOUT) === "1"; } catch (e) {}
+  }
+
+  function rendreStockage() {
+    var z = $("#par-stockage");
+    if (!z) return;
+    z.innerHTML = "";
+    var tab = el("table", "par-stock");
+    var tb = el("tbody");
+    var total = 0, remplies = 0;
+    STOCKAGE.forEach(function (s) {
+      var v = null;
+      try { v = localStorage.getItem(s[0]); } catch (e) {}
+      var tr = el("tr");
+      tr.appendChild(el("td", null, s[1]));
+      var td = el("td", "num");
+      if (v === null) td.appendChild(el("span", "sm-info", "rien"));
+      else {
+        remplies++; total += v.length;
+        td.appendChild(el("span", "mat-hits", Math.max(1, Math.round(v.length / 1024)) + " Ko"));
+      }
+      tr.appendChild(td);
+      tb.appendChild(tr);
     });
+    tab.appendChild(tb);
+    z.appendChild(tab);
+    z.appendChild(el("p", "hint",
+      remplies === 0 ? "Rien n'est enregistré pour le moment."
+        : remplies + (remplies > 1 ? " entrées enregistrées, " : " entrée enregistrée, ") +
+          "environ " + Math.max(1, Math.round(total / 1024)) + " Ko au total."));
+  }
+
+  function effacerDonnees() {
+    STOCKAGE.forEach(function (s) {
+      try { localStorage.removeItem(s[0]); } catch (e) {}
+    });
+    var e = $("#par-effacer-etat");
+    if (e) e.textContent = "Effacé. La page va se recharger pour repartir de zéro.";
+    setTimeout(function () { window.location.reload(); }, 900);
+  }
+
+  function rendreProfilChamps() {
+    var z = $("#par-profil-champs");
+    if (!z || !window.CHAT || !window.CHAT.champs) return;
+    z.innerHTML = "";
+    var r = el("div", "row");
+    window.CHAT.champs().forEach(function (c) {
+      var d = el("div");
+      d.appendChild(el("label", null, c.question));
+      var s = el("select");
+      var vide = el("option", null, "Non renseigné");
+      vide.value = "";
+      s.appendChild(vide);
+      c.options.forEach(function (o) {
+        var op = el("option", null, window.CHAT.afficher ? window.CHAT.afficher(o) : o);
+        op.value = o;
+        if (profil[c.cle] === o) op.selected = true;
+        s.appendChild(op);
+      });
+      s.addEventListener("change", function () {
+        if (s.value) profil[c.cle] = s.value; else delete profil[c.cle];
+        sauverConversation();
+        rendreTimeline();
+        rendreFiches();
+        rendreAccueil();
+      });
+      d.appendChild(s);
+      r.appendChild(d);
+    });
+    z.appendChild(r);
+  }
+
+  function initParametres() {
+    chargerTout();
+    var vues = ["apparence", "profil", "donnees", "contenu", "calcul"];
+    $$("#par-tabs button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        $$("#par-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
+        var v = b.dataset.par;
+        vues.forEach(function (n) {
+          var z = $("#par-" + n);
+          if (z) z.hidden = n !== v;
+        });
+        if (v === "donnees") rendreStockage();
+        if (v === "profil") rendreProfilChamps();
+        if (v === "apparence") rendreTheme();
+      });
+    });
+
+    var t = $("#par-tout");
+    if (t) {
+      t.checked = toutAfficher;
+      t.addEventListener("change", function () {
+        toutAfficher = t.checked;
+        try { localStorage.setItem(STORAGE_TOUT, toutAfficher ? "1" : "0"); } catch (e) {}
+        rendreTimeline();
+        rendreFiches();
+        rendreAccueil();
+      });
+    }
+
+    var v = $("#par-profil-vider");
+    if (v) {
+      v.addEventListener("click", function () {
+        profil = window.CHAT.profilVide();
+        sauverConversation();
+        rendreProfilChamps();
+        rendreTimeline();
+        rendreFiches();
+        rendreAccueil();
+      });
+    }
+
+    var e = $("#par-effacer");
+    if (e) {
+      e.addEventListener("click", function () {
+        if (e.dataset.confirme === "1") { effacerDonnees(); return; }
+        e.dataset.confirme = "1";
+        e.textContent = "Confirmer l'effacement";
+        var s = $("#par-effacer-etat");
+        if (s) {
+          s.textContent = "Cette action efface le profil, le parcours coché, les adresses de " +
+            "la carte, le tableau de comparaison et les fiches modifiées. Elle est définitive.";
+        }
+      });
+    }
   }
 
   // ---------- Navigation ----------
@@ -194,6 +358,10 @@
     amenerOngletEnVue(nom);
     setTimeout(majDefilementOnglets, 320);
     $$(".panel").forEach(function (p) { p.hidden = p.id !== "panel-" + nom; });
+    // L'accueil porte l'avancement du parcours et les comptes de chaque
+    // section : il se recalcule a chaque visite, sinon il affiche l'etat
+    // du chargement de la page.
+    if (nom === "accueil") rendreAccueil();
     // L'onglet Fiches revient toujours a la liste (une fiche ouverte la masquait,
     // barre de recherche comprise). montrerFiche, appele ensuite le cas echeant,
     // rouvre le detail par-dessus.
@@ -244,6 +412,16 @@
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: .08 });
     cibles.forEach(function (e) { obs.observe(e); });
+
+    // Filet de securite : un contenu qui reste a opacite zero parce qu'un
+    // observateur n'a pas reagi est un contenu perdu. Passe ce delai, tout
+    // s'affiche, animation ou pas. L'apparition reste un agrement, jamais une
+    // condition pour voir la page.
+    setTimeout(function () {
+      cibles.forEach(function (e) {
+        if (!e.classList.contains("vu")) { e.classList.add("vu"); obs.unobserve(e); }
+      });
+    }, 2500);
   }
 
   // ---------- Visuels ----------
@@ -281,44 +459,101 @@
 
   // ---------- Accueil ----------
 
+  // L'accueil ne recopie plus les sections. Il repetait la FAQ presque
+  // integralement, et listait les fiches que l'onglet Fiches liste deja. Il
+  // sert maintenant a une seule chose : dire ce que contient le guide, montrer
+  // ou l'on en est, et ouvrir la bonne porte.
   function rendreAccueil() {
-    var cats = {};
-    window.KB.fiches.forEach(function (f) { (cats[f.cat] = cats[f.cat] || []).push(f); });
-
     var stat = $("#stat-fiches");
     if (stat) stat.textContent = window.KB.fiches.length;
-
-    var g = $("#accueil-cats");
-    g.innerHTML = "";
-    Object.keys(cats).forEach(function (c) {
-      var liste = cats[c];
-      g.appendChild(tuile(
-        c,
-        liste[0].titre,
-        liste.map(function (f) { return f.titre; }).slice(1).join(" · ") || liste[0].resume,
-        liste.length + (liste.length > 1 ? " fiches" : " fiche"),
-        function () { ouvrir("fiches"); $("#q-fiches").value = ""; rendreFiches(liste); }
-      ));
-    });
-
-    var fq = $("#accueil-faq");
-    fq.innerHTML = "";
-    window.KB.faq.slice(0, 7).forEach(function (item) {
-      var card = el("div", "qcard reveal");
-      card.appendChild(el("h3", null, item.q));
-      card.appendChild(el("p", null, item.a.slice(0, 125) + (item.a.length > 125 ? "..." : "")));
-      card.addEventListener("click", function () { ouvrir("fiches"); montrerFiche(item.fiche); });
-      fq.appendChild(card);
-    });
-    var toutes = el("div", "qcard reveal");
-    toutes.appendChild(el("h3", null, "Toutes les questions →"));
-    toutes.appendChild(el("p", null,
-      "La FAQ complète : " + window.KB.faq.length + " questions vérifiées, filtrables, avec l'assistant en renfort."));
-    toutes.addEventListener("click", function () { ouvrir("faq"); });
-    fq.appendChild(toutes);
-
+    rendreReprise();
+    rendreSections();
     rendreCredits();
     activerApparition();
+  }
+
+  // Reprendre la ou l'on s'est arrete. N'apparait que si quelque chose a
+  // commence : sinon c'est une case vide qui occupe le haut de la page.
+  function rendreReprise() {
+    var z = $("#accueil-reprise");
+    if (!z) return;
+    z.innerHTML = "";
+    var coches = chargerCoches();
+    var faites = Object.keys(coches).length;
+    var total = etapesVisibles();
+    var connu = profilRenseigne();
+    if (!faites && !connu) return;
+
+    var c = el("div", "reprise");
+    var g = el("div", "reprise-txt");
+    if (faites) {
+      g.appendChild(el("h3", null, "Vous avez déjà coché " + faites +
+        (faites > 1 ? " étapes" : " étape") + " sur " + total));
+      var reste = Math.max(0, total - faites);
+      g.appendChild(el("p", null, reste
+        ? "Il en reste " + reste + " dans votre parcours. Les étapes affichées tiennent compte de votre profil."
+        : "Votre parcours est complet. Les fiches restent là si vous avez besoin d'y revenir."));
+    } else {
+      g.appendChild(el("h3", null, "Votre profil est enregistré"));
+      g.appendChild(el("p", null, window.CHAT.decrireProfil(profil) +
+        ". Le parcours et les fiches sont déjà filtrés en conséquence."));
+    }
+    c.appendChild(g);
+
+    var barre = el("div", "reprise-jauge");
+    var i = el("i");
+    i.style.width = (total ? Math.round(100 * faites / total) : 0) + "%";
+    barre.appendChild(i);
+    c.appendChild(barre);
+
+    var b = el("button", "btn", faites ? "Reprendre le parcours" : "Voir mon parcours");
+    b.addEventListener("click", function () { ouvrir("parcours"); });
+    c.appendChild(b);
+    z.appendChild(c);
+  }
+
+  function etapesVisibles() {
+    var n = 0;
+    (window.KB.timeline || []).forEach(function (etape) {
+      (etape.items || []).forEach(function (item) {
+        if (etapeConcerne(item, profil)) n++;
+      });
+    });
+    return n;
+  }
+
+  // Une carte par section, avec ce qu'elle contient, compte a l'appui.
+  function rendreSections() {
+    var g = $("#accueil-sections");
+    if (!g) return;
+    g.innerHTML = "";
+    var nbFiches = window.KB.fiches.length;
+    var nbFaq = window.KB.faq.length;
+    var nbCats = {};
+    window.KB.fiches.forEach(function (f) { nbCats[f.cat] = 1; });
+
+    [
+      ["parcours", "Parcours", "Administratif",
+       "Les démarches dans l'ordre où elles se conditionnent : la commune d'abord, puis le matricule, la sécurité sociale, la banque et les impôts. Chaque étape se coche.",
+       etapesVisibles() + " étapes"],
+      ["fiches", "Fiches pratiques", "Logement",
+       "Une fiche par sujet, autonome, avec ses points clés et ses sources officielles. Filtrables par thème et par votre situation.",
+       nbFiches + " fiches · " + Object.keys(nbCats).length + " thèmes"],
+      ["faq", "Questions et réponses", "Quotidien",
+       "Les questions que se posent les arrivants, avec une réponse vérifiée et la fiche qui la porte. Rien n'y est deviné.",
+       nbFaq + " questions"],
+      ["simulateur", "Simulateur", "Impots",
+       "Le salaire net à partir du brut, selon la classe d'impôt, et la capacité d'emprunt. Barème officiel, résultat indicatif.",
+       "2 calculs"],
+      ["comparateur", "Comparateur", "Finances",
+       "Quatre contrats habitation du marché lus intégralement, sinistre par sinistre, clause citée. Et trois démonstrations sur l'auto, le mobile et l'électricité.",
+       "4 postes"],
+      ["carte", "Comparer des logements", "Sante",
+       "Plusieurs adresses côte à côte : distance au travail, écoles, crèches, transports, commerces et santé autour de chacune.",
+       "jusqu'à 4 adresses"]
+    ].forEach(function (s) {
+      g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }));
+    });
   }
 
   function rendreCredits() {
@@ -342,9 +577,17 @@
     if (perso) perso.innerHTML = "";
 
     var effective = liste;
-    // Sans recherche en cours : si le profil est connu, ne montrer par defaut
+    // Le filtre par theme vit ici, la ou sont les fiches. Il etait sur la page
+    // d'accueil, qui renvoyait vers une liste que rien n'indiquait comme
+    // filtree : la porte d'entree faisait le travail de la section.
+    rendreThemes();
+    if (!liste && themeActif) {
+      effective = window.KB.fiches.filter(function (f) { return f.cat === themeActif; });
+    }
+
+    // Sans recherche ni theme : si le profil est connu, ne montrer par defaut
     // que les fiches qui concernent ce profil, avec l'interrupteur pour tout voir.
-    if (!liste && profilRenseigne() && perso) {
+    if (!liste && !themeActif && profilRenseigne() && perso && !toutAfficher) {
       var filtrer = !voirToutesFiches;
       if (filtrer) effective = window.CHAT.fichesPourProfil(profil);
       var bandeau = el("div", "notice small");
@@ -364,6 +607,33 @@
     activerApparition(g);
     $("#fiches-liste").hidden = false;
     $("#fiche-detail").hidden = true;
+  }
+
+  var themeActif = null;
+
+  function rendreThemes() {
+    var z = $("#fiches-themes");
+    if (!z) return;
+    var cats = [];
+    window.KB.fiches.forEach(function (f) { if (cats.indexOf(f.cat) === -1) cats.push(f.cat); });
+    z.innerHTML = "";
+    var tous = el("button", "chip" + (themeActif ? "" : " actif"),
+      "Tous les thèmes (" + window.KB.fiches.length + ")");
+    tous.setAttribute("aria-pressed", String(!themeActif));
+    tous.addEventListener("click", function () { themeActif = null; rendreFiches(); });
+    z.appendChild(tous);
+    cats.forEach(function (c) {
+      var n = window.KB.fiches.filter(function (f) { return f.cat === c; }).length;
+      var b = el("button", "chip" + (themeActif === c ? " actif" : ""), c + " (" + n + ")");
+      b.setAttribute("aria-pressed", String(themeActif === c));
+      b.addEventListener("click", function () {
+        themeActif = themeActif === c ? null : c;
+        var q = $("#q-fiches");
+        if (q) q.value = "";
+        rendreFiches();
+      });
+      z.appendChild(b);
+    });
   }
 
   function montrerFiche(id, sansHash) {
@@ -725,6 +995,8 @@
 
   // Une etape est gardee si le profil ne la contredit pas. Champ inconnu = on garde.
   function etapeConcerne(item, p) {
+    // L'interrupteur des parametres court-circuite tout filtrage.
+    if (toutAfficher) return true;
     if (!item || typeof item === "string" || !item.si) return true;
     var si = item.si;
     var ok = true;
@@ -3531,6 +3803,7 @@
 
   chargerKB();
   initTheme();
+  initParametres();
   initOnglets();
   rendreAccueil();
   rendreFiches();

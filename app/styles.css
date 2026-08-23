@@ -103,7 +103,7 @@ header.top {
       c'est le principe d'une marque reduite ; le nom du site est de toute
       facon repete par le titre de la page juste en dessous. Les huit sections
       restent toutes visibles, ce qui compte davantage que le nom.
-   3. En dessous de 760 px : la bande de sections defile, avec un fondu du cote
+   3. En dessous de 765 px : la bande de sections defile, avec un fondu du cote
       ou il en reste. C'est le geste attendu au doigt.
 
    La hauteur de l'en-tete ne varie qu'entre paliers, jamais a l'interieur :
@@ -185,6 +185,23 @@ nav.tabs button {
 }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
 nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+
+/* L'assistant n'est pas une page de plus, c'est quelqu'un qui attend. Un point
+   qui respire le signale, discretement : pas de couleur criarde, pas de
+   mouvement dans le texte, et rien du tout si le systeme demande le calme. */
+nav.tabs button.tab-assistant { display: inline-flex; align-items: center; gap: 7px; }
+.tab-pt {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--accent-2, var(--accent));
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2, var(--accent)) 55%, transparent);
+  animation: respire 2.8s ease-in-out infinite;
+}
+@keyframes respire {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2, var(--accent)) 50%, transparent); }
+  50%      { transform: scale(1.18); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent-2, var(--accent)) 0%, transparent); }
+}
+nav.tabs button.tab-assistant[aria-selected="true"] .tab-pt { animation: none; transform: scale(1); }
+@media (prefers-reduced-motion: reduce) { .tab-pt { animation: none; } }
 
 /* Focus visible : un utilisateur au clavier doit voir ou il est. Il n'y avait
    aucun anneau de focus dans la feuille, la navigation se faisait a l'aveugle. */
@@ -895,6 +912,39 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 }
 .etapes-fin h4 { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
 
+/* ---------- Reprise sur l'accueil ---------- */
+
+.reprise {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 10px 24px; margin: 40px 0 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 22px 24px; box-shadow: var(--ombre-s);
+}
+.reprise-txt h3 { margin: 0 0 5px; font-size: 17px; }
+.reprise-txt p { margin: 0; font-size: 14px; }
+.reprise-jauge {
+  grid-column: 1 / -1; height: 6px; border-radius: 99px;
+  background: var(--surface-2); overflow: hidden;
+}
+.reprise-jauge i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .4s cubic-bezier(.2,.7,.2,1);
+}
+@media (max-width: 700px) {
+  .reprise { grid-template-columns: 1fr; }
+  .reprise .btn { width: 100%; }
+}
+
+#fiches-themes { margin: -8px 0 22px; }
+
+/* ---------- Parametres ---------- */
+
+table.par-stock { font-size: 13.5px; }
+table.par-stock td { padding: 9px 12px; }
+table.par-stock td.num { text-align: right; white-space: nowrap; }
+#par-theme .chip { font-variant-numeric: tabular-nums; }
+
 /* ---------- Tableau sur mesure ---------- */
 
 .sm-barre {
@@ -1120,11 +1170,12 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
   .top-outils { margin-left: 2px; }
 }
 
-/* Le nom ne cede qu'ici, quand il n'y a plus le choix. La marque est dessinee
-   pour tenir seule, et le titre de la page repete le nom juste en dessous. */
+/* Un nom court se paie ici : « Moien » tient dans l'en-tete a toutes les
+   largeurs, y compris sur un telephone. Le logo ne se reduit plus jamais a la
+   seule marque, ce qui vaut mieux qu'un carre muet. */
 @media (max-width: 1039px) {
   :root { --h-top: 60px; }
-  .brand-txt { display: none; }
+  .brand { font-size: 19px; }
   .brand .mark { width: 30px; height: 30px; }
   .brand .mark svg { width: 18px; height: 18px; }
 }
@@ -1133,7 +1184,7 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
    visibles jusque vers 760 px au lieu de 790. Les marges suivent l'encoche en
    paysage. Ce palier ne concerne que l'en-tete : la mise en page du contenu a
    son propre seuil plus bas, une tablette de 780 px n'est pas un telephone. */
-@media (max-width: 799px) {
+@media (max-width: 839px) {
   .top-in {
     gap: 10px;
     padding-left: max(14px, env(safe-area-inset-left));
