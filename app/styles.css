@@ -126,34 +126,39 @@ header.top {
   border: 0; background: none; color: inherit; padding: 0; cursor: pointer;
   border-radius: 12px;
 }
-.brand-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Le nom seul ne dit pas ce qu'est le site, et un nom purement descriptif ne
-   se retient pas. D'ou un couple : la marque porte l'identite, la mention qui
-   suit dit le sujet. Ce n'est pas une seule chaine mais deux elements, ce qui
-   leur permet de ceder l'un apres l'autre au lieu d'etre tronques ensemble. */
+/* Le nom du guide dit exactement ce qu'il est, et n'a donc rien a expliquer.
+   Son seul defaut etait sa longueur sur une ligne : 223 px, qui disparaissaient
+   des qu'une fenetre se resserrait. Il tient sur deux lignes dans un cartouche,
+   comme le fait un titre de collection : 118 px au lieu de 223, et il n'a plus
+   jamais besoin de disparaitre. */
+.brand-lock {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px; min-width: 0; line-height: 1;
+}
+.brand-txt {
+  font-size: 19px; letter-spacing: -.2px; line-height: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .brand-desc {
-  font-family: var(--sans); font-size: 12.5px; font-weight: 500;
-  color: var(--muted); letter-spacing: .1px; white-space: nowrap;
-  display: flex; align-items: center; gap: 9px;
+  font-family: var(--sans); font-size: 9.5px; font-weight: 620;
+  letter-spacing: 1.7px; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap; line-height: 1;
+  transition: color .16s;
 }
-.brand-desc::before {
-  content: ""; width: 1px; height: 15px; flex: none;
-  background: var(--border-fort);
-}
-.brand:hover .brand-desc { color: var(--text-2); }
+.brand:hover .brand-desc { color: var(--accent); }
+/* La marque etait une pastille en degrade bleu-cyan-violet avec une ombre
+   coloree : trois couleurs et un halo pour un objet de 32 px, c'est le style
+   des applications de 2019. Un aplat de la couleur d'accent, un angle plus
+   ferme et aucune ombre portee tiennent mieux, et laissent la typographie
+   porter le nom. */
 .brand .mark {
-  width: 32px; height: 32px; border-radius: 10px; flex: none;
-  display: grid; place-items: center; color: #fff;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
-  box-shadow: 0 3px 12px -3px color-mix(in srgb, var(--accent) 70%, transparent);
-  transition: transform .18s cubic-bezier(.2,.7,.2,1), box-shadow .18s;
+  width: 32px; height: 32px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; color: var(--surface);
+  background: var(--accent);
+  transition: background .18s, transform .18s cubic-bezier(.2,.7,.2,1);
 }
-.brand .mark svg { width: 19px; height: 19px; display: block; }
-.brand:hover .mark {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--accent) 78%, transparent);
-}
+.brand .mark svg { width: 18px; height: 18px; display: block; }
+.brand:hover .mark { background: var(--text); transform: translateY(-1px); }
 
 /* Outils : ils ne sont pas des sections du guide, ils ne sont donc pas des
    onglets. Le reglage du theme et l'administration du contenu vivent ensemble
@@ -673,12 +678,13 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 #widget-btn {
   position: fixed; right: 22px; bottom: 22px; z-index: 90;
   width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
-  font-size: 25px; line-height: 1; color: #fff;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2) 60%, var(--accent-3));
-  box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--accent) 75%, transparent);
-  transition: transform .16s;
+  font-size: 25px; line-height: 1; color: var(--surface);
+  display: grid; place-items: center;
+  background: var(--accent);
+  box-shadow: var(--ombre-m);
+  transition: transform .16s cubic-bezier(.2,.7,.2,1), background .16s;
 }
-#widget-btn:hover { transform: translateY(-3px) scale(1.05); }
+#widget-btn:hover { transform: translateY(-2px); background: var(--text); }
 #widget {
   position: fixed; right: 22px; bottom: 22px; z-index: 95;
   width: min(390px, calc(100vw - 32px)); height: min(72vh, 580px);
@@ -689,13 +695,14 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 }
 #widget .w-head {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 13px 18px; color: #fff; font-weight: 620; font-size: 14.5px;
-  background: linear-gradient(140deg, var(--accent), var(--accent-2) 70%);
+  padding: 14px 18px; color: var(--text); font-weight: 620; font-size: 14.5px;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
 }
 #widget .w-head button {
-  background: none; border: none; color: #fff; font-size: 21px; line-height: 1;
-  cursor: pointer; padding: 0 3px;
+  background: none; border: none; color: var(--muted); font-size: 21px; line-height: 1;
+  cursor: pointer; padding: 0 3px; transition: color .16s;
 }
+#widget .w-head button:hover { color: var(--accent); }
 #widget .chat-log { padding: 16px; gap: 12px; }
 #widget .msg { max-width: 88%; font-size: 14px; padding: 11px 14px; }
 #widget .chat-bar { padding: 11px 13px; }
@@ -1127,15 +1134,8 @@ td.sous-ligne { color: var(--muted); font-size: 12.5px; }
   body.rail-ouvert { margin-right: var(--rail-w, 400px); }
   body.rail-ouvert #widget-btn { display: none; }
 
-  /* La barre de titre du panneau reprend le fond de la page, plus sobre
-     qu'un bandeau colore sur toute la hauteur de l'ecran. */
-  #widget .w-head {
-    background: var(--surface-2); color: var(--text);
-    border-bottom: 1px solid var(--border);
-    padding: 15px 18px;
-  }
-  #widget .w-head button { color: var(--muted); font-size: 24px; }
-  #widget .w-head button:hover { color: var(--accent); }
+  #widget .w-head { padding: 15px 18px; }
+  #widget .w-head button { font-size: 24px; }
   #widget .msg { max-width: 92%; }
 }
 
@@ -1185,33 +1185,28 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
   .top-outils { margin-left: 2px; }
 }
 
-/* La mention cede en premier, la marque reste. Un couple se demonte dans cet
-   ordre : on perd le sujet, jamais l'identite. « Moien » seul tient ensuite
-   jusqu'a 320 px, le logo ne se reduit donc jamais a un carre muet. */
-@media (max-width: 979px) {
-  .brand-desc { display: none; }
-}
-
+/* Le cartouche tient partout : le nom complet ne disparait a aucune largeur,
+   et le logo ne se reduit jamais a une marque muette. */
 @media (max-width: 1039px) {
   :root { --h-top: 60px; }
-  .brand { font-size: 19px; }
   .brand .mark { width: 30px; height: 30px; }
   .brand .mark svg { width: 18px; height: 18px; }
-  .brand-desc { font-size: 12px; }
+  .brand-txt { font-size: 17.5px; }
+  .brand-desc { font-size: 9px; letter-spacing: 1.5px; }
 }
 
 /* Palier 3 : l'en-tete se resserre encore, ce qui garde les huit sections
    visibles jusque vers 760 px au lieu de 790. Les marges suivent l'encoche en
    paysage. Ce palier ne concerne que l'en-tete : la mise en page du contenu a
    son propre seuil plus bas, une tablette de 780 px n'est pas un telephone. */
-@media (max-width: 839px) {
+@media (max-width: 879px) {
   .top-in {
     gap: 10px;
     padding-left: max(14px, env(safe-area-inset-left));
     padding-right: max(14px, env(safe-area-inset-right));
   }
   nav.tabs { margin-left: 8px; }
-  nav.tabs button { padding: 8px 9px; }
+  nav.tabs button { padding: 8px 8px; }
   .top-outils { gap: 5px; margin-left: 0; }
 }
 
