@@ -1286,17 +1286,21 @@
     var ct = $("#s-comp");
     ct.innerHTML = "";
     var th = el("thead"), tr0 = el("tr");
-    ["Situation", "Net mensuel", "Net annuel", "Prélèvement"].forEach(function (c, i) {
-      tr0.appendChild(el("th", i > 0 ? "num" : null, c));
-    });
+    ["Classe", "Net mensuel", "Prélèvement", "Avec les impatriés", "Gain par mois"]
+      .forEach(function (c, i) {
+        tr0.appendChild(el("th", i > 0 ? "num" : null, c));
+      });
     th.appendChild(tr0); ct.appendChild(th);
     var cb = el("tbody");
+    var classeChoisie = $("#s-classe") ? $("#s-classe").value : null;
     comp.forEach(function (c) {
-      var tr = el("tr");
+      var tr = el("tr", c.classe === classeChoisie ? "ligne-choisie" : null);
       tr.appendChild(el("td", null, c.label));
       tr.appendChild(el("td", "num", eur(c.res.netMensuel)));
-      tr.appendChild(el("td", "num", eur(c.res.netAnnuel)));
       tr.appendChild(el("td", "num", pct(c.res.tauxPrelevementGlobal)));
+      tr.appendChild(el("td", "num", eur(c.resImpatrie.netMensuel)));
+      var gain = c.resImpatrie.netMensuel - c.res.netMensuel;
+      tr.appendChild(el("td", "num gain", "+ " + eur(gain)));
       cb.appendChild(tr);
     });
     ct.appendChild(cb);
@@ -1338,7 +1342,7 @@
       q: "Êtes-vous marié ou lié par un partenariat enregistré ?",
       r: [
         ["Oui", "residence"],
-        ["Non, je vis seul ou en union libre", "enfant"]
+        ["Non, je vis seul ou en union libre", "rupture"]
       ]
     },
     residence: {
@@ -1349,13 +1353,21 @@
         ["Je ne sais pas encore", "nonresident"]
       ]
     },
-    enfant: {
-      q: "Avez-vous un enfant à votre charge, ou avez-vous plus de 64 ans ?",
+    rupture: {
+      q: "Votre situation a-t-elle changé au cours des trois dernières années ?",
+      r: [
+        ["Non, rien de tel", "moderation"],
+        ["Mon mariage a été dissous par un décès", "transitoire"],
+        ["J'ai divorcé ou je me suis séparé", "transitoire"]
+      ]
+    },
+    moderation: {
+      q: "Bénéficiez-vous d'une modération d'impôt pour enfants, ou avez-vous terminé votre 64e année ?",
       r: [
         ["Non, ni l'un ni l'autre", "classe1"],
-        ["Oui, j'élève seul un enfant à charge", "classe1a"],
-        ["Oui, j'ai plus de 64 ans", "classe1a"],
-        ["Je suis veuf ou veuve", "classe1a"]
+        ["Oui, une modération pour un enfant de mon ménage", "classe1a"],
+        ["Oui, j'ai terminé ma 64e année", "classe1a"],
+        ["Je suis veuf ou veuve depuis plus de trois ans", "classe1a"]
       ]
     }
   };
@@ -1363,8 +1375,8 @@
   var CL_FINS = {
     classe2: {
       titre: "Classe 2",
-      texte: "Les couples mariés ou partenaires imposés collectivement relèvent de la classe 2, " +
-        "avec le mécanisme de splitting qui allège fortement l'impôt.",
+      texte: "Les époux et partenaires imposés collectivement relèvent de la classe 2, avec le " +
+        "mécanisme de splitting qui allège fortement l'impôt.",
       alerte: "Si vous êtes deux à travailler, le point à surveiller n'est pas la classe mais le " +
         "second salaire. Il relève d'une fiche additionnelle portant un taux fixe de 15 % en " +
         "classe 2, et ce taux ne dépend jamais du revenu réel du ménage. Il sous-prélève donc " +
@@ -1372,14 +1384,24 @@
     },
     classe1: {
       titre: "Classe 1",
-      texte: "Les célibataires sans enfant à charge relèvent de la classe 1.",
+      texte: "La classe 1 est la catégorie résiduelle : elle comprend les personnes qui " +
+        "n'appartiennent ni à la classe 1a, ni à la classe 2. C'est la classe de la plupart des " +
+        "célibataires sans enfant.",
       alerte: null
     },
     classe1a: {
       titre: "Classe 1a",
-      texte: "Les parents isolés, les veufs et les personnes de plus de soixante-quatre ans " +
-        "relèvent de la classe 1a, un barème intermédiaire dont l'avantage se réduit à mesure " +
-        "que le revenu augmente.",
+      texte: "La classe 1a regroupe les personnes veuves, celles qui bénéficient d'une modération " +
+        "d'impôt pour enfants, et celles ayant terminé leur soixante-quatrième année au début de " +
+        "l'année d'imposition. Elle applique un barème intermédiaire, dont l'avantage se réduit à " +
+        "mesure que le revenu augmente.",
+      alerte: null
+    },
+    transitoire: {
+      titre: "Classe 2, pendant trois ans encore",
+      texte: "Un décès, un divorce ou une séparation ne fait pas basculer immédiatement en " +
+        "classe 1. Une période transitoire de trois ans maintient la classe 2, avant le passage " +
+        "en classe 1 ou en classe 1a selon la situation d'alors.",
       alerte: null
     },
     nonresident: {
@@ -1447,6 +1469,18 @@
       br.addEventListener("click", function () { clNoeud = "depart"; clChemin = []; rendreClasse(); });
       c.appendChild(br);
       z.appendChild(c);
+      var ni = el("div", "notice small");
+      ni.appendChild(el("strong", null, "Le régime des impatriés ne dépend pas de la classe. "));
+      ni.appendChild(document.createTextNode(
+        "Il porte sur la rémunération et s'applique dans les trois classes. Le tableau de " +
+        "comparaison du simulateur affiche le gain pour chacune : c'est en classe 1, celle de la " +
+        "plupart des célibataires nouvellement arrivés, qu'il change le plus le net."));
+      var ci = el("div", "chips");
+      var bi = el("button", "chip", "Ouvrir la fiche Régime des impatriés");
+      bi.addEventListener("click", function () { ouvrir("fiches"); montrerFiche("impatries"); });
+      ci.appendChild(bi);
+      ni.appendChild(ci);
+      z.appendChild(ni);
       z.appendChild(el("p", "hint",
         "La classe est inscrite sur votre fiche de retenue, établie automatiquement par " +
         "l'administration après l'affiliation à la sécurité sociale. Si elle ne correspond pas à " +
@@ -1460,7 +1494,7 @@
     tete.appendChild(el("span", "etapes-num", "Question " + (clChemin.length + 1)));
     var jauge = el("span", "etapes-jauge");
     var i2 = el("i");
-    i2.style.width = Math.round(100 * clChemin.length / 2) + "%";
+    i2.style.width = Math.round(100 * clChemin.length / 3) + "%";
     jauge.appendChild(i2);
     tete.appendChild(jauge);
     z.appendChild(tete);

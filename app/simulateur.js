@@ -161,13 +161,21 @@ window.SIM = (function () {
   }
 
   // Comparaison des trois situations les plus utiles.
+  // Les trois classes, chacune avec et sans le regime des impatries. La version
+  // precedente ne montrait le regime que sur la classe 2, alors que le profil
+  // le plus frequent a l'arrivee est un celibataire en classe 1 : il ne voyait
+  // pas ce que le regime lui apporterait.
   function comparatif(brut, mois) {
-    return [
-      { label: "Classe 1", res: calcul({ brut: brut, classe: "classe1", mois: mois }) },
-      { label: "Classe 1a", res: calcul({ brut: brut, classe: "classe1a", mois: mois }) },
-      { label: "Classe 2", res: calcul({ brut: brut, classe: "classe2", mois: mois }) },
-      { label: "Classe 2 + impatries", res: calcul({ brut: brut, classe: "classe2", mois: mois, impatrie: true }) }
-    ];
+    var out = [];
+    [["Classe 1", "classe1"], ["Classe 1a", "classe1a"], ["Classe 2", "classe2"]]
+      .forEach(function (c) {
+        out.push({
+          label: c[0], classe: c[1],
+          res: calcul({ brut: brut, classe: c[1], mois: mois }),
+          resImpatrie: calcul({ brut: brut, classe: c[1], mois: mois, impatrie: true })
+        });
+      });
+    return out;
   }
 
   // Capacite d'emprunt indicative.

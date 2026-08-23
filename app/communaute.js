@@ -34,6 +34,9 @@
       "Regardez la fréquence du bus le samedi et en soirée, pas seulement en semaine. C'est là que les écarts entre communes sont les plus violents.",
       "Une commune un peu plus loin mais sur une ligne directe bat souvent une commune proche nécessitant une correspondance."
     ],
+    emmenagement: [
+      "Prévoyez les luminaires et leur pose dès le premier jour. Beaucoup de logements sont remis avec les fils au plafond et aucun point lumineux monté, là où plusieurs pays voisins laissent une douille équipée."
+    ],
     bail: [
       "Un accord verbal du bailleur ne vaut rien au moment de l'état des lieux de sortie. Faites confirmer par courriel, même pour une étagère."
     ],

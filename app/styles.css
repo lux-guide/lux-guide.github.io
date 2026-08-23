@@ -1011,6 +1011,9 @@ table.mrh-table td.num { text-align: center; font-size: 13px; }
 
 /* ---------- Classe d'impot et simulateurs officiels ---------- */
 
+tr.ligne-choisie td { background: var(--accent-soft); font-weight: 600; }
+td.gain { color: var(--ok); font-weight: 650; }
+
 .cl-titre {
   font-family: var(--serif); font-size: 27px; margin: 0 0 10px;
   color: var(--text); letter-spacing: -.3px;
