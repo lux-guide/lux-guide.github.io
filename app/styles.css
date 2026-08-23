@@ -127,6 +127,21 @@ header.top {
   border-radius: 12px;
 }
 .brand-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Le nom seul ne dit pas ce qu'est le site, et un nom purement descriptif ne
+   se retient pas. D'ou un couple : la marque porte l'identite, la mention qui
+   suit dit le sujet. Ce n'est pas une seule chaine mais deux elements, ce qui
+   leur permet de ceder l'un apres l'autre au lieu d'etre tronques ensemble. */
+.brand-desc {
+  font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+  color: var(--muted); letter-spacing: .1px; white-space: nowrap;
+  display: flex; align-items: center; gap: 9px;
+}
+.brand-desc::before {
+  content: ""; width: 1px; height: 15px; flex: none;
+  background: var(--border-fort);
+}
+.brand:hover .brand-desc { color: var(--text-2); }
 .brand .mark {
   width: 32px; height: 32px; border-radius: 10px; flex: none;
   display: grid; place-items: center; color: #fff;
@@ -1170,14 +1185,19 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
   .top-outils { margin-left: 2px; }
 }
 
-/* Un nom court se paie ici : « Moien » tient dans l'en-tete a toutes les
-   largeurs, y compris sur un telephone. Le logo ne se reduit plus jamais a la
-   seule marque, ce qui vaut mieux qu'un carre muet. */
+/* La mention cede en premier, la marque reste. Un couple se demonte dans cet
+   ordre : on perd le sujet, jamais l'identite. « Moien » seul tient ensuite
+   jusqu'a 320 px, le logo ne se reduit donc jamais a un carre muet. */
+@media (max-width: 979px) {
+  .brand-desc { display: none; }
+}
+
 @media (max-width: 1039px) {
   :root { --h-top: 60px; }
   .brand { font-size: 19px; }
   .brand .mark { width: 30px; height: 30px; }
   .brand .mark svg { width: 18px; height: 18px; }
+  .brand-desc { font-size: 12px; }
 }
 
 /* Palier 3 : l'en-tete se resserre encore, ce qui garde les huit sections
