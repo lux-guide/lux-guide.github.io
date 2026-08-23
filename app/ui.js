@@ -440,13 +440,43 @@
   };
   function visuel(cat) { return VISUELS[cat] || "assets/hero.jpg"; }
 
-  function tuile(cat, titre, texte, compte, onClick) {
+  // Les categories servent d'identifiants et n'ont donc pas d'accent dans la
+  // base. Elles ne s'affichent jamais brutes : « Sante » se lit « Santé ».
+  var CATS_AFFICHAGE = {
+    "Sante": "Santé", "Impots": "Impôts", "Mobilite": "Mobilité"
+  };
+  function libelleCat(c) { return CATS_AFFICHAGE[c] || c; }
+
+  // La grille des fiches n'a plus de photo. Neuf visuels pour trente-six
+  // fiches, c'est la meme facade cinq fois de suite : on ne distingue plus les
+  // cartes, et la repetition ressemble a un defaut de chargement. La photo
+  // reste la ou elle a du sens, dans le bandeau de la fiche ouverte. La page
+  // cesse au passage de charger trente-six images.
+  function carteFiche(f) {
+    var t = el("article", "fcarte reveal");
+    t.tabIndex = 0;
+    t.setAttribute("role", "button");
+    t.dataset.cat = f.cat;
+    t.appendChild(el("span", "fcarte-cat", libelleCat(f.cat)));
+    t.appendChild(el("h3", null, f.titre));
+    t.appendChild(el("p", null, f.resume));
+    var ouvrirFiche = function () { montrerFiche(f.id); };
+    t.addEventListener("click", ouvrirFiche);
+    t.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ouvrirFiche(); }
+    });
+    return t;
+  }
+
+  // etiquette : ce qui s'imprime sur le visuel. null pour n'en mettre aucune,
+  // parce qu'une carte de section n'appartient a aucune categorie de fiche.
+  function tuile(cat, titre, texte, compte, onClick, etiquette) {
     var t = el("div", "tuile reveal");
     var v = el("div", "visuel");
     var img = el("img");
     img.src = visuel(cat); img.alt = ""; img.loading = "lazy";
     v.appendChild(img);
-    v.appendChild(el("span", "etiquette", cat));
+    if (etiquette !== null) v.appendChild(el("span", "etiquette", etiquette || libelleCat(cat)));
     t.appendChild(v);
     var c = el("div", "corps");
     c.appendChild(el("h3", null, titre));
@@ -548,11 +578,11 @@
       ["comparateur", "Comparateur", "Finances",
        "Quatre contrats habitation du marché lus intégralement, sinistre par sinistre, clause citée. Et trois démonstrations sur l'auto, le mobile et l'électricité.",
        "4 postes"],
-      ["carte", "Comparer des logements", "Sante",
+      ["carte", "Carte", "Sante",
        "Plusieurs adresses côte à côte : distance au travail, écoles, crèches, transports, commerces et santé autour de chacune.",
        "jusqu'à 4 adresses"]
     ].forEach(function (s) {
-      g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }));
+      g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }, null));
     });
   }
 
@@ -600,9 +630,27 @@
       perso.appendChild(bandeau);
     }
 
-    (effective || window.KB.fiches).forEach(function (f) {
-      g.appendChild(tuile(f.cat, f.titre, f.resume, null, function () { montrerFiche(f.id); }));
-    });
+    // Sans recherche ni filtre, les fiches se groupent par theme. Trente-six
+    // cartes d'un bloc, toutes du meme poids, ne disent pas par ou commencer ;
+    // un intitule tous les quelques rangs redonne des reperes en defilant.
+    var lot = effective || window.KB.fiches;
+    if (!liste && !themeActif && !profilRenseigne()) {
+      var ordre = [];
+      lot.forEach(function (f) { if (ordre.indexOf(f.cat) === -1) ordre.push(f.cat); });
+      ordre.forEach(function (c) {
+        var dedans = lot.filter(function (f) { return f.cat === c; });
+        var tete = el("div", "grp-tete");
+        tete.appendChild(el("h2", null, libelleCat(c)));
+        tete.appendChild(el("span", "grp-compte",
+          dedans.length + (dedans.length > 1 ? " fiches" : " fiche")));
+        g.appendChild(tete);
+        var sous = el("div", "grid grp-grille sans-etiquette");
+        dedans.forEach(function (f) { sous.appendChild(carteFiche(f)); });
+        g.appendChild(sous);
+      });
+    } else {
+      lot.forEach(function (f) { g.appendChild(carteFiche(f)); });
+    }
     if (!g.children.length) g.appendChild(el("p", "muted", "Aucune fiche ne correspond à cette recherche."));
     activerApparition(g);
     $("#fiches-liste").hidden = false;
@@ -624,7 +672,7 @@
     z.appendChild(tous);
     cats.forEach(function (c) {
       var n = window.KB.fiches.filter(function (f) { return f.cat === c; }).length;
-      var b = el("button", "chip" + (themeActif === c ? " actif" : ""), c + " (" + n + ")");
+      var b = el("button", "chip" + (themeActif === c ? " actif" : ""), libelleCat(c) + " (" + n + ")");
       b.setAttribute("aria-pressed", String(themeActif === c));
       b.addEventListener("click", function () {
         themeActif = themeActif === c ? null : c;
@@ -651,7 +699,7 @@
     himg.src = visuel(f.cat); himg.alt = "";
     hero.appendChild(himg);
     var ht = el("div", "titre");
-    ht.appendChild(el("div", "cat", f.cat));
+    ht.appendChild(el("div", "cat", libelleCat(f.cat)));
     ht.appendChild(el("h1", null, f.titre));
     hero.appendChild(ht);
     d.appendChild(hero);
@@ -700,7 +748,7 @@
 
     if (f.aRetenir && f.aRetenir.length) {
       var bc = el("div", "bloc cle");
-      bc.appendChild(el("h4", null, "A retenir"));
+      bc.appendChild(el("h4", null, "À retenir"));
       var ulc = el("ul");
       f.aRetenir.forEach(function (x) { ulc.appendChild(el("li", null, x)); });
       bc.appendChild(ulc); cote.appendChild(bc);

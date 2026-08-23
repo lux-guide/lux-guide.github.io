@@ -362,6 +362,55 @@ p { color: var(--text-2); }
   text-transform: uppercase; letter-spacing: .8px;
 }
 
+/* ---------- Carte de fiche, sans photo ---------- */
+
+.fcarte {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 20px 22px 22px; cursor: pointer;
+  box-shadow: var(--ombre-s); position: relative; overflow: hidden;
+  transition: transform .24s cubic-bezier(.2,.8,.3,1), box-shadow .24s, border-color .24s;
+}
+/* Un filet de la couleur du theme sur le bord haut : la categorie se lit d'un
+   coup d'oeil en balayant la colonne, sans lire l'etiquette. */
+.fcarte::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: var(--cat-c, var(--accent));
+}
+.fcarte:hover {
+  transform: translateY(-3px); box-shadow: var(--ombre-m);
+  border-color: color-mix(in srgb, var(--cat-c, var(--accent)) 45%, var(--border));
+}
+.fcarte-cat {
+  display: inline-block; font-size: var(--micro); font-weight: 680;
+  text-transform: uppercase; letter-spacing: 1.1px; margin-bottom: 11px;
+  color: var(--cat-c, var(--accent));
+}
+.sans-etiquette .fcarte-cat { display: none; }
+.sans-etiquette .fcarte h3 { margin-top: 2px; }
+.fcarte h3 { margin: 0 0 8px; font-size: 17px; letter-spacing: -.3px; line-height: 1.3; }
+.fcarte p { margin: 0; color: var(--muted); font-size: 14.3px; line-height: 1.6; }
+
+/* Une couleur par theme, prise dans la meme famille que le reste du site. */
+.fcarte[data-cat="Administratif"] { --cat-c: #0a4fa8; }
+.fcarte[data-cat="Logement"]      { --cat-c: #0f766e; }
+.fcarte[data-cat="Impots"]        { --cat-c: #96570a; }
+.fcarte[data-cat="Finances"]      { --cat-c: #7c3aed; }
+.fcarte[data-cat="Travail"]       { --cat-c: #1d4ed8; }
+.fcarte[data-cat="Famille"]       { --cat-c: #be123c; }
+.fcarte[data-cat="Sante"]         { --cat-c: #0c6b3e; }
+.fcarte[data-cat="Mobilite"]      { --cat-c: #0369a1; }
+.fcarte[data-cat="Quotidien"]     { --cat-c: #a21caf; }
+
+/* Groupes par theme dans la liste des fiches */
+.grp-tete {
+  grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px;
+  margin: 34px 0 2px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.grp-tete:first-child { margin-top: 6px; }
+.grp-tete h2 { margin: 0; font-size: 22px; }
+.grp-compte { font-size: var(--micro); color: var(--muted); font-weight: 620; letter-spacing: .8px; text-transform: uppercase; }
+.grp-grille { grid-column: 1 / -1; margin: 0; }
+
 .cat {
   display: inline-block; font-size: var(--micro); font-weight: 680;
   text-transform: uppercase; letter-spacing: 1.1px;
