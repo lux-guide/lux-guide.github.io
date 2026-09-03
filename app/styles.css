@@ -1339,7 +1339,8 @@ html, body { overflow-x: hidden; }
   .tl-lien, .tl-item span { min-height: 40px; display: flex; align-items: center; }
 
   /* Liens de sources et de fiches : une ligne de texte seule est trop fine */
-  .faq-sources a, .detail-cote .bloc a, .lien-fiche, .lien-fiche-inline, .msg .srcs a {
+  .faq-sources a, .detail-cote .bloc a, .lien-fiche, .lien-fiche-inline,
+  .msg .srcs a, .srcbox a, .mrh-sources-liste a {
     display: inline-block; padding: 8px 0; min-height: 40px;
   }
   .faq-item summary { min-height: 52px; display: flex; align-items: center; }
@@ -1370,3 +1371,52 @@ html, body { overflow-x: hidden; }
     line-height: 40px !important; font-size: 21px !important;
   }
 }
+
+/* ---------- Conseil financier ---------- */
+
+/* Le plafond montre comme un mouvement : « 4 500 » ne dit rien a qui ne
+   connaissait pas « 3 200 ». On montre les deux et l'ecart. */
+.mouvement {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 24px 26px; margin: 30px 0 34px;
+  box-shadow: var(--ombre-s);
+}
+.mouvement-chiffres {
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: 18px 26px;
+  margin-bottom: 14px;
+}
+.mvt-lab {
+  display: block; font-size: var(--micro); letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); font-weight: 650; margin-bottom: 4px;
+}
+.mvt-val { display: block; font-family: var(--serif); font-size: 34px; line-height: 1; }
+.mvt-av .mvt-val { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.mvt-ap .mvt-val { color: var(--accent); }
+.mvt-delta .mvt-val { color: var(--ok); font-size: 26px; }
+.mvt-fleche { font-size: 22px; color: var(--muted); padding-bottom: 4px; }
+.mouvement p { margin: 0; max-width: 70ch; }
+@media (max-width: 560px) {
+  .mvt-val { font-size: 27px; }
+  .mvt-fleche { display: none; }
+}
+
+.cons-calcul { font-size: 13px; color: var(--muted); max-width: 42ch; }
+.cons-reserve {
+  display: block; margin-top: 6px; font-size: 12px; color: var(--warn);
+  line-height: 1.45;
+}
+.cons-pistes { color: var(--text-2); font-size: 14.5px; }
+.cons-pistes li { margin: 7px 0; }
+.cons-etapes { counter-reset: etape; list-style: none; padding-left: 0; }
+.cons-etapes li {
+  counter-increment: etape; position: relative; padding-left: 46px; margin: 0 0 22px;
+}
+.cons-etapes li::before {
+  content: counter(etape); position: absolute; left: 0; top: 0;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  display: grid; place-items: center; font-weight: 650; font-size: 14px;
+}
+.cons-etapes strong { display: block; font-size: 16.5px; margin-bottom: 4px; }
+.cons-etapes p { margin: 0; }
+#cons-cas { margin-bottom: 18px; }

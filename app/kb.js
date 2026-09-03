@@ -384,7 +384,7 @@ window.KB = {
       id: "conseil_fiscal",
       titre: "Conseil fiscal : les leviers de la première année",
       cat: "Impots",
-      resume: "Vérifier la classe d'impôt et la faire corriger, puis activer les déductions qui rapportent : 111bis, épargne-logement.",
+      resume: "Vérifier la classe d'impôt et la faire corriger, puis activer les déductions qui rapportent : 111bis relevé à 4 500 € en 2026, épargne-logement.",
       tags: ["conseil fiscal", "111bis", "prévoyance-vieillesse", "épargne-logement", "classe", "fiche de retenue", "rectification", "correction", "164 R", "bureau RTS", "optimisation", "déduction"],
       corps: [
         "La première année, quelques décisions simples pèsent plus sur l'impôt final que tout le reste. Cette fiche regroupe les leviers concrets, dans l'ordre où ils se présentent.",
@@ -392,7 +392,7 @@ window.KB = {
         "La retenue mensuelle repose sur la fiche de retenue d'impôt. Pour un salarié qui commence à travailler au Luxembourg, elle est émise automatiquement par l'administration après l'affiliation au Centre commun de la sécurité sociale, faite par l'employeur, sous une trentaine de jours ouvrables : il n'y a pas de démarche à faire pour l'obtenir. La démarche, c'est de la vérifier. Pour un nouvel arrivant, la situation familiale est parfois mal reprise et la classe attribuée est alors erronée, ce qui arrive plus souvent qu'on ne le croit. Ni vous ni votre employeur n'avez le droit de corriger la fiche vous-mêmes.",
         "La modification se demande sans tarder au bureau RTS compétent pour votre commune, de préférence avec le formulaire 164 R. Tant que la fiche n'est pas corrigée, la retenue se fait sur la mauvaise classe ; l'écart se régularise ensuite, mais autant ne pas avancer cet argent des mois durant.",
         { h: "Le contrat de prévoyance-vieillesse, dit 111bis" },
-        "Les primes versées à un contrat de prévoyance-vieillesse se déduisent jusqu'à 3 200 euros par an et par contribuable, quel que soit l'âge, et chaque conjoint qui souscrit son propre contrat a son propre plafond. En contrepartie, c'est une épargne longue : contrat d'au moins dix ans, épargne remboursable au plus tôt à 60 ans et au plus tard à 75 ans, en capital, en rente viagère ou en mixte. Le remboursement anticipé est exclu, sauf maladie grave ou invalidité.",
+        "Les primes versées à un contrat de prévoyance-vieillesse se déduisent jusqu'à 4 500 euros par an et par contribuable depuis le 1er janvier 2026, contre 3 200 euros auparavant. Le plafond vaut quel que soit l'âge, et chaque conjoint qui souscrit son propre contrat a le sien. En contrepartie, c'est une épargne longue : contrat d'au moins dix ans, épargne remboursable au plus tôt à 60 ans et au plus tard à 75 ans, en capital, en rente viagère ou en mixte. Le remboursement anticipé est exclu, sauf maladie grave ou invalidité.",
         { h: "L'épargne-logement" },
         "Les cotisations à un contrat d'épargne-logement se déduisent jusqu'à 1 344 euros par an et par personne du ménage lorsque le souscripteur a entre 18 et 41 ans, 672 euros au-delà. Le plafond se majore pour le conjoint imposé collectivement et pour chaque enfant donnant droit à une modération d'impôt : pour une famille, cela se multiplie vite. L'épargne doit financer l'habitation personnelle ; utilisée à autre chose avant dix ans, la déduction est reprise par imposition rectificative.",
         { h: "Les autres leviers, déjà détaillés dans le guide" },
@@ -401,7 +401,7 @@ window.KB = {
       ],
       aRetenir: [
         "Classe erronée : demander la correction au bureau RTS, formulaire 164 R, sans tarder.",
-        "111bis : jusqu'à 3 200 € par an et par contribuable, épargne bloquée jusqu'à 60 ans au plus tôt.",
+        "111bis : jusqu'à 4 500 € par an et par contribuable depuis 2026, épargne bloquée jusqu'à 60 ans au plus tôt.",
         "Épargne-logement : 1 344 € par personne jusqu'à 41 ans, 672 € ensuite, plafond multiplié par la taille du ménage."
       ],
       sources: [
