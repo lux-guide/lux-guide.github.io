@@ -27,8 +27,8 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 
 ## Trois onglets, et un assistant qui reste ouvert à côté
 
-1. **Accueil.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
-2. **Simulateur.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
+1. **Accueil.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée et qui ne suppose rien du lecteur, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
+2. **Simulateur.** Quatre questions dont aucune n'est obligatoire, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
 3. **Questions.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
 
 **L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit.
@@ -55,7 +55,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-trente-neuf contrôles de fond, dans [test_prevoyance.py](test_prevoyance.py), et un audit de forme séparé, dans [audit_responsive.py](audit_responsive.py) :
+Chacune est vérifiée par un test. Cent-cinquante-et-un contrôles de fond, dans [test_prevoyance.py](test_prevoyance.py), et un audit de forme séparé, dans [audit_responsive.py](audit_responsive.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -91,9 +91,15 @@ Le rendu refuse d'afficher un texte sans ses citations. Un test compte les blocs
 
 IBAN, numéro long, téléphone, adresse électronique : la réponse est un refus, et **même le message de l'utilisateur n'est pas rendu tel quel**. Il resterait dans la page et dans une capture d'écran. Un écho est déjà une conservation.
 
-### 6. Un chiffre avant de demander quoi que ce soit
+### 6. Un chiffre avant de demander quoi que ce soit, et qui ne suppose rien
 
-Un bouton « calculez votre avantage » réclame de la confiance avant d'en avoir donné. Trois situations sont donc déjà calculées à l'arrivée. **Le troisième cas ne donne droit à rien et il est montré exprès** : un outil qui ne sait dire que oui n'est pas cru quand il dit oui. Sur ce cas, la page ne dessine ni tableau ni indicateur, seulement le motif du refus. Un tableau vide laisse croire à un défaut d'affichage.
+Un bouton « calculez votre avantage » réclame de la confiance avant d'en avoir donné. Un montant est donc affiché dès l'arrivée. **Il ne suppose rien du lecteur** : c'est ce que la loi ouvre à toute personne imposée au Luxembourg, quels que soient son âge, son foyer et ses contrats. Deux postes seulement, la prévoyance-vieillesse et les primes d'assurance, parce que ce sont les deux dont le plafond ne dépend de rien.
+
+Cette page a d'abord fait le contraire, et c'était une faute. Trois cas préparés ouvraient le site : « 34 ans, deux enfants, un prêt en cours », « 52 ans, sans prêt », « 40 ans, imposé hors du Luxembourg ». **Ces chiffres ne venaient d'aucune source, je les avais inventés**, et rien sur la page ne disait d'où ils sortaient. Sur un site destiné à tout le monde, un exemple inventé se lit comme une hypothèse sur le lecteur, ou comme le cas de quelqu'un en particulier.
+
+Les deux autres postes dépendent de l'âge et d'un éventuel prêt. Ils ne sont pas devinés : ils sont **annoncés comme à calculer**, avec ce qui manque pour le faire. Renseigner son âge les fait apparaître, l'effacer les remet en attente. Aucun des quatre champs n'est obligatoire, et le champ d'âge affiche « non renseigné » plutôt qu'une valeur.
+
+**Le cas qui ne donne droit à rien reste montré**, en décochant « imposé au Luxembourg » : un outil qui ne sait dire que oui n'est pas cru quand il dit oui. Sur ce cas, la page ne dessine ni tableau ni indicateur, seulement le motif du refus. Un tableau vide laisse croire à un défaut d'affichage.
 
 ### 7. Les deux totaux ne s'additionnent jamais
 

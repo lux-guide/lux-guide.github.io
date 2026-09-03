@@ -51,27 +51,68 @@ with sync_playwright() as p:
     acc = pg.inner_text("#vue-accueil")
     verifie("pas que les nouveaux arrivants" in acc or "quelle que soit la durée" in acc,
             "il est dit que le dispositif ne vise pas que les arrivants")
+    verifie("ne suppose rien de vous" in acc, "et que le chiffre affiche ne suppose rien du lecteur")
 
     print("4. Le simulateur")
     pg.click("#tabs button[data-vue='simulateur']")
     pg.wait_for_timeout(600)
     verifie(pg.locator("#vue-simulateur").is_visible(), "la vue s'ouvre")
     verifie(pg.locator("#sim-champs input, #sim-champs select").count() == 4, "quatre questions, pas une de plus")
+    # « Chaque montant » veut dire autant d'explications que de lignes, et non
+    # un nombre fixe : le tableau ne compte plus trois lignes par defaut,
+    # puisqu'il ne suppose plus d'age.
     calculs = pg.eval_on_selector_all("#sim-resultat .calcul", PLAT)
-    verifie(len(calculs) >= 3 and all(c.strip() for c in calculs), "chaque montant dit comment il est obtenu")
+    postes = pg.locator("#sim-resultat tbody tr td:first-child strong").count()
+    verifie(len(calculs) == postes and postes > 0 and all(c.strip() for c in calculs),
+            "chaque montant dit comment il est obtenu (%d sur %d)" % (len(calculs), postes))
     txt = pg.inner_text("#sim-resultat")
     verifie("ne s'additionnent pas" in txt, "annuel et ponctuel ne s'additionnent pas")
     entetes = pg.eval_on_selector_all("#sim-resultat thead th", PLAT)
     verifie(len([e for e in entetes if "%" in e]) == 4, "une colonne par taux")
     verifie("ne le devine pas" in txt, "aucun taux devine")
+    verifie("aucune n'est obligatoire" in pg.inner_text("#vue-simulateur"),
+            "et il est dit qu'aucune question n'est obligatoire")
+
+    print("4b. Le site ne suppose rien de la personne")
+    # Un age, des enfants, un pret sont des faits sur quelqu'un. Trois cas
+    # prepares les inventaient : « 34 ans, deux enfants, un pret en cours ».
+    # Ces chiffres ne venaient d'aucune source, et sur un site destine a tout
+    # le monde un exemple invente se lit comme une hypothese sur le lecteur.
+    verifie(pg.locator("#sim-cas").count() == 0 and pg.locator("#acc-cas").count() == 0,
+            "aucun cas prepare, ni sur l'accueil ni sur le simulateur")
+    verifie(pg.input_value("#ch-age") == "", "l'age n'est pas prerempli")
+    verifie(pg.locator("#ch-enfants").input_value() == "0", "aucun enfant n'est suppose")
+    verifie(not pg.is_checked("#ch-pret"), "aucun pret n'est suppose")
+    # Ce qui reste affiche ne depend ni de l'age ni du foyer : c'est ce que la
+    # loi ouvre a toute personne imposee au Luxembourg.
+    lignes = pg.eval_on_selector_all("#sim-resultat tbody tr td:first-child strong", PLAT)
+    verifie(len(lignes) == 2, "deux postes seulement, ceux qui ne dependent de rien")
+    verifie(any("111bis" in x for x in lignes) and any("111" in x for x in lignes),
+            "la prevoyance et les primes d'assurance")
+    # Les deux autres ne sont pas devines : ils sont annonces comme a calculer.
+    pistes = pg.eval_on_selector_all("#sim-resultat ul li strong", PLAT)
+    verifie(any("logement" in x for x in pistes),
+            "l'epargne-logement est annoncee comme a calculer, pas devinee")
+    manque = pg.eval_on_selector("#sim-resultat ul", "e => e.textContent")
+    verifie("votre âge" in manque, "et il est dit ce qui manque pour la chiffrer")
+
+    print("4c. Renseigner un age ajoute un poste, l'effacer le retire")
+    pg.fill("#ch-age", "35")
+    pg.wait_for_timeout(500)
+    n1 = pg.locator("#sim-resultat tbody tr td:first-child strong").count()
+    verifie(n1 == 3, "a 35 ans, l'epargne-logement se chiffre (%d postes)" % n1)
+    pg.fill("#ch-age", "")
+    pg.wait_for_timeout(500)
+    n2 = pg.locator("#sim-resultat tbody tr td:first-child strong").count()
+    verifie(n2 == 2, "effacer l'age la remet en attente (%d postes)" % n2)
 
     print("5. Le cas qui rend zero ne dessine rien")
-    pg.locator("#sim-cas .chip").nth(2).click()
+    pg.uncheck("#ch-imposeLuxembourg")
     pg.wait_for_timeout(500)
     verifie(pg.locator("#sim-resultat table").count() == 0, "aucun tableau")
     verifie(pg.locator("#sim-resultat .kpi").count() == 0, "aucun indicateur")
     verifie("lieu d'imposition" in pg.inner_text("#sim-resultat"), "le refus est motive")
-    pg.locator("#sim-cas .chip").first.click()
+    pg.check("#ch-imposeLuxembourg")
     pg.wait_for_timeout(400)
 
     print("6. L'age de sortie est calcule, pas ecrit en dur")
@@ -87,7 +128,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500)
     t40 = pg.inner_text("#sim-resultat")
     verifie("60 ans" in t40 and "repousse l'échéance" not in t40, "a 40 ans, l'echeance est l'age legal, sans mention inutile")
-    pg.locator("#sim-cas .chip").first.click()
+    pg.fill("#ch-age", "")
     pg.wait_for_timeout(400)
 
     print("7. La foire aux questions")

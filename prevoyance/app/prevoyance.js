@@ -103,8 +103,14 @@ window.PREVOYANCE = (function () {
 
   // Entree : quatre faits, et pas un de plus.
   //   { age, enfants, pret, imposeLuxembourg }
+  // L'age peut ne pas etre connu, et ce n'est pas un cas degrade : c'est
+  // l'etat de depart. Un site pour tout le monde ne commence pas par supposer
+  // un age, il commence par ce qui vaut pour tout le monde.
   function simuler(e) {
-    var age = Math.max(TABLE.bornes.ageMin, Math.min(TABLE.bornes.ageMax, Number(e.age) || 0));
+    var age = null;
+    if (e.age !== null && e.age !== undefined && e.age !== "") {
+      age = Math.max(TABLE.bornes.ageMin, Math.min(TABLE.bornes.ageMax, Number(e.age) || 0));
+    }
     var enfants = Math.max(0, Math.min(TABLE.bornes.enfantsMax, Number(e.enfants) || 0));
     var pret = !!e.pret;
     var impose = !!e.imposeLuxembourg;
@@ -125,19 +131,25 @@ window.PREVOYANCE = (function () {
       return out;
     }
 
-    // Prevoyance-vieillesse
-    if (age < TABLE.prevoyance.ageMaxSouscription) {
+    // Prevoyance-vieillesse. Elle ne depend ni de l'age ni du foyer : c'est le
+    // seul plafond qui vaut a l'identique pour tout le monde, et c'est donc
+    // par lui que la page commence.
+    if (age === null || age < TABLE.prevoyance.ageMaxSouscription) {
       out.lignes.push({
         nom: "Prévoyance-vieillesse (111bis)",
         plafond: TABLE.prevoyance.plafond,
         annuel: true,
         calcul: "Plafond légal depuis le 1er janvier " + TABLE.annee + ", par personne et par an.",
-        condition: "Contrat d'au moins " + TABLE.prevoyance.dureeMinimaleAns + " ans. En " +
-          "souscrivant à " + age + " ans, l'épargne ne sera récupérable qu'à partir de " +
-          ageSortieEffectif(age) + " ans" +
-          (ageSortieEffectif(age) > TABLE.prevoyance.sortieMin
-            ? ", et non à " + TABLE.prevoyance.sortieMin + " ans : la durée minimale du contrat repousse l'échéance."
-            : ".") ,
+        condition: age === null
+          ? "Souscription avant " + TABLE.prevoyance.ageMaxSouscription + " ans, contrat d'au " +
+            "moins " + TABLE.prevoyance.dureeMinimaleAns + " ans, épargne récupérable entre " +
+            TABLE.prevoyance.sortieMin + " et " + TABLE.prevoyance.sortieMax + " ans."
+          : "Contrat d'au moins " + TABLE.prevoyance.dureeMinimaleAns + " ans. En " +
+            "souscrivant à " + age + " ans, l'épargne ne sera récupérable qu'à partir de " +
+            ageSortieEffectif(age) + " ans" +
+            (ageSortieEffectif(age) > TABLE.prevoyance.sortieMin
+              ? ", et non à " + TABLE.prevoyance.sortieMin + " ans : la durée minimale du contrat repousse l'échéance."
+              : "."),
         reserve: "Le montant non versé une année est perdu : il ne se reporte pas sur la suivante."
       });
     } else {
@@ -145,17 +157,27 @@ window.PREVOYANCE = (function () {
         "possible à partir de " + TABLE.prevoyance.ageMaxSouscription + " ans.");
     }
 
-    // Epargne-logement
-    var pel = plafondEpargneLogement(age);
-    out.lignes.push({
-      nom: "Épargne-logement",
-      plafond: pel, annuel: true,
-      calcul: pel === 1344
-        ? "Plafond doublé entre 18 et 40 ans : 672 × 2."
-        : "Plafond de base, au-delà de 40 ans.",
-      condition: "Contrat d'épargne-logement en cours.",
-      reserve: null
-    });
+    // Epargne-logement. Son plafond double avant 41 ans : sans age, il n'y a
+    // pas de montant a afficher, seulement un montant a calculer. Choisir
+    // l'une des deux valeurs reviendrait a supposer un age.
+    if (age === null) {
+      out.pistes.push({
+        nom: "Épargne-logement",
+        ordre: "de 672 à 1 344 € par an selon l'âge",
+        manque: "votre âge, le plafond doublant avant 41 ans"
+      });
+    } else {
+      var pel = plafondEpargneLogement(age);
+      out.lignes.push({
+        nom: "Épargne-logement",
+        plafond: pel, annuel: true,
+        calcul: pel === 1344
+          ? "Plafond doublé entre 18 et 40 ans : 672 × 2."
+          : "Plafond de base, au-delà de 40 ans.",
+        condition: "Contrat d'épargne-logement en cours.",
+        reserve: null
+      });
+    }
 
     // Primes d'assurance
     out.lignes.push({
@@ -166,8 +188,16 @@ window.PREVOYANCE = (function () {
       reserve: null
     });
 
-    // Solde restant du : ponctuel, et seulement avec un pret
-    if (pret) {
+    // Solde restant du : ponctuel, et seulement avec un pret. Son plafond
+    // depend de l'age et du nombre d'enfants : sans age, rien a calculer.
+    if (pret && age === null) {
+      out.pistes.push({
+        nom: "Solde restant dû, prime unique",
+        ordre: "6 000 € de base, majorés par enfant et par année au-delà de 30 ans",
+        manque: "votre âge"
+      });
+    }
+    if (pret && age !== null) {
       var srd = plafondSrd(age, enfants);
       var maj = Math.max(0, age - 30);
       out.lignes.push({
@@ -225,20 +255,9 @@ window.PREVOYANCE = (function () {
     return out;
   }
 
-  // Trois cas prepares. Le troisieme rend zero, et il est montre expres : un
-  // outil qui ne sait dire que oui n'est pas cru quand il dit oui.
-  var CAS = [
-    { id: "famille", titre: "34 ans, deux enfants, un prêt en cours",
-      e: { age: 34, enfants: 2, pret: true, imposeLuxembourg: true } },
-    { id: "sans-pret", titre: "52 ans, sans prêt",
-      e: { age: 52, enfants: 0, pret: false, imposeLuxembourg: true } },
-    { id: "hors-lux", titre: "40 ans, imposé hors du Luxembourg",
-      e: { age: 40, enfants: 0, pret: false, imposeLuxembourg: false } }
-  ];
 
   return {
     table: TABLE,
-    cas: CAS,
     simuler: simuler,
     plafondSrd: plafondSrd,
     plafondEpargneLogement: plafondEpargneLogement,

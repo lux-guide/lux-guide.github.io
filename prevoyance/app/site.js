@@ -575,29 +575,13 @@
 
   // ---------- Le simulateur ----------
 
-  var entree = null;
+  // L'etat de depart ne declare rien. Ni age, ni enfant, ni pret : ce sont
+  // des faits sur une personne, et ce site s'adresse a tout le monde. Seul
+  // « impose au Luxembourg » est pose, parce que ce n'est pas un trait de
+  // caractere, c'est le champ du dispositif dont la page parle.
+  var entree = { age: null, enfants: 0, pret: false, imposeLuxembourg: true };
 
-  function casParDefaut() {
-    var c = window.PREVOYANCE.cas[0];
-    return { id: c.id, age: c.e.age, enfants: c.e.enfants, pret: c.e.pret, imposeLuxembourg: c.e.imposeLuxembourg };
-  }
 
-  function rendreCas(zone) {
-    var z = $(zone);
-    if (!z) return;
-    z.innerHTML = "";
-    window.PREVOYANCE.cas.forEach(function (c) {
-      var actif = entree && entree.id === c.id;
-      var b = el("button", "chip" + (actif ? " actif" : ""), c.titre);
-      b.setAttribute("aria-pressed", String(!!actif));
-      b.addEventListener("click", function () {
-        entree = { id: c.id, age: c.e.age, enfants: c.e.enfants, pret: c.e.pret, imposeLuxembourg: c.e.imposeLuxembourg };
-        rendreSimulateur();
-        rendreApercu();
-      });
-      z.appendChild(b);
-    });
-  }
 
   function rendreChamps() {
     var z = $("#sim-champs");
@@ -605,13 +589,17 @@
     z.innerHTML = "";
 
     var da = el("div");
-    da.appendChild(el("label", null, "Votre âge"));
+    da.appendChild(el("label", null, "Votre âge, si vous voulez le préciser"));
     var ia = el("input");
     ia.type = "number"; ia.min = String(T.bornes.ageMin); ia.max = String(T.bornes.ageMax);
-    ia.value = String(entree.age);
+    ia.value = entree.age === null ? "" : String(entree.age);
+    ia.placeholder = "non renseigné";
     ia.id = "ch-age";
     ia.addEventListener("input", function () {
-      entree.age = Number(ia.value) || entree.age; entree.id = null;
+      // Effacer le champ redevient un etat valable : on retire ce qu'on avait
+      // dit, et les montants qui en dependaient repassent en « a calculer ».
+      var v = ia.value.trim();
+      entree.age = v === "" ? null : (Number(v) || null);
       rendreSimulateur(true); rendreApercu();
     });
     da.appendChild(ia); z.appendChild(da);
@@ -778,8 +766,6 @@
   }
 
   function rendreSimulateur(sansChamps) {
-    if (!entree) entree = casParDefaut();
-    rendreCas("#sim-cas");
     if (!sansChamps) rendreChamps();
     var z = $("#sim-resultat");
     if (!z) return;
@@ -790,11 +776,10 @@
   function rendreApercu() {
     var z = $("#acc-apercu");
     if (!z) return;
-    if (!entree) entree = casParDefaut();
     z.innerHTML = "";
     z.appendChild(tableauResultat(window.PREVOYANCE.simuler(entree), true));
     var c = el("div", "chips");
-    var b = el("button", "chip", "Changer la situation et voir le détail");
+    var b = el("button", "chip", "Ajouter ma situation et voir le détail");
     b.addEventListener("click", function () { ouvrir("simulateur"); });
     c.appendChild(b);
     z.appendChild(c);
@@ -811,8 +796,6 @@
       m.appendChild(bm);
     }
 
-    if (!entree) entree = casParDefaut();
-    rendreCas("#acc-cas");
     rendreApercu();
 
     var p = $("#acc-principe");
