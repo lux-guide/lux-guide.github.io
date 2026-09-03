@@ -111,15 +111,19 @@ with sync_playwright() as p:
     pg.fill("#q-filtre", "")
     pg.wait_for_timeout(300)
 
-    print("8. Une source qui se contredit ne se resume pas")
-    # Sur le remboursement anticipe, le texte officiel dit dans le meme
-    # paragraphe « integralement impose » et « est exclu ». Trancher a sa place
-    # serait inventer une regle.
+    print("8. C'est le texte d'application qui fait foi, pas un resume")
+    # Les pages A a Z de l'administration resument, et le resume laisse croire
+    # que le remboursement anticipe est interdit. La circulaire d'application
+    # dit l'inverse : il est prevu, integral ou partiel, et impose au tarif
+    # normal. Une reponse qui s'arrete au resume se trompe.
     # Les questions sont des <details> replies : innerText ne rend que le
     # resume, il faut lire le texte du noeud.
     fq = pg.eval_on_selector("#q-liste", "e => e.textContent")
-    verifie("intégralement imposé" in fq and "exclu" in fq, "les deux lectures figurent")
-    verifie("ne tranche" in fq, "le site dit qu'il ne tranche pas")
+    verifie("intégral ou partiel" in fq, "le remboursement anticipe est dit possible")
+    verifie("tarif normal" in fq, "et son cout est nomme")
+    verifie("Circulaire" in fq, "la circulaire est citee en source")
+    verifie("Pas nécessairement" in fq, "la nature du contrat n'est plus donnee pour une assurance vie")
+    verifie("établissements de crédit" in fq, "les deux familles de prestataires figurent")
 
     print("9. L'assistant annonce son perimetre avant qu'on lui parle")
     pg.click("#tabs button[data-vue='assistant']")
@@ -201,6 +205,85 @@ with sync_playwright() as p:
         pg.wait_for_timeout(400)
         over = pg.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1")
         verifie(not over, "%d px sans debordement" % w)
+
+    print("17. Les champs tombent a la meme hauteur, dans les deux themes")
+    # Un input et un select ne se mesurent pas pareil : le select suit les
+    # metriques du systeme, l'input celles de la police. Avec le meme padding
+    # ils ne tombent pas a la meme hauteur, et cela se voit des qu'ils sont
+    # cote a cote. Le defaut se mesure, il ne se juge pas a l'oeil.
+    pg.set_viewport_size({"width": 1280, "height": 900})
+    for theme in ["clair", "sombre"]:
+        pg.goto(URL + "#simulateur")
+        pg.wait_for_timeout(400)
+        pg.evaluate("t => localStorage.setItem('prevoyance.theme.v1', t)", theme)
+        pg.reload()
+        pg.wait_for_timeout(700)
+        m = pg.evaluate("""() => {
+          const b = s => document.querySelector(s).getBoundingClientRect();
+          const a = b('#ch-age'), e = b('#ch-enfants');
+          const ch = getComputedStyle(document.querySelector('.champ-sel'), '::after');
+          return { dh: Math.abs(a.height - e.height), dy: Math.abs(a.top - e.top),
+                   chevron: ch.content !== 'none' && ch.width !== 'auto' };
+        }""")
+        verifie(m["dh"] < 0.5, "%s : meme hauteur (ecart %.2f px)" % (theme, m["dh"]))
+        verifie(m["dy"] < 0.5, "%s : meme ligne de base (ecart %.2f px)" % (theme, m["dy"]))
+        verifie(m["chevron"], "%s : le chevron du select est bien redessine" % theme)
+
+    print("18. Le texte se lit, mesure et non juge a l'oeil")
+    # Un gris trop clair passe l'inspection visuelle et rate la mesure. Celui
+    # de la charte, #67768e, rendait 4.38 sur le fond de page : sous le seuil.
+    CONTRASTE = """() => {
+      const pot = document.createElement('canvas').getContext('2d');
+      const lum = c => {
+        pot.fillStyle = '#000'; pot.fillStyle = c;
+        const h = pot.fillStyle;
+        let r, g, b;
+        if (h[0] === '#') { r = parseInt(h.slice(1,3),16); g = parseInt(h.slice(3,5),16); b = parseInt(h.slice(5,7),16); }
+        else if (h.startsWith('color(')) { [r,g,b] = h.match(/[\\d.]+/g).slice(0,3).map(v => v*255); }
+        else { [r,g,b] = h.match(/[\\d.]+/g).slice(0,3).map(Number); }
+        const f = v => { v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+        return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+      };
+      const lisible = c => {
+        if (!c || c === 'transparent' || c === 'rgba(0, 0, 0, 0)') return null;
+        pot.fillStyle = '#123456'; pot.fillStyle = c;
+        return pot.fillStyle === '#123456' ? null : c;
+      };
+      const fond = e => {
+        let n = e;
+        while (n && n !== document.documentElement) {
+          const bg = lisible(getComputedStyle(n).backgroundColor);
+          if (bg) return bg;
+          n = n.parentElement;
+        }
+        return getComputedStyle(document.body).backgroundColor;
+      };
+      const out = [];
+      document.querySelectorAll('p,li,td,th,label,a,button,summary,h1,h2,h3,.sous,.micro').forEach(e => {
+        if (!e.offsetParent || !(e.innerText || '').trim()) return;
+        const s = getComputedStyle(e);
+        const c = (lum(s.color) + 0.05) / (lum(fond(e)) + 0.05);
+        const ratio = c > 1 ? c : 1 / c;
+        const t = parseFloat(s.fontSize);
+        const seuil = (t >= 24 || (t >= 18.66 && parseInt(s.fontWeight) >= 700)) ? 3 : 4.5;
+        if (ratio < seuil) out.push(ratio.toFixed(2) + ' < ' + seuil + '  ' + t + 'px  « ' +
+          e.innerText.trim().slice(0, 34) + ' »');
+      });
+      return [...new Set(out)];
+    }"""
+    for theme in ["clair", "sombre"]:
+        for vue in ["", "#simulateur", "#questions"]:
+            pg.goto(URL + vue)
+            pg.wait_for_timeout(300)
+            pg.evaluate("t => localStorage.setItem('prevoyance.theme.v1', t)", theme)
+            pg.reload()
+            pg.wait_for_timeout(600)
+            mauvais = pg.evaluate(CONTRASTE)
+            for x in mauvais:
+                print("     ", x)
+            verifie(not mauvais, "%s %s : tout le texte passe le seuil de contraste"
+                    % (theme, vue or "#accueil"))
+    pg.evaluate("localStorage.removeItem('prevoyance.theme.v1')")
 
     b.close()
 

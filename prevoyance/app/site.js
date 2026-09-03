@@ -121,7 +121,10 @@
   var LIB = { systeme: "Thème du système", clair: "Thème clair", sombre: "Thème sombre" };
 
   function initTheme() {
-    var t = "systeme";
+    // Clair par defaut, et non « comme le systeme » : ce site se lit surtout
+    // de jour, sur un ecran de bureau, et la palette est batie pour le blanc.
+    // Les deux autres etats restent a un clic.
+    var t = "clair";
     try { var v = localStorage.getItem(CLE_THEME); if (THEMES.indexOf(v) !== -1) t = v; } catch (e) {}
     var b = $("#theme-btn");
     function appliquer() {
@@ -205,7 +208,7 @@
     });
     da.appendChild(ia); z.appendChild(da);
 
-    var de = el("div");
+    var de = el("div", "champ-sel");
     de.appendChild(el("label", null, "Enfants à charge"));
     var se = el("select");
     se.id = "ch-enfants";

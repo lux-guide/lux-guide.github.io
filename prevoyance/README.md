@@ -18,7 +18,7 @@ Ce qui trahit, quand on héberge un sujet dans un produit qui n'est pas le sien,
 | Public | les personnes qui arrivent | toute personne imposée au Luxembourg |
 | Vu en premier | un parcours de démarches | un chiffre, avant toute question |
 | Coquille | huit sections, un assistant global | quatre onglets, un assistant dédié |
-| Palette | bleu marine | vert profond |
+| Typographie | Fraunces et Inter | Barlow et Inter |
 
 Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C'est le seul point de contact, et il est volontairement en bas.
 
@@ -28,7 +28,7 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 
 1. **Accueil.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
 2. **Ce que cela rapporte.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, et l'économie par taux d'imposition.
-3. **Questions fréquentes.** Vingt-sept questions écrites et sourcées, filtrables, groupées par thème.
+3. **Questions fréquentes.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
 4. **Poser une question.** L'assistant, qui annonce son périmètre avant qu'on lui parle.
 
 Chaque onglet a son adresse (`#simulateur`, `#questions`, `#assistant`) : elle se partage, se met en favori, et le bouton Précédent fonctionne.
@@ -37,7 +37,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`, `#assistant`) : elle s
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cinquante-neuf contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Soixante-quatorze contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -94,11 +94,30 @@ Une colonne du tableau porte le mode d'obtention, par exemple « 6 000 de base +
 
 Cinq entretiens avec un praticien du dispositif ont été relus pour compléter le répertoire. Ils apportent surtout les idées fausses courantes, qu'aucun texte officiel ne prend la peine de démentir puisqu'il énonce la règle sans dire comment on la comprend de travers.
 
-Ce qui a été repris, parce que c'est de la connaissance générale du dispositif : le mythe des dix ans et sa conséquence chiffrée (souscrire à 55 ans, c'est sortir à 65 et non à 60), l'absence de rachat partiel et l'intérêt de plusieurs contrats plus petits, l'intérêt d'étaler la sortie, l'asymétrie entre une déduction valorisée à la tranche haute et une sortie imposée à la moitié du taux moyen, le moment où l'avantage revient réellement, le conjoint qui travaille à l'étranger et ouvre son propre contrat grâce à la déclaration commune, et la nature d'assurance vie du contrat.
+Ce qui a été repris, parce que c'est de la connaissance générale du dispositif : le mythe des dix ans et sa conséquence chiffrée (souscrire à 55 ans, c'est sortir à 65 et non à 60), l'intérêt de plusieurs contrats plus petits plutôt qu'un seul gros, l'intérêt d'étaler la sortie, l'asymétrie entre une déduction valorisée à la tranche haute et une sortie imposée à la moitié du taux moyen, le moment où l'avantage revient réellement, et le conjoint qui travaille à l'étranger et ouvre son propre contrat grâce à la déclaration commune.
 
 Ce qui a été écarté sans exception : tout nom d'entreprise, de gestionnaire, de fonds ou d'outil interne, tout chiffre de performance, toute pratique commerciale, tout montant d'entrée et tout avantage réservé à une catégorie de clients. Ce site est une démonstration, il ne porte aucune donnée d'entreprise.
 
-**Un point reste ouvert et le site le dit au lieu de trancher.** Sur le remboursement avant l'âge légal, le praticien décrit une sortie possible à tout moment au prix des avantages fiscaux, et le texte officiel emploie, dans le même paragraphe, « intégralement imposé au taux normal » et « est exclu ». Une source qui se contredit ne se résume pas : la réponse expose les deux lectures et renvoie à un écrit de l'assureur et de l'administration.
+**Sur un point, le praticien avait raison contre la page de vulgarisation, et c'est la circulaire qui l'a montré.** Il décrivait une sortie possible à tout moment au prix des avantages fiscaux ; la page A à Z de l'administration dit que le remboursement anticipé « est exclu », ce qui se lit comme une interdiction. La [circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022](https://impotsdirects.public.lu/dam-assets/fr/legislation/legi22/2022-04-27-lir-111bis-1-111ter-1-du-2742022.pdf), qui est le texte d'application, prévoit expressément un remboursement anticipé « intégral ou partiel », imposé au tarif normal comme revenu divers. Ce n'est donc pas interdit : c'est cher.
+
+La leçon vaut au-delà de ce point : **une page de vulgarisation officielle n'est pas la source, c'est un résumé de la source.** Le site cite désormais la circulaire là où le résumé induit en erreur.
+
+**Et sur un autre point, l'entretien m'avait induit en erreur, faute de l'avoir confronté au texte.** J'avais écrit que le contrat est une assurance vie, et j'en avais tiré la clause bénéficiaire. C'est faux en général : la prévoyance-vieillesse est un régime fiscal, pas un produit. Les entreprises d'assurances en proposent trois formes, mais les établissements de crédit peuvent aussi en offrir, investies en parts de capitalisation d'OPC. Les réflexes de l'assurance vie ne valent donc que chez un assureur.
+
+---
+
+## La palette
+
+Couleurs et typographie relevées sur le site institutionnel du groupe, en mesurant les styles calculés de la page plutôt qu'en les estimant à l'œil : bleu `#2957c8`, marine `#01213c`, gris `#1a1d23` et `#67768e`, fonds `#f8f9fc` et `#eaeefa`, Barlow pour les titres, Inter pour le texte, rayons courts de 4 et 8 px.
+
+La reprise s'arrête là. **Aucun logo, aucun nom, aucune signature :** ce site traite un dispositif fiscal public, il ne doit passer pour la page officielle de personne. Le test cherche les noms d'assureurs dans tous les fichiers et échoue s'il en trouve un.
+
+Deux écarts assumés par rapport à la charte relevée :
+
+1. **Le gris a été assombri**, de `#67768e` à `#5f6d85`. Le gris d'origine rend 4,38 sur le fond de page et 3,97 sur le bleu clair, sous le seuil de 4,5 exigé pour du petit texte. Un test mesure le contraste de chaque texte visible sur son fond réel, dans les deux thèmes et sur trois vues.
+2. **Le mode sombre est bâti sur le marine de la charte** plutôt que sur un gris neutre, et le bleu vif y monte d'un cran vers `#7c9ade`, faute de quoi il ne passerait pas le contraste. C'est la même identité, pas un second thème sans rapport.
+
+Le site ouvre en clair, et non « comme le système » : la palette est bâtie pour le blanc. Les deux autres états restent à un clic.
 
 ---
 
@@ -124,7 +143,7 @@ prevoyance/
   index.html          la coquille et les quatre vues
   app/
     prevoyance.js     la table fiscale et le calcul, sans dépendance au rendu
-    questions.js      27 questions-réponses sourcées, 8 thèmes
+    questions.js      29 questions-réponses sourcées, 8 thèmes
     site.js           le rendu, la navigation, le moteur de reconnaissance
     site.css          feuille propre à ce site, aucune partagée avec le guide
 ```
@@ -135,10 +154,11 @@ prevoyance/
 
 ## Sources
 
-Les chiffres viennent de trois sources officielles, citées dans le pied de chaque réponse et vérifiées le 28 août 2026 :
+Les chiffres viennent de quatre sources officielles, citées dans le pied de chaque réponse et vérifiées le 28 août 2026 :
 
 1. Administration des contributions directes, prévoyance-vieillesse.
 2. Guichet.lu, déduire les primes versées à un contrat de prévoyance-vieillesse.
 3. Gouvernement luxembourgeois, nouveautés 2026, qui porte le relèvement du plafond au 1er janvier 2026.
+4. Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022, le texte d'application, qui fait foi quand un résumé paraît se contredire.
 
 La réglementation évolue, en particulier les plafonds. La source fait foi, pas cette page.

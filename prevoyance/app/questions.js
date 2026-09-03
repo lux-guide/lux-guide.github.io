@@ -19,6 +19,11 @@ window.QUESTIONS = (function () {
               u: "https://impotsdirects.public.lu/fr/az/p/prevoyance_vieillesse.html", officielle: true };
   var GUI = { t: "Guichet.lu, déduire les primes d'un contrat de prévoyance-vieillesse",
               u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/depenses-deductibles/contrat-prevoyance-resident.html", officielle: true };
+  // Les pages A a Z de l'administration resument. La circulaire, elle, est le
+  // texte d'application : c'est elle qui tranche quand un resume parait se
+  // contredire.
+  var CIR = { t: "Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022",
+              u: "https://impotsdirects.public.lu/dam-assets/fr/legislation/legi22/2022-04-27-lir-111bis-1-111ter-1-du-2742022.pdf", officielle: true };
   var GOU = { t: "Gouvernement luxembourgeois, nouveautés 2026",
               u: "https://gouvernement.lu/fr/actualites/toutes_actualites/articles/2025/12-decembre/nouveautes-2026.html", officielle: true };
 
@@ -188,17 +193,17 @@ window.QUESTIONS = (function () {
       question: "Puis-je sortir avant soixante ans ?",
       variantes: ["avant", "anticipe", "rachat", "urgence", "besoin d'argent", "sortir plus tot",
                   "recuperer avant", "casser le contrat", "maladie", "invalidite"],
-      reponse: "Le texte officiel dit deux choses qu'il faut lire ensemble. D'une part, un " +
-        "remboursement anticipé pour un motif autre que la maladie grave ou l'invalidité est " +
-        "intégralement imposé au taux normal, ce qui annule l'avantage obtenu jusque-là. D'autre " +
-        "part, ce même texte qualifie d'exclu le remboursement anticipé avant que les conditions " +
-        "minimales soient remplies.",
-      reserve: "Les deux formulations coexistent dans la source officielle et ce site ne tranche " +
-        "pas à sa place. Ce qui est certain : il ne faut pas compter sur cette épargne comme sur " +
-        "une réserve disponible. Si la question compte pour vous, faites-vous répondre par écrit " +
-        "par l'assureur et par l'administration avant de signer.",
-      sources: [ACD, GUI],
-      voisines: ["quand-recuperer", "mythe-10-ans"]
+      reponse: "Oui, et c'est souvent mal compris. La circulaire d'application prévoit " +
+        "expressément le remboursement anticipé, intégral ou partiel, avant {sortieMin} ans ou " +
+        "avant la fin de la durée minimale. Ce n'est donc pas interdit : c'est cher. Pour un " +
+        "motif autre que la maladie grave ou l'invalidité, la somme récupérée est traitée comme " +
+        "un revenu divers et imposée au tarif normal, celui de vos autres revenus. L'avantage " +
+        "obtenu à l'entrée est ainsi repris à la sortie.",
+      reserve: "Deux cas échappent à cette reprise : l'invalidité et la maladie grave du " +
+        "souscripteur, pour lesquelles l'imposition suit le régime de l'échéance normale. Cela " +
+        "reste une épargne de long terme, pas une réserve dans laquelle on puise.",
+      sources: [CIR, ACD],
+      voisines: ["quand-recuperer", "mythe-10-ans", "un-seul-contrat"]
     },
     {
       id: "impot-sortie",
@@ -320,13 +325,15 @@ window.QUESTIONS = (function () {
       question: "Puis-je récupérer seulement une partie de mon épargne ?",
       variantes: ["partiel", "une partie", "rachat partiel", "tout ou rien", "plusieurs contrats",
                   "diviser", "fractionner", "un peu", "la moitie"],
-      reponse: "Un contrat se dénoue en une fois : il n'y a pas de retrait partiel. Si vous avez " +
-        "besoin d'une somme et que vous ne disposez que d'un contrat, c'est l'ensemble qui se " +
-        "dénoue. C'est la raison pour laquelle plusieurs contrats de montants plus petits valent " +
-        "souvent mieux qu'un seul gros : on n'en dénoue qu'un, les autres continuent.",
-      reserve: "Ce point relève des conditions du contrat et non du texte fiscal, qui ne le règle " +
-        "pas. À faire confirmer par écrit avant de signer.",
-      sources: [ACD],
+      reponse: "Il faut séparer deux questions. Du côté fiscal, la circulaire envisage " +
+        "explicitement un remboursement anticipé « intégral ou partiel » : le texte n'interdit " +
+        "donc pas de ne reprendre qu'une part. Du côté du contrat, c'est autre chose : les " +
+        "conditions de chaque produit décident de ce qui est possible, et beaucoup ne se dénouent " +
+        "qu'en une fois. C'est ce qui explique le conseil courant d'ouvrir plusieurs contrats " +
+        "plus petits plutôt qu'un seul gros : on n'en dénoue qu'un, les autres continuent.",
+      reserve: "Ce que la loi permet et ce que votre contrat permet ne se recouvrent pas. La " +
+        "seule réponse qui vaut est celle des conditions du produit, à lire avant de signer.",
+      sources: [CIR],
       voisines: ["avant-60", "echelonner"]
     },
     {
@@ -394,17 +401,50 @@ window.QUESTIONS = (function () {
     {
       id: "assurance-vie",
       theme: "principe",
-      question: "Quelle est la nature juridique du contrat ?",
+      question: "Est-ce une assurance vie ?",
       variantes: ["assurance vie", "nature", "type de contrat", "juridique", "c'est quoi comme contrat",
-                  "beneficiaire", "clause beneficiaire"],
-      reponse: "Le contrat prend la forme d'une assurance vie. C'est ce qui explique deux choses " +
-        "qui surprennent : vous désignez des bénéficiaires, et le sort de l'épargne au décès " +
-        "relève du droit successoral et non du droit fiscal de la déduction.",
-      reserve: "Le droit applicable à la succession est en principe celui de votre pays de " +
-        "résidence fiscale au moment du décès, ce qui peut changer si vous déménagez. Point à " +
-        "faire préciser, il dépasse le cadre de ce site.",
-      sources: [ACD],
-      voisines: ["deces", "forme-sortie"]
+                  "beneficiaire", "clause beneficiaire", "banque ou assureur", "chez qui souscrire"],
+      reponse: "Pas nécessairement, et c'est une confusion fréquente. La prévoyance-vieillesse " +
+        "est un régime fiscal, pas un produit : il désigne tout contrat conçu spécialement pour " +
+        "cet objet. Deux familles d'organismes peuvent en proposer. Les entreprises d'assurances, " +
+        "avec un contrat à rendement garanti, un contrat en unités de compte, ou une combinaison " +
+        "des deux depuis 2022. Et les établissements de crédit, qui ne peuvent offrir que des " +
+        "contrats investis en parts de capitalisation d'organismes de placement collectif.",
+      reserve: "La conséquence est pratique : la clause bénéficiaire et les réflexes de " +
+        "l'assurance vie ne valent que si vous avez souscrit chez un assureur. Un contrat " +
+        "bancaire relève d'une autre mécanique, à faire préciser avant de signer.",
+      sources: [CIR],
+      voisines: ["deces", "forme-sortie", "supports"]
+    },
+    {
+      id: "dependance",
+      theme: "impot",
+      question: "Y a-t-il d'autres prélèvements que l'impôt à la sortie ?",
+      variantes: ["dependance", "assurance dependance", "prelevement", "cotisation",
+                  "autre que l'impot", "charges sociales", "1.4"],
+      reponse: "Oui, un seul, et il est facile à oublier au moment de comparer. Toutes les " +
+        "prestations de prévoyance-vieillesse sont soumises à l'assurance dépendance : le capital, " +
+        "la rente, le remboursement anticipé, et la restitution à l'ayant droit en cas de décès. " +
+        "Ce prélèvement s'ajoute à l'impôt calculé à la sortie.",
+      reserve: "Ce site ne chiffre pas ce prélèvement, dont le taux se vérifie à la date où vous " +
+        "sortez.",
+      sources: [CIR],
+      voisines: ["impot-sortie", "deces"]
+    },
+    {
+      id: "restitution-deces",
+      theme: "vie",
+      question: "Comment est imposé ce qui revient à mes proches si je meurs avant l'échéance ?",
+      variantes: ["deces avant echeance", "ayant droit", "restitution", "mes proches",
+                  "si je meurs", "heritier", "succession"],
+      reponse: "En cas de décès du souscripteur avant l'échéance du contrat, l'épargne accumulée " +
+        "est restituée à l'ayant droit. Elle est imposée dans son chef, comme un revenu divers, " +
+        "à la moitié du taux global. C'est le même traitement favorable que celui d'une sortie " +
+        "normale, et non l'imposition au tarif plein qui frappe un remboursement anticipé.",
+      reserve: "L'imposition se règle chez la personne qui reçoit, selon sa situation à elle. " +
+        "Les questions de succession proprement dites dépassent le cadre de ce site.",
+      sources: [CIR],
+      voisines: ["deces", "dependance"]
     },
     {
       id: "divorce",

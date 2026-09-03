@@ -6,49 +6,78 @@
    Deux sites, deux identites, meme exigence.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ------------------------------------------------------------
+   Palette
+   ------------------------------------------------------------
+   Couleurs et typographie relevees sur le site institutionnel du
+   groupe : bleu #2957c8, marine #01213c, gris #1a1d23 et #67768e,
+   fonds #f8f9fc et #eaeefa, Barlow pour les titres, Inter pour le
+   texte, rayons courts de 4 et 8 px.
+
+   La reprise s'arrete a la palette et aux polices. Aucun logo,
+   aucun nom, aucune signature : ce site est une demonstration sur
+   un dispositif fiscal public, il ne doit passer pour la page
+   officielle de personne.
+   ------------------------------------------------------------ */
 
 :root {
-  --bg: #fbfaf8;
+  --bg: #f8f9fc;
   --surface: #ffffff;
-  --surface-2: #f4f2ee;
-  --border: #e8e4dc;
-  --border-fort: #d2cabb;
-  --text: #171412;
-  --text-2: #413a33;
-  --muted: #756c62;
-  --accent: #1d5c4a;
-  --accent-2: #2f7d64;
-  --accent-soft: #e7f1ec;
-  --ok: #1d5c4a;
-  --warn: #8a5a12;
-  --warn-soft: #fbf3e4;
-  --ombre-s: 0 1px 2px rgba(23,20,18,.05), 0 2px 6px rgba(23,20,18,.05);
-  --ombre-m: 0 6px 14px -4px rgba(23,20,18,.10), 0 18px 34px -10px rgba(23,20,18,.10);
-  --r-s: 10px;
-  --r-m: 16px;
+  --surface-2: #f2f5fa;
+  --border: #e1e6ef;
+  --border-fort: #cdd5e4;
+  --text: #1a1d23;
+  --text-2: #3f485a;
+  /* Le gris de la charte, assombri d'un cran : #67768e rend 4.38 sur le fond
+     de page et 3.97 sur le bleu clair, sous le seuil de 4.5 exige pour du
+     petit texte. Celui-ci passe sur les quatre fonds clairs du site. */
+  --muted: #5f6d85;
+  --accent: #2957c8;
+  --accent-2: #173682;
+  --accent-soft: #eaeefa;
+  --profond: #01213c;
+  --ok: #00856e;
+  --warn: #a04203;
+  --warn-soft: #fff3eb;
+  --ombre-s: 0 1px 2px rgba(4,29,88,.05), 0 2px 6px rgba(4,29,88,.05);
+  --ombre-m: 0 6px 14px -4px rgba(4,29,88,.10), 0 18px 34px -10px rgba(4,29,88,.12);
+  --r-s: 4px;
+  --r-m: 8px;
   --max: 1080px;
   --micro: 11px;
+  --h-champ: 44px;
   --h-top: 66px;
-  --serif: Fraunces, "Iowan Old Style", Georgia, serif;
+  --titre: Barlow, "Segoe UI", -apple-system, sans-serif;
   --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Le mode sombre est bati sur le marine de la charte plutot que sur un
+   gris neutre : c'est la meme identite, pas un second theme sans
+   rapport. Le bleu vif du clair n'y passerait pas le contraste, il
+   monte donc d'un cran vers #7c9ade. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12100e; --surface: #1b1815; --surface-2: #232019;
-    --border: #2e2921; --border-fort: #423a2f;
-    --text: #f4f1ec; --text-2: #cfc7bc; --muted: #9b9187;
-    --accent: #6ecfae; --accent-2: #8fdcc1; --accent-soft: #1c2f28;
-    --ok: #6ecfae; --warn: #e0b169; --warn-soft: #2b2317;
+    --bg: #020e1a; --surface: #01213c; --surface-2: #052a4a;
+    --border: #0c3358; --border-fort: #17497c;
+    --text: #f8f9fc; --text-2: #cdd5e4; --muted: #9aa7c1;
+    --accent: #7c9ade; --accent-2: #a9bce9; --accent-soft: #0f2f5c;
+    --profond: #010b16;
+    --ok: #4db2a2; --warn: #fc9e5f; --warn-soft: #2d1301;
+    --ombre-s: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
+    --ombre-m: 0 6px 14px -4px rgba(0,0,0,.42), 0 18px 34px -10px rgba(0,0,0,.40);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12100e; --surface: #1b1815; --surface-2: #232019;
-  --border: #2e2921; --border-fort: #423a2f;
-  --text: #f4f1ec; --text-2: #cfc7bc; --muted: #9b9187;
-  --accent: #6ecfae; --accent-2: #8fdcc1; --accent-soft: #1c2f28;
-  --ok: #6ecfae; --warn: #e0b169; --warn-soft: #2b2317;
+  --bg: #020e1a; --surface: #01213c; --surface-2: #052a4a;
+  --border: #0c3358; --border-fort: #17497c;
+  --text: #f8f9fc; --text-2: #cdd5e4; --muted: #9aa7c1;
+  --accent: #7c9ade; --accent-2: #a9bce9; --accent-soft: #0f2f5c;
+  --profond: #010b16;
+  --ok: #4db2a2; --warn: #fc9e5f; --warn-soft: #2d1301;
+  --ombre-s: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
+  --ombre-m: 0 6px 14px -4px rgba(0,0,0,.42), 0 18px 34px -10px rgba(0,0,0,.40);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -60,7 +89,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 a { color: var(--accent); text-underline-offset: 3px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-s); }
 
 /* ---------- Coquille ---------- */
 
@@ -82,7 +111,7 @@ header.top {
   border: 0; background: none; color: inherit; padding: 0; cursor: pointer;
 }
 .brand .mark {
-  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  width: 34px; height: 34px; border-radius: var(--r-m); flex: none;
   display: grid; place-items: center; color: var(--surface);
   background: var(--accent);
   transition: background .18s, transform .18s cubic-bezier(.2,.7,.2,1);
@@ -90,7 +119,7 @@ header.top {
 .brand .mark svg { width: 19px; height: 19px; }
 .brand:hover .mark { background: var(--text); transform: translateY(-1px); }
 .brand-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1; }
-.brand-txt { font-family: var(--serif); font-size: 18px; letter-spacing: -.2px; white-space: nowrap; }
+.brand-txt { font-family: var(--titre); font-weight: 700; font-size: 18px; letter-spacing: -.2px; white-space: nowrap; }
 .brand-desc {
   font-size: 9.5px; font-weight: 620; letter-spacing: 1.6px;
   text-transform: uppercase; color: var(--muted); white-space: nowrap;
@@ -106,7 +135,7 @@ nav.tabs[data-defile="gauche"] { -webkit-mask-image: linear-gradient(90deg, tran
 nav.tabs[data-defile="deux"] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); }
 nav.tabs button {
   border: 0; background: none; color: var(--muted); cursor: pointer;
-  padding: 9px 13px; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 500;
+  padding: 9px 13px; border-radius: var(--r-s); font: inherit; font-size: 14px; font-weight: 500;
   flex: none; white-space: nowrap; transition: color .18s, background .18s;
 }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
@@ -114,7 +143,7 @@ nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; 
 
 .outil {
   border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
-  width: 34px; height: 34px; border-radius: 9px; cursor: pointer; flex: none;
+  width: 34px; height: 34px; border-radius: var(--r-s); cursor: pointer; flex: none;
   display: grid; place-items: center; font-size: 15px; line-height: 1; padding: 0;
   transition: color .16s, border-color .16s, background .16s;
 }
@@ -130,8 +159,8 @@ nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; 
 /* ---------- Structure ---------- */
 
 main { max-width: var(--max); margin: 0 auto; padding: 0 max(22px, env(safe-area-inset-left)) 80px; }
-h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4.6vw, 46px); line-height: 1.1; margin: 40px 0 16px; letter-spacing: -.4px; }
-h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 2.8vw, 30px); margin: 54px 0 14px; letter-spacing: -.2px; }
+h1 { font-family: var(--titre); font-weight: 700; font-size: clamp(30px, 4.6vw, 46px); line-height: 1.1; margin: 40px 0 16px; letter-spacing: -.4px; }
+h2 { font-family: var(--titre); font-weight: 600; font-size: clamp(22px, 2.8vw, 30px); margin: 54px 0 14px; letter-spacing: -.2px; }
 h3 { font-size: 16.5px; margin: 20px 0 8px; font-weight: 620; }
 p { color: var(--text-2); }
 .lead { color: var(--muted); font-size: 17px; margin: 0 0 26px; max-width: 66ch; }
@@ -158,11 +187,35 @@ p { color: var(--text-2); }
 .row { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
 .row > div { flex: 1 1 180px; min-width: 0; }
 label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
-input, select {
-  width: 100%; padding: 11px 13px; border: 1px solid var(--border-fort);
-  border-radius: var(--r-s); background: var(--surface); color: var(--text); font: inherit; font-size: 15px;
+input:not([type="checkbox"]), select {
+  width: 100%; height: var(--h-champ); padding: 0 13px; margin: 0;
+  -webkit-appearance: none; appearance: none;
+  border: 1px solid var(--border-fort); border-radius: var(--r-s);
+  background: var(--surface); color: var(--text);
+  font: inherit; font-size: 15px; line-height: normal;
+  transition: border-color .16s, box-shadow .16s;
 }
-input:focus, select:focus { outline: none; border-color: var(--accent); }
+select { padding-right: 34px; }
+
+/* « appearance: none » emporte le chevron du select. Une variable CSS ne se
+   resout pas dans un url(), et un data URI est charge comme un document
+   separe : ni var(), ni currentColor n'y arrivent. Le chevron est donc trace
+   au trait sur le conteneur du champ, ou il suit le theme sans effort. */
+.champ-sel { position: relative; }
+.champ-sel::after {
+  content: ""; position: absolute; right: 15px; bottom: 18px;
+  width: 8px; height: 8px; pointer-events: none;
+  border-right: 1.7px solid var(--accent);
+  border-bottom: 1.7px solid var(--accent);
+  transform: rotate(45deg);
+}
+input:not([type="checkbox"]):focus, select:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .check { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .check input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
 .check label { margin: 0; flex: 1 1 14ch; min-width: 0; display: flex; align-items: center; color: var(--text-2); font-weight: 400; font-size: 14.5px; cursor: pointer; }
@@ -212,7 +265,7 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .mouvement { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: 24px 26px; margin: 28px 0; box-shadow: var(--ombre-s); }
 .mvt-chiffres { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 26px; margin-bottom: 12px; }
 .mvt-lab { display: block; font-size: var(--micro); letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 650; margin-bottom: 4px; }
-.mvt-val { display: block; font-family: var(--serif); font-size: 33px; line-height: 1; }
+.mvt-val { display: block; font-family: var(--titre); font-weight: 700; font-size: 33px; line-height: 1; }
 .mvt-av .mvt-val { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .mvt-ap .mvt-val { color: var(--accent); }
 .mvt-delta .mvt-val { color: var(--ok); font-size: 25px; }
@@ -225,7 +278,7 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .kpis { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 20px 0; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: 18px 20px; box-shadow: var(--ombre-s); }
 .kpi .k { font-size: var(--micro); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 620; }
-.kpi .v { font-family: var(--serif); font-size: 30px; margin-top: 6px; line-height: 1.1; }
+.kpi .v { font-family: var(--titre); font-weight: 700; font-size: 30px; margin-top: 6px; line-height: 1.1; }
 .calcul { font-size: 13px; color: var(--muted); max-width: 40ch; }
 .sous { display: block; margin-top: 5px; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 .sous.reserve { color: var(--warn); }
@@ -274,7 +327,7 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .chat-bar input { flex: 1 1 12rem; min-width: 0; }
 .chat-bar .btn { flex: 0 0 auto; }
 
-.msg { max-width: 88%; padding: 12px 15px; border-radius: 14px; font-size: 14.5px; line-height: 1.6; }
+.msg { max-width: 88%; padding: 12px 15px; border-radius: 12px; font-size: 14.5px; line-height: 1.6; }
 .msg.moi { align-self: flex-end; background: var(--accent); color: var(--surface); border-bottom-right-radius: 5px; }
 .msg.rep { align-self: flex-start; background: var(--surface-2); border-bottom-left-radius: 5px; }
 
