@@ -590,19 +590,66 @@
 
     var da = el("div");
     da.appendChild(el("label", null, "Votre âge, si vous voulez le préciser"));
+    // « type=number » ne suffit pas : il laisse passer « e », « + », un
+    // collage de texte, et ne fait respecter min et max qu'a la validation
+    // d'un formulaire, qu'il n'y a pas ici. Pire, sur une saisie invalide sa
+    // propriete value rend une chaine vide : le champ affichait des lettres
+    // pendant que le site se comportait comme s'il etait vide, sans rien dire.
+    // On filtre donc soi-meme, et on borne.
     var ia = el("input");
-    ia.type = "number"; ia.min = String(T.bornes.ageMin); ia.max = String(T.bornes.ageMax);
+    ia.type = "text";
+    ia.inputMode = "numeric";
+    ia.autocomplete = "off";
+    ia.maxLength = 2;
+    ia.setAttribute("aria-describedby", "ch-age-note");
     ia.value = entree.age === null ? "" : String(entree.age);
     ia.placeholder = "non renseigné";
     ia.id = "ch-age";
+
+    var note = el("p", "champ-note");
+    note.id = "ch-age-note";
+
+    function direAge(msg) {
+      note.textContent = msg || "";
+      note.hidden = !msg;
+    }
+
+    function lireAge(borner) {
+      // Seuls les chiffres sont retenus, et la longueur est limitee a deux :
+      // 255555 ne devrait jamais pouvoir s'ecrire, pas seulement ne pas etre
+      // pris en compte.
+      var v = ia.value.replace(/[^0-9]/g, "").slice(0, 2);
+      if (v !== ia.value) ia.value = v;
+      if (v === "") { entree.age = null; direAge(""); return; }
+      var n = Number(v);
+      if (borner) {
+        // On ne borne qu'a la sortie du champ : sinon taper « 1 » en route
+        // vers « 18 » ferait bondir la valeur a 18 sous les doigts.
+        if (n < T.bornes.ageMin) {
+          n = T.bornes.ageMin;
+          ia.value = String(n);
+          direAge("Le dispositif s'adresse aux personnes majeures : âge ramené à " +
+            T.bornes.ageMin + " ans.");
+        } else if (n > T.bornes.ageMax) {
+          n = T.bornes.ageMax;
+          ia.value = String(n);
+          direAge("Au-delà de " + T.prevoyance.ageMaxSouscription + " ans la souscription " +
+            "n'est plus possible : âge ramené à " + T.bornes.ageMax + " ans.");
+        } else direAge("");
+      } else if (n >= T.bornes.ageMin && n <= T.bornes.ageMax) direAge("");
+      entree.age = n;
+    }
+
     ia.addEventListener("input", function () {
-      // Effacer le champ redevient un etat valable : on retire ce qu'on avait
-      // dit, et les montants qui en dependaient repassent en « a calculer ».
-      var v = ia.value.trim();
-      entree.age = v === "" ? null : (Number(v) || null);
+      lireAge(false);
       rendreSimulateur(true); rendreApercu();
     });
-    da.appendChild(ia); z.appendChild(da);
+    ia.addEventListener("blur", function () {
+      lireAge(true);
+      rendreSimulateur(true); rendreApercu();
+    });
+    da.appendChild(ia); da.appendChild(note); z.appendChild(da);
+    direAge("");
 
     var de = el("div", "champ-sel");
     de.appendChild(el("label", null, "Enfants à charge"));
@@ -648,12 +695,22 @@
       return f;
     }
 
+    // Un indicateur a zero se lit comme un refus. Le deductible ponctuel vaut
+    // zero tant qu'aucun pret n'est declare, ce qui n'est pas la meme chose
+    // que « vous n'y avez pas droit » : on le dit, au lieu d'afficher 0 €.
     var k = el("div", "kpis");
-    [["Déductible chaque année", eur(r.totalAnnuel)],
-     ["Déductible une seule fois", eur(r.totalPonctuel)]].forEach(function (x) {
+    [["Déductible chaque année", r.totalAnnuel, null],
+     ["Déductible une seule fois", r.totalPonctuel,
+      "Se calcule à la souscription d'un prêt immobilier"]].forEach(function (x) {
       var d = el("div", "kpi");
       d.appendChild(el("div", "k", x[0]));
-      d.appendChild(el("div", "v", x[1]));
+      if (!x[1] && x[2]) {
+        d.classList.add("vide");
+        d.appendChild(el("div", "v", "—"));
+        d.appendChild(el("span", "sous", x[2]));
+      } else {
+        d.appendChild(el("div", "v", eur(x[1])));
+      }
       k.appendChild(d);
     });
     f.appendChild(k);
@@ -757,7 +814,7 @@
     }
 
     var d2 = el("details");
-    d2.appendChild(el("summary", null, "Ce que ce calcul suppose"));
+    d2.appendChild(el("summary", null, "Ce que ce site ne dit pas"));
     var uh = el("ul");
     r.hypotheses.forEach(function (x) { uh.appendChild(el("li", null, x)); });
     d2.appendChild(uh);
@@ -809,6 +866,8 @@
        ["Vous le déclarez", "Rien n'est automatique. Sans la ligne dans votre déclaration, le " +
         "versement ne produit aucun effet fiscal."],
        ["Vous récupérez entre " + T.prevoyance.sortieMin + " et " + T.prevoyance.sortieMax + " ans",
+        "À condition que le contrat ait duré au moins " + T.prevoyance.dureeMinimaleAns + " ans : " +
+        "souscrire à 55 ans, c'est donc sortir à 65 et non à " + T.prevoyance.sortieMin + ". " +
         "En capital, en rente viagère, ou les deux. Le capital est imposé à la moitié du taux " +
         "global, la rente sur la moitié de son montant."]].forEach(function (e) {
         var li = el("li");
@@ -833,8 +892,7 @@
         T.prevoyance.dureeMinimaleAns + " ans."],
        ["Imposé au Luxembourg",
         "C'est le lieu d'imposition qui décide, pas le lieu d'habitation. Un frontalier imposé " +
-        "au Luxembourg y a droit, un résident imposé ailleurs n'y a pas droit. C'est la " +
-        "confusion la plus fréquente sur ce dispositif."],
+        "au Luxembourg y a droit, un résident imposé ailleurs n'y a pas droit."],
        ["Une épargne de long terme",
         "Récupérable entre " + T.prevoyance.sortieMin + " et " + T.prevoyance.sortieMax + " ans. " +
         "Sortir avant reste possible, mais la somme est alors imposée au tarif normal et " +
@@ -884,7 +942,8 @@
       "Il chiffre des plafonds de déduction et l'impôt que vous ne payez pas. Il ne chiffre ni le " +
       "capital que vous récupérerez, ce qui supposerait un rendement, ni le rendement d'un " +
       "contrat, ni votre taux d'imposition réel. Il ne compare aucun contrat du marché et ne " +
-      "recommande aucun placement. La réglementation évolue, la source ci-dessous fait foi."));
+      "recommande aucun placement. La réglementation évolue, et ce sont les sources du pied de " +
+      "page qui font foi, pas cette page."));
     return f;
   }
 

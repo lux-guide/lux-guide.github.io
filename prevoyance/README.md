@@ -55,7 +55,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-cinquante-et-un contrôles de fond, dans [test_prevoyance.py](test_prevoyance.py), et un audit de forme séparé, dans [audit_responsive.py](audit_responsive.py) :
+Chacune est vérifiée par un test. Cent-quatre-vingt-un contrôles de fond, dans [test_prevoyance.py](test_prevoyance.py), et un audit de forme séparé, dans [audit_responsive.py](audit_responsive.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -235,13 +235,64 @@ prevoyance/
 
 ---
 
+## Ce qu'une relecture d'un seul bloc a trouvé
+
+Le site a été construit par ajouts successifs. Une relecture morceau par morceau ne voit pas ce qu'une relecture d'un seul bloc saute aux yeux. Sept défauts, dont trois de fond.
+
+### Une erreur de calcul
+
+La majoration de la prime unique d'assurance solde restant dû est de 8 % par année d'âge au-delà de 30 ans, **« sans que le montant de cette augmentation puisse dépasser 160 % »**. Le code ne plafonnait pas. À 65 ans il annonçait donc 280 %, près du double du maximum légal, et l'erreur grandissait avec l'âge. Le plafond est atteint à 50 ans, et cet âge est calculé depuis la table plutôt qu'écrit.
+
+### Des plafonds sans source
+
+Trois sources étaient citées, toutes sur la prévoyance-vieillesse, pour six plafonds affichés comme « plafond légal ». Un lecteur luxembourgeois connaît ces montants et les vérifie. Chacun est maintenant porté par sa propre source, et **uniquement par un site de l'État** : les résultats de recherche renvoyaient aussi vers des assureurs et des sites de frontaliers, écartés.
+
+Ce que la vérification a donné, en plus des sources :
+
+1. **Le plafond de l'article 111 et celui de l'épargne-logement sont majorés de leur propre montant par enfant.** Le site demandait le nombre d'enfants et n'en faisait rien pour ces deux postes. À 35 ans avec deux enfants, l'épargne-logement passe de 1 344 à 4 032 €. Ils sont aussi majorés pour un conjoint imposé collectivement, que ce site ne demande pas : la condition le dit, le calcul ne le suppose pas.
+2. **Une fourchette a été retirée.** Les intérêts hypothécaires étaient annoncés « de 2 000 à 4 000 € » sans source vérifiée. La piste reste, le montant part.
+3. **Un communiqué de janvier 2026 annonce le passage de l'épargne-logement à 900 et 1 500 €.** La page de l'Administration porte toujours 672 et 1 344, et la page « nouveautés 2026 » du gouvernement ne mentionne pas cette mesure. On publie ce que la source établit, pas ce qu'une annonce laisse prévoir.
+
+### Une contradiction publiée
+
+La page des questions affirmait « quelqu'un qui ignore que l'épargne est bloquée jusqu'à soixante ans ». C'est précisément ce que le site réfute depuis la lecture de la circulaire, et la phrase était restée. La condition d'un levier disait la même chose.
+
+### Des affirmations sur les gens, que rien n'établit
+
+« Ce qu'on nous demande le plus » : personne n'a rien demandé à ce site. « C'est le troisième qu'on oublie », « la confusion la plus fréquente », « l'idée fausse la plus répandue » : des superlatifs sans source, sur un site qui s'interdit d'écrire un montant sans source. Tous retirés, la règle est vérifiée par un test qui relit le texte des trois vues.
+
+### Deux titres qui parlaient du site plutôt que du sujet
+
+« Un chiffre avant de vous demander quoi que ce soit » et « Ce que ce calcul suppose » (suivi d'un texte qui disait autre chose). Le raisonnement de conception intéresse celui qui fabrique la page ; il n'a rien à faire dessus. Il est ici, dans ce fichier.
+
+### Un renvoi devenu faux
+
+« La source ci-dessous fait foi » pointait vers un encadré déplacé dans le pied de page.
+
+### Un champ qui acceptait n'importe quoi
+
+`type="number"` ne bloque ni les lettres collées, ni « e », ni « + », et ne fait respecter `min` et `max` qu'à la validation d'un formulaire, qu'il n'y a pas ici. Pire : sur une saisie invalide, sa propriété `value` rend une chaîne vide, si bien que le champ affichait des lettres pendant que le site se comportait comme s'il était vide, sans rien dire. Les chiffres sont maintenant filtrés à la frappe, la longueur limitée à deux, et la valeur bornée à la sortie du champ, en expliquant la correction. Borner à la frappe ferait bondir « 1 » à 18 sous les doigts.
+
+### Un zéro qui se lisait comme un refus
+
+Le déductible ponctuel affichait « 0 € » à l'arrivée. Il vaut zéro parce qu'aucun prêt n'est déclaré, ce qui n'est pas « vous n'y avez pas droit ». Il affiche un tiret et le motif.
+
+---
+
 ## Sources
 
-Les chiffres viennent de quatre sources officielles, citées dans le pied de chaque réponse et vérifiées le 28 août 2026 :
+**Uniquement des sites de l'État**, une source par plafond, toutes ouvertes et vérifiées le 3 septembre 2026 :
 
-1. Administration des contributions directes, prévoyance-vieillesse.
-2. Guichet.lu, déduire les primes versées à un contrat de prévoyance-vieillesse.
-3. Gouvernement luxembourgeois, nouveautés 2026, qui porte le relèvement du plafond au 1er janvier 2026.
-4. Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022, le texte d'application, qui fait foi quand un résumé paraît se contredire.
+| Ce qu'elle porte | Source |
+|---|---|
+| Le régime, les âges, l'imposition à la sortie | Administration des contributions directes, prévoyance-vieillesse |
+| La démarche du contribuable | Guichet.lu, déduire les primes versées à un contrat de prévoyance-vieillesse |
+| Le plafond porté à 4 500 € au 1er janvier 2026 | Gouvernement luxembourgeois, nouveautés 2026 |
+| Le texte d'application, qui tranche quand un résumé paraît se contredire | Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022 |
+| Les 672 € de l'article 111 et les 1 200 € du régime complémentaire | Administration des contributions directes, cotisations et primes d'assurance |
+| Les 672 et 1 344 € de l'épargne-logement, et la majoration par enfant | Administration des contributions directes, cotisations d'épargne-logement |
+| Les 6 000 € de la prime unique, la majoration par enfant, les 8 % par année et le plafond de 160 % | Administration des contributions directes, prime unique |
+
+Un test vérifie qu'aucune source n'est hors d'un domaine de l'État, et que les trois dernières sont bien citées.
 
 La réglementation évolue, en particulier les plafonds. La source fait foi, pas cette page.

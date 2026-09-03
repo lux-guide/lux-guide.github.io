@@ -106,6 +106,50 @@ with sync_playwright() as p:
     n2 = pg.locator("#sim-resultat tbody tr td:first-child strong").count()
     verifie(n2 == 2, "effacer l'age la remet en attente (%d postes)" % n2)
 
+    print("4d. Le champ d'age n'accepte que des ages")
+    # « type=number » ne bloque ni les lettres collees, ni « e », ni « + », et
+    # ne fait respecter min et max qu'a la validation d'un formulaire, qu'il
+    # n'y a pas ici. Pire, sur une saisie invalide sa propriete value rend une
+    # chaine vide : le champ affichait des lettres pendant que le site se
+    # comportait comme s'il etait vide, sans rien dire.
+    for saisie, attendu, note in [
+        ("abc", "", False),
+        ("25555", "25", False),
+        ("9", "18", True),
+        ("80", "70", True),
+        ("35", "35", False),
+    ]:
+        pg.fill("#ch-age", saisie)
+        pg.wait_for_timeout(200)
+        pg.locator("#ch-enfants").focus()
+        pg.wait_for_timeout(350)
+        v = pg.input_value("#ch-age")
+        verifie(v == attendu, "« %s » donne « %s »" % (saisie, v))
+        visible = pg.eval_on_selector("#ch-age-note", "e => !e.hidden && !!e.textContent.trim()")
+        verifie(visible == note,
+                "et %s" % ("la correction est expliquee" if note else "rien n'est a expliquer"))
+    pg.fill("#ch-age", "")
+    pg.locator("#ch-enfants").focus()
+    pg.wait_for_timeout(350)
+
+    print("4e. Un indicateur nul dit pourquoi, il n'affiche pas zero")
+    # Le deductible ponctuel vaut zero tant qu'aucun pret n'est declare, ce qui
+    # n'est pas « vous n'y avez pas droit ». Un zero se lit comme un refus.
+    k = pg.eval_on_selector_all("#sim-resultat .kpi", "e => e.map(x => x.textContent)")
+    verifie(not any("0 €" == x.strip()[-3:] and "—" not in x for x in k) and any("—" in x for x in k),
+            "aucun « 0 € » affiche a l'arrivee")
+    verifie(any("souscription d'un prêt" in x for x in k), "le motif est donne")
+    pg.check("#ch-pret")
+    pg.fill("#ch-age", "35")
+    pg.locator("#ch-enfants").focus()
+    pg.wait_for_timeout(500)
+    k2 = pg.eval_on_selector_all("#sim-resultat .kpi", "e => e.map(x => x.textContent)")
+    verifie(not any("—" in x for x in k2), "et le montant apparait des qu'un pret est declare")
+    pg.uncheck("#ch-pret")
+    pg.fill("#ch-age", "")
+    pg.locator("#ch-enfants").focus()
+    pg.wait_for_timeout(400)
+
     print("5. Le cas qui rend zero ne dessine rien")
     pg.uncheck("#ch-imposeLuxembourg")
     pg.wait_for_timeout(500)
@@ -152,6 +196,69 @@ with sync_playwright() as p:
     verifie(pg.locator("#q-liste .notice").count() == 1, "un resultat vide propose l'assistant")
     pg.fill("#q-filtre", "")
     pg.wait_for_timeout(300)
+
+    print("7b. Chaque plafond affiche est porte par une source officielle")
+    # Trois sources sur la prevoyance-vieillesse ne peuvent pas etablir six
+    # plafonds. Le site annoncait « plafond legal » pour des montants
+    # qu'aucune source citee ne portait.
+    src = pg.evaluate("window.PREVOYANCE.table.sources.map(s => s.u)")
+    verifie(len(src) >= 6, "au moins six sources (%d)" % len(src))
+    officielles = [u for u in src if ".public.lu" in u or "gouvernement.lu" in u]
+    verifie(len(officielles) == len(src),
+            "toutes sur un site de l'Etat, aucune source privee")
+    for cle in ["cotis_prim", "cotis-epargne-logement", "prime_uniq"]:
+        verifie(any(cle in u for u in src), "la source de %s est citee" % cle)
+
+    print("7c. La majoration de la prime unique est plafonnee a 160 %")
+    # « sans que le montant de cette augmentation puisse depasser 160% ».
+    # Sans ce plafond, a 65 ans le site annoncait 280 %, pres du double du
+    # maximum legal, et l'erreur grandissait avec l'age.
+    m = pg.evaluate("""() => {
+      const P = window.PREVOYANCE;
+      return { a50: P.plafondSrd(50, 0), a55: P.plafondSrd(55, 0), a65: P.plafondSrd(65, 0),
+               a40: P.plafondSrd(40, 0), base: 6000 };
+    }""")
+    verifie(m["a50"] == m["a55"] == m["a65"],
+            "elle ne bouge plus apres 50 ans (%d, %d, %d)" % (m["a50"], m["a55"], m["a65"]))
+    verifie(m["a50"] == round(m["base"] * 2.6),
+            "et vaut la base majoree de 160 %% (%d)" % m["a50"])
+    verifie(m["a40"] < m["a50"], "avant 50 ans, elle croit encore")
+
+    print("7d. Les plafonds majores par enfant le sont")
+    # L'article 111 et l'epargne-logement sont majores de leur propre montant
+    # par enfant. Le site demandait le nombre d'enfants et n'en faisait rien.
+    d = pg.evaluate("""() => {
+      const s = n => window.PREVOYANCE.simuler({age: 35, enfants: n, pret: false, imposeLuxembourg: true});
+      const p = r => r.lignes.reduce((o, l) => (o[l.nom] = l.plafond, o), {});
+      return { sans: p(s(0)), avec: p(s(2)) };
+    }""")
+    for nom in d["sans"]:
+        if "111bis" in nom:
+            verifie(d["avec"][nom] == d["sans"][nom],
+                    "la prevoyance ne se majore pas par enfant, elle est par personne")
+        else:
+            verifie(d["avec"][nom] == d["sans"][nom] * 3,
+                    "%s est majore de son montant par enfant (%d puis %d)"
+                    % (nom, d["sans"][nom], d["avec"][nom]))
+
+    print("7e. Rien n'est affirme sur les gens, et aucun renvoi ne pend")
+    textes = []
+    for vue in ["", "#simulateur", "#questions"]:
+        pg.goto(URL + vue)
+        pg.wait_for_timeout(450)
+        textes.append(pg.eval_on_selector("main", "e => e.textContent"))
+    tout = " ".join(textes)
+    for phrase, pourquoi in [
+        ("nous demande", "personne n'a rien demande a ce site"),
+        ("la plus fréquente", "un superlatif sans source"),
+        ("la plus répandue", "un superlatif sans source"),
+        ("qu'on oublie", "une affirmation sur les lecteurs"),
+        ("ci-dessous fait foi", "un renvoi vers un encadre retire"),
+        ("bloquée jusqu'à", "une phrase que le site lui-meme refute"),
+    ]:
+        verifie(phrase not in tout, "aucun « %s » : %s" % (phrase, pourquoi))
+    pg.goto(URL + "#questions")
+    pg.wait_for_timeout(500)
 
     print("8. C'est le texte d'application qui fait foi, pas un resume")
     # Les pages A a Z de l'administration resument, et le resume laisse croire
@@ -237,7 +344,7 @@ with sync_playwright() as p:
     # Elles viennent d'entretiens : aucun texte officiel ne dement une idee
     # fausse, il enonce la regle sans dire comment on la comprend de travers.
     for q, attendu in [
-        ("est ce que l argent est bloque pendant dix ans", "idée fausse"),
+        ("est ce que l argent est bloque pendant dix ans", "la nuance change tout"),
         ("puis je recuperer une partie seulement", "en une fois"),
         ("mon conjoint travaille en france peut il en ouvrir un", "déclaration commune"),
         ("quand est ce que je touche le remboursement", "année suivante"),

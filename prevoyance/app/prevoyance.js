@@ -38,7 +38,7 @@ window.PREVOYANCE = (function () {
     // ponctuel ne s'additionne jamais a un montant annuel.
     leviers: [
       { id: "prevoyance", nom: "Prévoyance-vieillesse (111bis)", plafond: 4500, annuel: true,
-        condition: "Souscrire avant 65 ans, contrat d'au moins 10 ans, épargne bloquée jusqu'à 60 ans." },
+        condition: "Souscrire avant 65 ans, contrat d'au moins 10 ans, épargne récupérable entre 60 et 75 ans." },
       { id: "primes", nom: "Primes d'assurance (art. 111)", plafond: 672, annuel: true,
         condition: "Primes de responsabilité civile, décès, accident, maladie." },
       { id: "logement", nom: "Épargne-logement", plafond: 672, annuel: true,
@@ -49,6 +49,9 @@ window.PREVOYANCE = (function () {
         condition: "Cotisations personnelles à un régime complémentaire d'entreprise." },
       { id: "srd", nom: "Solde restant dû, prime unique", plafond: 6000, annuel: false,
         parEnfant: 1200, majorationParAnAu_dela30: 0.08,
+        // Le texte plafonne la majoration : « sans que le montant de cette
+        // augmentation puisse depasser 160% ». Elle est pleine a 50 ans.
+        majorationMax: 1.60,
         condition: "Prime unique d'une assurance solde restant dû, à la souscription d'un prêt." }
     ],
 
@@ -68,13 +71,23 @@ window.PREVOYANCE = (function () {
 
     bornes: { ageMin: 18, ageMax: 70, enfantsMax: 4 },
 
+    // Une source par plafond, et uniquement des sites de l'Etat. Trois sources
+    // sur la prevoyance-vieillesse ne pouvaient pas etablir six plafonds : le
+    // site annoncait « plafond legal » pour des montants qu'aucune source
+    // citee ne portait.
     sources: [
       { t: "Administration des contributions directes, prévoyance-vieillesse",
         u: "https://impotsdirects.public.lu/fr/az/p/prevoyance_vieillesse.html" },
       { t: "Guichet.lu, déduire les primes d'un contrat de prévoyance-vieillesse",
         u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/depenses-deductibles/contrat-prevoyance-resident.html" },
       { t: "Gouvernement luxembourgeois, nouveautés 2026",
-        u: "https://gouvernement.lu/fr/actualites/toutes_actualites/articles/2025/12-decembre/nouveautes-2026.html" }
+        u: "https://gouvernement.lu/fr/actualites/toutes_actualites/articles/2025/12-decembre/nouveautes-2026.html" },
+      { t: "Administration des contributions directes, cotisations et primes d'assurance",
+        u: "https://impotsdirects.public.lu/fr/az/c/cotis_prim.html" },
+      { t: "Administration des contributions directes, cotisations d'épargne-logement",
+        u: "https://impotsdirects.public.lu/fr/az/c/cotis-epargne-logement.html" },
+      { t: "Administration des contributions directes, prime unique",
+        u: "https://impotsdirects.public.lu/fr/az/p/prime_uniq.html" }
     ]
   };
 
@@ -82,11 +95,33 @@ window.PREVOYANCE = (function () {
 
   // Le plafond du solde restant du depend du foyer et de l'age. C'est le seul
   // levier dont le plafond se calcule, les autres sont fixes.
+  function levier(id) {
+    return TABLE.leviers.filter(function (x) { return x.id === id; })[0];
+  }
+
   function plafondSrd(age, enfants) {
-    var l = TABLE.leviers.filter(function (x) { return x.id === "srd"; })[0];
+    var l = levier("srd");
     var base = l.plafond + (enfants || 0) * l.parEnfant;
     var sup = Math.max(0, (age || 0) - 30);
-    return Math.round(base * (1 + sup * l.majorationParAnAu_dela30));
+    // La majoration ne depasse pas 160 %. Sans ce plafond elle croissait sans
+    // fin : a 65 ans le site annoncait 280 %, pres du double du maximum legal,
+    // et l'erreur grandissait avec l'age.
+    var maj = Math.min(sup * l.majorationParAnAu_dela30, l.majorationMax);
+    return Math.round(base * (1 + maj));
+  }
+
+  // L'age ou la majoration devient pleine. Il se calcule, il ne s'ecrit pas.
+  function agePleineMajoration() {
+    var l = levier("srd");
+    return 30 + Math.round(l.majorationMax / l.majorationParAnAu_dela30);
+  }
+
+  // Le plafond de l'article 111 et celui de l'epargne-logement sont majores de
+  // leur propre montant pour chaque enfant ouvrant droit a une moderation. Ils
+  // le sont aussi pour un conjoint impose collectivement, que ce site ne
+  // demande pas : la condition le dit, le calcul ne le suppose pas.
+  function parEnfant(base, enfants) {
+    return base * (1 + Math.max(0, enfants || 0));
   }
 
   function plafondEpargneLogement(age) {
@@ -164,27 +199,37 @@ window.PREVOYANCE = (function () {
       out.pistes.push({
         nom: "Épargne-logement",
         ordre: "de 672 à 1 344 € par an selon l'âge",
-        manque: "votre âge, le plafond doublant avant 41 ans"
+        manque: "votre âge : le plafond passe de 672 à 1 344 € de 18 à 40 ans accomplis"
       });
     } else {
-      var pel = plafondEpargneLogement(age);
+      var pelBase = plafondEpargneLogement(age);
       out.lignes.push({
         nom: "Épargne-logement",
-        plafond: pel, annuel: true,
-        calcul: pel === 1344
-          ? "Plafond doublé entre 18 et 40 ans : 672 × 2."
-          : "Plafond de base, au-delà de 40 ans.",
-        condition: "Contrat d'épargne-logement en cours.",
+        plafond: parEnfant(pelBase, enfants), annuel: true,
+        calcul: (pelBase === 1344
+          ? "Plafond de 1 344 € de 18 à 40 ans accomplis"
+          : "Plafond de 672 € au-delà de 40 ans")
+          + (enfants > 0
+            ? ", majoré de son propre montant pour chacun des " + enfants + " enfants."
+            : "."),
+        condition: "Contrat d'épargne-logement en cours. Le plafond est aussi majoré pour un " +
+          "conjoint imposé collectivement, que ce site ne demande pas.",
         reserve: null
       });
     }
 
     // Primes d'assurance
+    var primesBase = levier("primes").plafond;
     out.lignes.push({
       nom: "Primes d'assurance (art. 111)",
-      plafond: 672, annuel: true,
-      calcul: "Plafond légal par personne et par an.",
-      condition: "Primes de responsabilité civile, décès, accident, maladie.",
+      plafond: parEnfant(primesBase, enfants), annuel: true,
+      calcul: "Plafond de " + primesBase + " € par personne et par an depuis l'année " +
+        "d'imposition 2017" +
+        (enfants > 0
+          ? ", majoré de son propre montant pour chacun des " + enfants + " enfants."
+          : "."),
+      condition: "Primes de responsabilité civile, décès, accident, maladie. Le plafond est " +
+        "aussi majoré pour un conjoint imposé collectivement, que ce site ne demande pas.",
       reserve: null
     });
 
@@ -204,21 +249,29 @@ window.PREVOYANCE = (function () {
         nom: "Solde restant dû, prime unique",
         plafond: srd, annuel: false,
         calcul: "6 000 de base" + (enfants ? " + " + enfants + " × 1 200 par enfant" : "") +
-          (maj ? " puis + 8 % par année au-delà de 30 ans, soit " + maj + " années" : ""),
+          (maj
+            ? (maj >= agePleineMajoration() - 30
+                ? ", puis + 8 % par année au-delà de 30 ans, majoration plafonnée à 160 %, " +
+                  "atteinte à " + agePleineMajoration() + " ans"
+                : ", puis + 8 % par année au-delà de 30 ans, soit " + maj + " années")
+            : ""),
         condition: "Prime unique versée à la souscription du prêt.",
         reserve: "Ce montant est ponctuel : il ne se déduit pas chaque année."
       });
       out.pistes.push({
         nom: "Intérêts hypothécaires",
-        ordre: "de 2 000 à 4 000 € par an selon l'ancienneté du logement",
-        manque: "l'année d'occupation du logement, qui décide du plafond applicable"
+        // Aucun montant ici : le plafond depend de l'anciennete du logement,
+        // et ce site ne cite pas de source officielle qui l'etablisse. Une
+        // fourchette non sourcee est exactement ce que la regle interdit.
+        ordre: "un plafond annuel qui dépend de l'ancienneté du logement",
+        manque: "le montant, que ce site ne chiffre pas faute de l'avoir vérifié sur une source officielle"
       });
     }
 
     out.pistes.push({
       nom: "Régime complémentaire de pension",
       ordre: "jusqu'à 1 200 € par an",
-      manque: "savoir si l'employeur propose un régime et si vous y cotisez à titre personnel"
+      manque: "de savoir si votre employeur a mis en place un régime et si vous y cotisez à titre personnel"
     });
 
     out.lignes.forEach(function (l) {

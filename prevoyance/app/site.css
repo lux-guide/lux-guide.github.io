@@ -221,6 +221,11 @@ input:not([type="checkbox"]):focus, select:focus {
 input[type="number"] { -moz-appearance: textfield; }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+/* La note d'un champ tient sous lui, sans pousser la ligne : elle
+   n'apparait que lorsqu'une valeur a ete ramenee dans les bornes. */
+.champ-note { margin: 6px 0 0; font-size: 12.5px; color: var(--warn); max-width: 40ch; }
+.kpi.vide .v { color: var(--muted); }
+
 .check { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .check input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
 .check label { margin: 0; flex: 1 1 14ch; min-width: 0; display: flex; align-items: center; color: var(--text-2); font-weight: 400; font-size: 14.5px; cursor: pointer; }

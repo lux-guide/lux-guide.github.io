@@ -137,7 +137,7 @@ window.QUESTIONS = (function () {
                   "je vis a l'etranger", "resident", "residence", "non resident", "j'habite pas au luxembourg"],
       reponse: "Oui, si vous êtes imposé au Luxembourg. C'est le lieu d'imposition qui décide, pas " +
         "le lieu d'habitation. Un frontalier imposé au Luxembourg y a droit ; un résident imposé " +
-        "ailleurs n'y a pas droit. C'est la confusion la plus fréquente sur ce dispositif.",
+        "ailleurs n'y a pas droit.",
       reserve: "Un frontalier non résident doit remplir les conditions d'assimilation au résident " +
         "pour faire valoir cette dépense spéciale. Le point se vérifie auprès de l'administration.",
       sources: [ACD, GUI],
@@ -328,7 +328,7 @@ window.QUESTIONS = (function () {
       question: "L'argent est-il bloqué pendant dix ans ?",
       variantes: ["bloque", "blocage", "dix ans", "10 ans", "immobilise", "fige", "mythe",
                   "combien de temps bloque", "duree du blocage"],
-      reponse: "Non, et c'est l'idée fausse la plus répandue sur ce dispositif. Ce n'est pas " +
+      reponse: "Non, et la nuance change tout. Ce n'est pas " +
         "l'argent qui est immobilisé {duree} ans, c'est le contrat qui doit durer au moins " +
         "{duree} ans. La différence est concrète : quelqu'un qui souscrit à 55 ans ne pourra pas " +
         "récupérer son épargne à {sortieMin} ans, mais à 65, parce que le contrat n'aura pas " +
