@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=34">
+<link rel="stylesheet" href="app/styles.css?v=35">
 </head>
 <body>
 
@@ -27,7 +27,6 @@
       <button role="tab" id="tab-parcours" data-panel="parcours" aria-selected="false" aria-controls="panel-parcours" tabindex="-1">Parcours</button>
       <button role="tab" id="tab-faq" data-panel="faq" aria-selected="false" aria-controls="panel-faq" tabindex="-1">FAQ</button>
       <button role="tab" id="tab-simulateur" data-panel="simulateur" aria-selected="false" aria-controls="panel-simulateur" tabindex="-1">Simulateur</button>
-      <button role="tab" id="tab-conseil" data-panel="conseil" aria-selected="false" aria-controls="panel-conseil" tabindex="-1">Conseil financier</button>
       <button role="tab" id="tab-comparateur" data-panel="comparateur" aria-selected="false" aria-controls="panel-comparateur" tabindex="-1">Comparateur</button>
       <button role="tab" id="tab-carte" data-panel="carte" aria-selected="false" aria-controls="panel-carte" tabindex="-1">Carte</button>
       <button role="tab" id="tab-assistant" data-panel="assistant" aria-selected="false" aria-controls="panel-assistant" tabindex="-1" class="tab-assistant">
@@ -292,43 +291,6 @@
     </div>
   </section>
 
-  <!-- Conseil financier : la prevoyance-vieillesse 111bis -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-conseil" id="panel-conseil" hidden>
-    <h1>Ce que l'État vous rend quand vous préparez votre retraite</h1>
-    <p class="lead">
-      Le Luxembourg laisse déduire de votre revenu imposable ce que vous versez sur un contrat
-      de prévoyance-vieillesse, et sur quelques autres postes. Cette page chiffre ce que cela
-      représente, sans vous demander votre nom.
-    </p>
-
-    <div id="cons-mouvement"></div>
-
-    <div class="sous-onglets" id="cons-tabs">
-      <button data-cons="rapporte" class="actif">Ce que cela rapporte</button>
-      <button data-cons="principe">Comment ça marche</button>
-      <button data-cons="concerne">Est-ce que cela me concerne</button>
-    </div>
-
-    <div id="cons-rapporte">
-      <p class="lead small">
-        Un chiffre avant de vous demander quoi que ce soit : trois situations sont déjà calculées.
-        Changez-les ensuite pour la vôtre. Le troisième cas ne donne droit à rien, et il est montré
-        exprès : un outil qui ne sait dire que oui n'est pas cru quand il dit oui.
-      </p>
-      <div class="chips" id="cons-cas"></div>
-      <div class="card">
-        <div class="row" id="cons-champs"></div>
-      </div>
-      <div id="cons-resultat"></div>
-    </div>
-
-    <div id="cons-principe" hidden></div>
-    <div id="cons-concerne" hidden></div>
-
-    <div class="notice small" id="cons-reserves"></div>
-    <div id="cons-sources"></div>
-  </section>
-
   <!-- Comparateur -->
   <section class="panel" role="tabpanel" aria-labelledby="tab-comparateur" id="panel-comparateur" hidden>
     <h1>Comparateur</h1>
@@ -549,7 +511,7 @@
     </div>
     <p class="lead">
       Il construit votre profil au fil des réponses, puis cible ce qui vous concerne.
-      <span class="badge" id="mode-badge">assistant fictif</span>
+      <span class="badge" id="mode-badge">mode local</span>
     </p>
     <div class="card chat-wrap">
       <div class="chat-log" id="chat-log"></div>
@@ -560,9 +522,8 @@
       </div>
     </div>
     <p class="hint">
-      Cet assistant est une démonstration fictive : il n'y a pas de modèle de langage derrière,
-      il cherche dans la base de connaissances de ce guide et cite ses sources. Quand une
-      information n'y figure pas, il le dit plutôt que d'inventer.
+      Les réponses proviennent de la base de connaissances de ce guide, avec leurs sources.
+      Quand une information n'y figure pas, l'assistant le dit plutôt que d'inventer.
     </p>
   </section>
 
@@ -750,16 +711,15 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=34"></script>
-<script src="app/kb.js?v=34"></script>
-<script src="app/simulateur.js?v=34"></script>
-<script src="comparateur/contrats_kb.js?v=34"></script>
-<script src="comparateur/mrh_kb.js?v=34"></script>
-<script src="comparateur/offres_kb.js?v=34"></script>
-<script src="app/prevoyance.js?v=34"></script>
-<script src="app/chat.js?v=34"></script>
-<script src="app/ui.js?v=34"></script>
-<script src="app/communaute.js?v=34"></script>
+<script src="app/bareme.js?v=35"></script>
+<script src="app/kb.js?v=35"></script>
+<script src="app/simulateur.js?v=35"></script>
+<script src="comparateur/contrats_kb.js?v=35"></script>
+<script src="comparateur/mrh_kb.js?v=35"></script>
+<script src="comparateur/offres_kb.js?v=35"></script>
+<script src="app/chat.js?v=35"></script>
+<script src="app/ui.js?v=35"></script>
+<script src="app/communaute.js?v=35"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

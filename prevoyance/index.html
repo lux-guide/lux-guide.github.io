@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Épargne-retraite au Luxembourg</title>
+<meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
+<link rel="stylesheet" href="app/site.css?v=1">
+</head>
+<body>
+
+<!-- Coquille propre a ce site : une marque, quatre liens, un pied de page.
+     Aucune barre du guide d'installation, aucun selecteur d'audience. Ce site
+     s'adresse aussi bien a quelqu'un qui vient d'arriver qu'a quelqu'un qui vit
+     ici depuis dix ans, et sa navigation doit le dire. -->
+<header class="top">
+  <div class="top-in">
+    <button class="brand" id="brand" title="Retour à l'accueil" aria-label="Épargne-retraite au Luxembourg, retour à l'accueil">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M3 17.5 9 11l4 3.5L21 6"/>
+          <path d="M15.5 6H21v5.5"/>
+        </svg>
+      </span>
+      <span class="brand-lock">
+        <span class="brand-txt">Épargne-retraite</span>
+        <span class="brand-desc">au Luxembourg</span>
+      </span>
+    </button>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0">Accueil</button>
+      <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1">Ce que cela rapporte</button>
+      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1">Questions fréquentes</button>
+      <button role="tab" id="tab-assistant" data-vue="assistant" aria-selected="false" aria-controls="vue-assistant" tabindex="-1">Poser une question</button>
+    </nav>
+    <button id="theme-btn" class="outil" title="Changer de thème" aria-label="Changer de thème"></button>
+  </div>
+</header>
+
+<main>
+
+  <!-- Accueil -->
+  <section class="vue" role="tabpanel" aria-labelledby="tab-accueil" id="vue-accueil">
+    <div class="hero">
+      <h1>Ce que l'État vous rend quand vous préparez votre retraite</h1>
+      <p class="lead">
+        Le Luxembourg laisse déduire de votre revenu imposable ce que vous versez sur un contrat
+        de prévoyance-vieillesse, et sur quelques autres postes. Cette page chiffre ce que cela
+        représente. Sans compte, sans nom, sans conseil de placement.
+      </p>
+      <div class="hero-cta">
+        <button class="btn" data-aller="simulateur">Chiffrer ma situation</button>
+        <button class="btn contour" data-aller="questions">Lire les questions fréquentes</button>
+      </div>
+    </div>
+
+    <div id="acc-mouvement"></div>
+
+    <h2>Un chiffre avant de vous demander quoi que ce soit</h2>
+    <p class="lead small">
+      Trois situations sont déjà calculées. Vous mettrez la vôtre ensuite. Le troisième cas ne
+      donne droit à rien, et il est montré exprès : un outil qui ne sait dire que oui n'est pas
+      cru quand il dit oui.
+    </p>
+    <div class="chips" id="acc-cas"></div>
+    <div id="acc-apercu"></div>
+
+    <h2>Comment ça marche</h2>
+    <p class="lead small">Quatre moments, et c'est le troisième qu'on oublie.</p>
+    <div id="acc-principe"></div>
+
+    <h2>Est-ce que cela me concerne</h2>
+    <p class="lead small">
+      Trois conditions, et une confusion très fréquente. Ce dispositif ne concerne pas que
+      les nouveaux arrivants : il s'ouvre à toute personne imposée au Luxembourg, quelle que
+      soit la durée de sa présence.
+    </p>
+    <div id="acc-concerne"></div>
+
+    <h2>Ce qu'on nous demande le plus</h2>
+    <div class="grid" id="acc-questions"></div>
+
+    <div class="notice small" id="acc-reserves"></div>
+    <div id="acc-sources"></div>
+  </section>
+
+  <!-- Ce que cela rapporte -->
+  <section class="vue" role="tabpanel" aria-labelledby="tab-simulateur" id="vue-simulateur" hidden>
+    <h1>Ce que cela rapporte</h1>
+    <p class="lead">
+      Quatre questions, et pas une de plus. Chaque montant affiché indique comment il est obtenu.
+    </p>
+    <div class="chips" id="sim-cas"></div>
+    <div class="card">
+      <div class="row" id="sim-champs"></div>
+    </div>
+    <div id="sim-resultat"></div>
+    <div class="notice small" id="sim-reserves"></div>
+    <div id="sim-sources"></div>
+  </section>
+
+  <!-- Questions fréquentes -->
+  <section class="vue" role="tabpanel" aria-labelledby="tab-questions" id="vue-questions" hidden>
+    <h1>Questions fréquentes</h1>
+    <p class="lead">
+      On y trouve ce qu'on n'aurait pas su demander. Quelqu'un qui ignore que l'épargne est
+      bloquée jusqu'à soixante ans ne tapera jamais la question : il la lira ici, et c'est la
+      seule façon qu'il l'apprenne avant de signer.
+      <span class="badge" id="q-compte"></span>
+    </p>
+    <div class="search-bar">
+      <input type="search" id="q-filtre" placeholder="Filtrer : frontalier, plafond, sortie, décès..." autocomplete="off">
+    </div>
+    <div class="chips" id="q-themes"></div>
+    <div id="q-liste"></div>
+  </section>
+
+  <!-- Poser une question -->
+  <section class="vue" role="tabpanel" aria-labelledby="tab-assistant" id="vue-assistant" hidden>
+    <h1>Poser une question</h1>
+    <p class="lead">
+      Les réponses sont écrites et relues à l'avance, chacune avec sa source. Aucun modèle de
+      langue ne rédige ici : sur une déduction fiscale, une phrase juste la plupart du temps
+      n'est pas un niveau de service, et l'erreur ne se verrait pas.
+    </p>
+
+    <div class="perimetre" id="as-perimetre"></div>
+
+    <div class="card conv">
+      <div class="chat-log" id="as-log"></div>
+      <div class="chat-bar">
+        <input type="text" id="as-input" placeholder="Votre question, en français courant" autocomplete="off">
+        <button class="btn" id="as-envoyer">Demander</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pied">
+  <p>
+    Démonstration. Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée
+    sur chaque source. Ce site ne compare aucun contrat du marché, ne recommande aucun placement
+    et ne collecte aucune donnée : rien de ce que vous saisissez ne quitte votre navigateur.
+  </p>
+  <p id="pied-sources"></p>
+</footer>
+
+<script src="app/prevoyance.js?v=1"></script>
+<script src="app/questions.js?v=1"></script>
+<script src="app/site.js?v=1"></script>
+</body>
+</html>

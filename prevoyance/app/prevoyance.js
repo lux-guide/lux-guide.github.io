@@ -93,6 +93,14 @@ window.PREVOYANCE = (function () {
     return (age >= 18 && age <= 40) ? 1344 : 672;
   }
 
+  // L'age auquel on peut reellement recuperer l'epargne. Ce n'est pas toujours
+  // l'age legal : le contrat doit aussi avoir dure la duree minimale. Souscrire
+  // a 55 ans ne permet donc pas de sortir a 60, mais a 65. C'est la consequence
+  // la plus mal comprise du dispositif, et elle se calcule.
+  function ageSortieEffectif(age) {
+    return Math.max(TABLE.prevoyance.sortieMin, (Number(age) || 0) + TABLE.prevoyance.dureeMinimaleAns);
+  }
+
   // Entree : quatre faits, et pas un de plus.
   //   { age, enfants, pret, imposeLuxembourg }
   function simuler(e) {
@@ -123,10 +131,13 @@ window.PREVOYANCE = (function () {
         nom: "Prévoyance-vieillesse (111bis)",
         plafond: TABLE.prevoyance.plafond,
         annuel: true,
-        calcul: "Plafond légal depuis le 1er janvier 2026, par personne et par an.",
-        condition: "Contrat d'au moins " + TABLE.prevoyance.dureeMinimaleAns + " ans, " +
-          "épargne remboursable entre " + TABLE.prevoyance.sortieMin + " et " +
-          TABLE.prevoyance.sortieMax + " ans.",
+        calcul: "Plafond légal depuis le 1er janvier " + TABLE.annee + ", par personne et par an.",
+        condition: "Contrat d'au moins " + TABLE.prevoyance.dureeMinimaleAns + " ans. En " +
+          "souscrivant à " + age + " ans, l'épargne ne sera récupérable qu'à partir de " +
+          ageSortieEffectif(age) + " ans" +
+          (ageSortieEffectif(age) > TABLE.prevoyance.sortieMin
+            ? ", et non à " + TABLE.prevoyance.sortieMin + " ans : la durée minimale du contrat repousse l'échéance."
+            : ".") ,
         reserve: "Le montant non versé une année est perdu : il ne se reporte pas sur la suivante."
       });
     } else {
@@ -230,6 +241,7 @@ window.PREVOYANCE = (function () {
     cas: CAS,
     simuler: simuler,
     plafondSrd: plafondSrd,
-    plafondEpargneLogement: plafondEpargneLogement
+    plafondEpargneLogement: plafondEpargneLogement,
+    ageSortieEffectif: ageSortieEffectif
   };
 })();

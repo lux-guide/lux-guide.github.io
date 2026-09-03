@@ -246,7 +246,7 @@
 
   // ---------- Navigation ----------
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "conseil", "comparateur", "carte", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
 
   var pagePrecedente = null;
 
@@ -1582,346 +1582,6 @@
   }
 
 
-  // ---------- Conseil financier : la prevoyance-vieillesse 111bis ----------
-  //
-  // Regle de ce volet : aucun montant de loi n'est ecrit ici. Tout vient de
-  // window.PREVOYANCE.table. Un test verifie qu'aucun montant en euros n'est
-  // ecrit en dur dans ce bloc.
-
-  var consEntree = null;
-
-  function consT() { return window.PREVOYANCE ? window.PREVOYANCE.table : null; }
-
-  // Le plafond montre comme un mouvement, pas comme un nombre. « 4 500 » ne dit
-  // rien a qui ne connaissait pas « 3 200 ». On affiche les deux, et l'ecart est
-  // DERIVE de la table, jamais soustrait a la main dans un texte.
-  function rendreMouvement() {
-    var z = $("#cons-mouvement"), T = consT();
-    if (!z || !T) return;
-    var p = T.prevoyance;
-    var ecart = p.plafond - p.plafondPrecedent;
-    z.innerHTML = "";
-    var c = el("div", "mouvement");
-    var g = el("div", "mouvement-chiffres");
-    var av = el("div", "mvt-av");
-    av.appendChild(el("span", "mvt-lab", "En " + T.anneePrecedente));
-    av.appendChild(el("span", "mvt-val", eur(p.plafondPrecedent)));
-    g.appendChild(av);
-    g.appendChild(el("span", "mvt-fleche", "→"));
-    var ap = el("div", "mvt-ap");
-    ap.appendChild(el("span", "mvt-lab", "Depuis " + T.annee));
-    ap.appendChild(el("span", "mvt-val", eur(p.plafond)));
-    g.appendChild(ap);
-    var d = el("div", "mvt-delta");
-    d.appendChild(el("span", "mvt-lab", "Soit"));
-    d.appendChild(el("span", "mvt-val", "+ " + eur(ecart)));
-    g.appendChild(d);
-    c.appendChild(g);
-    c.appendChild(el("p", null,
-      "Le plafond déductible de la prévoyance-vieillesse a été relevé au 1er janvier " +
-      T.annee + ". C'est le montant que vous pouvez sortir de votre revenu imposable " +
-      "chaque année, par personne."));
-    z.appendChild(c);
-  }
-
-  function rendreCasConseil() {
-    var z = $("#cons-cas");
-    if (!z || !window.PREVOYANCE) return;
-    z.innerHTML = "";
-    window.PREVOYANCE.cas.forEach(function (c) {
-      var actif = consEntree && consEntree.id === c.id;
-      var b = el("button", "chip" + (actif ? " actif" : ""), c.titre);
-      b.setAttribute("aria-pressed", String(!!actif));
-      b.addEventListener("click", function () {
-        consEntree = { id: c.id, age: c.e.age, enfants: c.e.enfants,
-                       pret: c.e.pret, imposeLuxembourg: c.e.imposeLuxembourg };
-        rendreConseil();
-      });
-      z.appendChild(b);
-    });
-  }
-
-  function rendreChampsConseil() {
-    var z = $("#cons-champs"), T = consT();
-    if (!z || !T) return;
-    z.innerHTML = "";
-
-    var da = el("div");
-    da.appendChild(el("label", null, "Votre âge"));
-    var ia = el("input");
-    ia.type = "number"; ia.min = String(T.bornes.ageMin); ia.max = String(T.bornes.ageMax);
-    ia.value = String(consEntree.age);
-    ia.addEventListener("input", function () {
-      consEntree.age = Number(ia.value) || consEntree.age;
-      consEntree.id = null;
-      rendreConseil(true);
-    });
-    da.appendChild(ia);
-    z.appendChild(da);
-
-    var de = el("div");
-    de.appendChild(el("label", null, "Enfants à charge"));
-    var se = el("select");
-    for (var n = 0; n <= T.bornes.enfantsMax; n++) {
-      var o = el("option", null, String(n));
-      o.value = String(n);
-      if (n === consEntree.enfants) o.selected = true;
-      se.appendChild(o);
-    }
-    se.addEventListener("change", function () {
-      consEntree.enfants = Number(se.value) || 0;
-      consEntree.id = null;
-      rendreConseil(true);
-    });
-    de.appendChild(se);
-    z.appendChild(de);
-
-    [["pret", "Un prêt immobilier en cours"],
-     ["imposeLuxembourg", "Imposé au Luxembourg"]].forEach(function (c) {
-      var d = el("div", "check");
-      var i = el("input");
-      i.type = "checkbox"; i.id = "cons-" + c[0]; i.checked = !!consEntree[c[0]];
-      i.addEventListener("change", function () {
-        consEntree[c[0]] = i.checked;
-        consEntree.id = null;
-        rendreConseil(true);
-      });
-      var l = el("label", null, c[1]);
-      l.setAttribute("for", i.id);
-      d.appendChild(i); d.appendChild(l);
-      z.appendChild(d);
-    });
-  }
-
-  function rendreResultatConseil() {
-    var z = $("#cons-resultat"), T = consT();
-    if (!z || !T) return;
-    z.innerHTML = "";
-    var r = window.PREVOYANCE.simuler(consEntree);
-
-    // Le cas qui rend zero ne dessine RIEN : ni tableau de taux, ni indicateurs.
-    // Un tableau sans montants est pire que rien, il laisse croire a un defaut.
-    if (r.refus.length && !r.lignes.length) {
-      var n = el("div", "notice");
-      n.appendChild(el("strong", null, "Aucune déduction ouverte. "));
-      r.refus.forEach(function (m) { n.appendChild(document.createTextNode(m + " ")); });
-      z.appendChild(n);
-      return;
-    }
-
-    var k = el("div", "kpis");
-    [["Déductible chaque année", eur(r.totalAnnuel)],
-     ["Déductible une seule fois", eur(r.totalPonctuel)]].forEach(function (x) {
-      var d = el("div", "kpi");
-      d.appendChild(el("div", "k", x[0]));
-      d.appendChild(el("div", "v", x[1]));
-      z.appendChild(d);
-      k.appendChild(d);
-    });
-    z.appendChild(k);
-    z.appendChild(el("p", "hint",
-      "Ces deux montants ne s'additionnent pas. Le premier revient chaque année, " +
-      "le second se déduit une seule fois, à la souscription du prêt."));
-
-    // Les leviers ouverts, chacun avec SON MODE DE CALCUL affiche.
-    var w = el("div", "table-wrap"), t = el("table");
-    var th = el("thead"), tr0 = el("tr");
-    ["Levier", "Plafond", "Rythme", "Comment ce montant est obtenu"].forEach(function (c, i) {
-      tr0.appendChild(el("th", i === 1 ? "num" : null, c));
-    });
-    th.appendChild(tr0); t.appendChild(th);
-    var tb = el("tbody");
-    r.lignes.forEach(function (l) {
-      var tr = el("tr");
-      var td0 = el("td");
-      td0.appendChild(el("strong", null, l.nom));
-      td0.appendChild(el("span", "sm-type", l.condition));
-      if (l.reserve) td0.appendChild(el("span", "cons-reserve", l.reserve));
-      tr.appendChild(td0);
-      tr.appendChild(el("td", "num", eur(l.plafond)));
-      tr.appendChild(el("td", null, l.annuel ? "chaque année" : "une seule fois"));
-      tr.appendChild(el("td", "cons-calcul", l.calcul));
-      tb.appendChild(tr);
-    });
-    t.appendChild(tb); w.appendChild(t); z.appendChild(w);
-
-    // Une colonne par taux : on ne devine jamais celui du visiteur.
-    z.appendChild(el("h3", null, "Ce que cela vous rend, selon votre taux d'imposition"));
-    z.appendChild(el("p", "hint",
-      "Votre taux dépend de votre revenu et de votre classe d'impôt. Le guide ne le devine " +
-      "pas : situez-vous dans la colonne qui vous correspond. Le simulateur de salaire net " +
-      "donne votre taux de prélèvement global."));
-    var w2 = el("div", "table-wrap"), t2 = el("table");
-    var th2 = el("thead"), tr1 = el("tr");
-    tr1.appendChild(el("th", null, "Taux d'imposition"));
-    T.taux.forEach(function (x) { tr1.appendChild(el("th", "num", Math.round(x * 100) + " %")); });
-    th2.appendChild(tr1); t2.appendChild(th2);
-    var tb2 = el("tbody");
-    [["Économie chaque année", r.economieAnnuelleParTaux],
-     ["Économie une seule fois", r.economiePonctuelleParTaux],
-     ["Ce qu'il vous reste à sortir par an", r.effortAnnuelParTaux]].forEach(function (l) {
-      var tr = el("tr");
-      tr.appendChild(el("td", null, l[0]));
-      T.taux.forEach(function (x) {
-        var v = l[1][String(Math.round(x * 100))];
-        tr.appendChild(el("td", "num", v === undefined ? "—" : eur(v)));
-      });
-      tb2.appendChild(tr);
-    });
-    var trc = el("tr", "sm-score");
-    trc.appendChild(el("td", null, "Cumul sur " + T.horizonAns + " ans"));
-    T.taux.forEach(function (x) {
-      var serie = r.serieCumulParTaux[String(Math.round(x * 100))];
-      trc.appendChild(el("td", "num", serie ? eur(serie[serie.length - 1]) : "—"));
-    });
-    tb2.appendChild(trc);
-    t2.appendChild(tb2); w2.appendChild(t2); z.appendChild(w2);
-
-    if (r.pistes.length) {
-      z.appendChild(el("h3", null, "Ce qui pourrait s'y ajouter"));
-      var ul = el("ul", "cons-pistes");
-      r.pistes.forEach(function (p) {
-        var li = el("li");
-        li.appendChild(el("strong", null, p.nom));
-        li.appendChild(document.createTextNode(", " + p.ordre + ". Pour le chiffrer, il manque " + p.manque + "."));
-        ul.appendChild(li);
-      });
-      z.appendChild(ul);
-    }
-
-    if (r.refus.length) {
-      var nr = el("div", "notice small");
-      nr.appendChild(el("strong", null, "Un levier fermé. "));
-      r.refus.forEach(function (m) { nr.appendChild(document.createTextNode(m + " ")); });
-      z.appendChild(nr);
-    }
-
-    var h = el("details", "sm-choix");
-    h.appendChild(el("summary", null, "Ce que ce calcul suppose"));
-    var uh = el("ul");
-    r.hypotheses.forEach(function (x) { uh.appendChild(el("li", null, x)); });
-    h.appendChild(uh);
-    z.appendChild(h);
-  }
-
-  function rendrePrincipe() {
-    var z = $("#cons-principe"), T = consT();
-    if (!z || !T || z.children.length) return;
-    z.appendChild(el("p", "lead small",
-      "Quatre moments, et c'est le troisième qu'on oublie."));
-    var ol = el("ol", "cons-etapes");
-    [["Vous versez", "Sur un contrat de prévoyance-vieillesse, jusqu'au plafond de l'année. " +
-      "Ce que vous ne versez pas une année est perdu : le plafond ne se reporte pas."],
-     ["Le montant sort de votre revenu imposable", "Vous ne payez pas d'impôt dessus. " +
-      "Ce que cela vous rend dépend donc de votre taux, pas du montant versé."],
-     ["Vous le déclarez", "Rien n'est automatique. Sans la ligne dans votre déclaration, " +
-      "le versement ne produit aucun effet fiscal."],
-     ["Vous récupérez entre " + T.prevoyance.sortieMin + " et " + T.prevoyance.sortieMax + " ans",
-      "En capital, en rente viagère, ou les deux. Le capital est imposé à la moitié du taux " +
-      "global, la rente sur la moitié de son montant."]].forEach(function (e) {
-      var li = el("li");
-      li.appendChild(el("strong", null, e[0]));
-      li.appendChild(el("p", null, e[1]));
-      ol.appendChild(li);
-    });
-    z.appendChild(ol);
-  }
-
-  function rendreConcerne() {
-    var z = $("#cons-concerne"), T = consT();
-    if (!z || !T || z.children.length) return;
-    var p = T.prevoyance;
-    z.appendChild(el("p", "lead small", "Trois conditions, et une confusion très fréquente."));
-    var g = el("div", "grid serre");
-    [["Avant " + p.ageMaxSouscription + " ans",
-      "La souscription n'est plus possible à partir de " + p.ageMaxSouscription + " ans. " +
-      "Le contrat doit durer au moins " + p.dureeMinimaleAns + " ans."],
-     ["Imposé au Luxembourg",
-      "C'est le lieu d'imposition qui décide, pas le lieu d'habitation. Un frontalier imposé " +
-      "au Luxembourg y a droit. Un résident imposé ailleurs n'y a pas droit. C'est la " +
-      "confusion la plus fréquente sur ce dispositif."],
-     ["Bloqué jusqu'à " + p.sortieMin + " ans",
-      "L'épargne n'est pas disponible avant. Le remboursement anticipé n'existe qu'en cas de " +
-      "maladie grave ou d'invalidité, et il est alors imposé au taux plein."]].forEach(function (c) {
-      var d = el("div", "qcard");
-      d.appendChild(el("h3", null, c[0]));
-      d.appendChild(el("p", null, c[1]));
-      g.appendChild(d);
-    });
-    z.appendChild(g);
-    var b = el("div", "chips");
-    var bf = el("button", "chip", "Ouvrir la fiche Conseil fiscal");
-    bf.addEventListener("click", function () { ouvrir("fiches"); montrerFiche("conseil_fiscal"); });
-    b.appendChild(bf);
-    var bq = el("button", "chip", "Voir les questions sur les impôts");
-    bq.addEventListener("click", function () {
-      ouvrir("faq");
-      var q = $("#q-faq");
-      if (q) { q.value = "111bis"; rendreFaq("111bis"); }
-    });
-    b.appendChild(bq);
-    z.appendChild(b);
-  }
-
-  function rendreReserves() {
-    var z = $("#cons-reserves"), T = consT();
-    if (!z || !T) return;
-    z.innerHTML = "";
-    z.appendChild(el("strong", null, "Ce que ce calcul ne dit pas. "));
-    z.appendChild(document.createTextNode(
-      "Il chiffre des plafonds de déduction et l'impôt que vous ne payez pas. Il ne chiffre " +
-      "ni le capital que vous récupérerez, ce qui supposerait un rendement, ni le rendement " +
-      "d'un contrat, ni votre taux d'imposition réel. Il ne compare aucun contrat du marché " +
-      "et ne recommande aucun placement. Les plafonds sont ceux en vigueur, la réglementation " +
-      "évolue et la source ci-dessous fait foi."));
-    var s = $("#cons-sources");
-    if (!s) return;
-    s.innerHTML = "";
-    var b = el("div", "srcbox");
-    b.appendChild(el("strong", null, "Sources officielles"));
-    var ul = el("ul", "mrh-sources-liste");
-    T.sources.forEach(function (x) {
-      var li = el("li");
-      var a = el("a", null, x.t);
-      a.href = x.u; a.target = "_blank"; a.rel = "noopener noreferrer";
-      li.appendChild(a);
-      ul.appendChild(li);
-    });
-    b.appendChild(ul);
-    s.appendChild(b);
-  }
-
-  function rendreConseil(sansChamps) {
-    if (!window.PREVOYANCE) return;
-    if (!consEntree) {
-      var c = window.PREVOYANCE.cas[0];
-      consEntree = { id: c.id, age: c.e.age, enfants: c.e.enfants,
-                     pret: c.e.pret, imposeLuxembourg: c.e.imposeLuxembourg };
-    }
-    rendreMouvement();
-    rendreCasConseil();
-    if (!sansChamps) rendreChampsConseil();
-    rendreResultatConseil();
-    rendreReserves();
-  }
-
-  function initConseil() {
-    if (!window.PREVOYANCE || !$("#cons-tabs")) return;
-    var vues = ["rapporte", "principe", "concerne"];
-    $$("#cons-tabs button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        $$("#cons-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
-        vues.forEach(function (v) {
-          var z = $("#cons-" + v);
-          if (z) z.hidden = v !== b.dataset.cons;
-        });
-        if (b.dataset.cons === "principe") rendrePrincipe();
-        if (b.dataset.cons === "concerne") rendreConcerne();
-      });
-    });
-    rendreConseil();
-  }
-
   function initSimulateur() {
     // Quatre sous-onglets : salaire net, capacite d'emprunt, classe d'impot,
     // et les simulateurs officiels que le guide ne refait pas.
@@ -2145,11 +1805,8 @@
       sauverConversation();
       var b = $("#mode-badge");
       if (b) {
-        // Le libelle dit au visiteur ce qu'il a devant lui, pas comment c'est
-        // branche : sans modele derriere, l'assistant est une demonstration.
-        var api = String(r.via).indexOf("api") === 0;
-        b.textContent = api ? "mode api" : "assistant fictif";
-        b.className = "badge" + (api ? " on" : "");
+        b.textContent = "mode " + (r.via || "local");
+        b.className = "badge" + (String(r.via).indexOf("api") === 0 ? " on" : "");
       }
     }).catch(function (e) {
       attente.forEach(function (m) { m.remove(); });
@@ -2218,7 +1875,7 @@
     window.CHAT.testerApi().then(function (ok) {
       var b = $("#mode-badge");
       if (b) {
-        b.textContent = ok ? "mode api" : "assistant fictif";
+        b.textContent = ok ? "mode api" : "mode local";
         b.className = "badge" + (ok ? " on" : "");
       }
     });
@@ -4463,7 +4120,6 @@
   rendreTimeline();
   initFaq();
   initSimulateur();
-  initConseil();
   initChat();
   initComparateur();
   initAdmin();
