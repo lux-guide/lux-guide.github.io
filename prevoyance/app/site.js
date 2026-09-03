@@ -51,7 +51,9 @@
 
   // ---------- Navigation ----------
 
-  var VUES = ["accueil", "simulateur", "questions", "assistant"];
+  // L'assistant n'est plus une vue : c'est un panneau qui s'ouvre par-dessus
+  // celle qu'on lit. Son adresse, #assistant, l'ouvre quand meme.
+  var VUES = ["accueil", "simulateur", "questions"];
 
   function majDefilement() {
     var n = $("#tabs");
@@ -238,6 +240,153 @@
     return d;
   }
 
+  // ---------- Le panneau de l'assistant ----------
+  //
+  // Un onglet obligeait a quitter le simulateur pour poser une question, puis
+  // a y revenir pour verifier. Le panneau reste ouvert a cote de ce qu'on lit,
+  // et c'est de la qu'il peut renvoyer vers un endroit precis de la page.
+  //
+  // Il est fixe et porte son propre defilement. Un cadre qui defile a
+  // l'interieur d'une page qui defile oblige a viser pour choisir lequel bouge.
+
+  var CLE_PAN = "prevoyance.panneau.v1";
+  var panOuvert = false, avantPan = null;
+
+  function largeEcran() {
+    return window.matchMedia && window.matchMedia("(min-width: 1180px)").matches;
+  }
+
+  function majPanneau() {
+    var p = $("#panneau"), v = $("#voile"), b = $("#assistant-btn");
+    if (!p) return;
+    p.hidden = !panOuvert;
+    // Le voile n'a de sens que quand le panneau recouvre la page. Au-dela de
+    // 1180 px il pousse le contenu au lieu de le masquer : rien a assombrir.
+    if (v) v.hidden = !panOuvert || largeEcran();
+    document.body.setAttribute("data-panneau", panOuvert ? "1" : "0");
+    if (b) {
+      b.setAttribute("aria-expanded", String(panOuvert));
+      b.classList.toggle("actif", panOuvert);
+    }
+  }
+
+  function ouvrirPanneau(focus) {
+    if (!panOuvert) {
+      avantPan = document.activeElement;
+      panOuvert = true;
+      majPanneau();
+      demarrerAssistant();
+      try { localStorage.setItem(CLE_PAN, "1"); } catch (e) {}
+    }
+    if (focus !== false) {
+      var i = $("#as-input");
+      if (i) i.focus();
+    }
+  }
+
+  function fermerPanneau() {
+    if (!panOuvert) return;
+    panOuvert = false;
+    majPanneau();
+    try { localStorage.setItem(CLE_PAN, "0"); } catch (e) {}
+    // Le clavier revient d'ou il venait, et non en haut de la page.
+    var c = avantPan && avantPan.focus ? avantPan : $("#assistant-btn");
+    if (c && c.focus) c.focus();
+    avantPan = null;
+  }
+
+  function initPanneau() {
+    var b = $("#assistant-btn");
+    if (b) b.addEventListener("click", function () {
+      if (panOuvert) fermerPanneau(); else ouvrirPanneau();
+    });
+    var f = $("#pan-fermer");
+    if (f) f.addEventListener("click", fermerPanneau);
+    var v = $("#voile");
+    if (v) v.addEventListener("click", fermerPanneau);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && panOuvert && !largeEcran()) fermerPanneau();
+    });
+    window.addEventListener("resize", function () { if (panOuvert) majPanneau(); });
+    var ouvre = false;
+    try { ouvre = localStorage.getItem(CLE_PAN) === "1"; } catch (e) {}
+    if (ouvre) { panOuvert = true; majPanneau(); demarrerAssistant(); }
+    else majPanneau();
+  }
+
+  // ---------- Renvoyer vers un endroit de la page ----------
+  //
+  // Une reponse gagne a montrer d'ou elle vient. Chaque element visable porte
+  // un data-ancre, pose au moment ou il est construit : un selecteur ecrit a
+  // la main casserait au premier remaniement, un data-ancre se voit.
+  //
+  // Cette table vit ici et non dans questions.js : le repertoire de questions
+  // ne connait pas le DOM de ce site, et doit rester lisible sans lui.
+
+  var ANCRES = {
+    "mouvement":        { vue: "accueil",    sel: '[data-ancre="mouvement"]' },
+    "moments":          { vue: "accueil",    sel: '[data-ancre="moments"]' },
+    "condition-age":    { vue: "accueil",    sel: '[data-ancre="condition-0"]' },
+    "condition-lieu":   { vue: "accueil",    sel: '[data-ancre="condition-1"]' },
+    "condition-duree":  { vue: "accueil",    sel: '[data-ancre="condition-2"]' },
+    "totaux":           { vue: "simulateur", sel: '[data-ancre="totaux"]' },
+    "leviers":          { vue: "simulateur", sel: '[data-ancre="leviers"]' },
+    "graphe-taux":      { vue: "simulateur", sel: '[data-ancre="graphe-taux"]' },
+    "graphe-cumul":     { vue: "simulateur", sel: '[data-ancre="graphe-cumul"]' }
+  };
+
+  var OU_VOIR = {
+    "cest-quoi": "moments",
+    "plafond-montant": "mouvement",
+    "plafond-couple": "totaux",
+    "conjoint-etranger": "totaux",
+    "qui-a-droit": "condition-lieu",
+    "frontalier": "condition-lieu",
+    "age-limite": "condition-age",
+    "mythe-10-ans": "condition-duree",
+    "quand-recuperer": "condition-duree",
+    "avant-60": "condition-duree",
+    "combien-ca-rend": "graphe-taux",
+    "marginal-vs-moyen": "graphe-taux",
+    "impot-sortie": "graphe-taux",
+    "declarer": "moments",
+    "vs-epargne-logement": "leviers",
+    "supports": "leviers"
+  };
+
+  var tSurligne = null;
+
+  function surligner(n) {
+    if (!n) return;
+    if (n.tagName === "DETAILS") n.open = true;
+    n.scrollIntoView({ behavior: doux(), block: "center" });
+    // Un seul endroit surligne a la fois. Deux marques en meme temps, dont une
+    // qui repond a une question deja oubliee, ne designent plus rien.
+    var d = document.querySelectorAll(".surligne");
+    for (var i = 0; i < d.length; i++) d[i].classList.remove("surligne");
+    // Retirer puis reposer la classe relance l'animation quand on redemande le
+    // meme endroit ; sans la lecture forcee, le navigateur regroupe les deux.
+    void n.offsetWidth;
+    n.classList.add("surligne");
+    clearTimeout(tSurligne);
+    tSurligne = setTimeout(function () { n.classList.remove("surligne"); }, 2800);
+  }
+
+  function montrer(cle) {
+    var a = ANCRES[cle];
+    if (!a) return false;
+    ouvrir(a.vue);
+    // La vue vient d'etre rendue : on laisse le navigateur poser la mise en
+    // page avant de mesurer ou defiler.
+    setTimeout(function () { surligner(document.querySelector(a.sel)); }, 90);
+    return true;
+  }
+
+  function ouVoir(e) {
+    if (OU_VOIR[e.id] && ANCRES[OU_VOIR[e.id]]) return OU_VOIR[e.id];
+    return null;
+  }
+
   // ---------- Le plafond comme un mouvement ----------
 
   function blocMouvement() {
@@ -395,18 +544,22 @@
     var valAn = T.taux.map(function (x) {
       return r.economieAnnuelleParTaux[String(Math.round(x * 100))] || 0;
     });
-    f.appendChild(bloc("Économie d'impôt chaque année",
+    var bt = bloc("Économie d'impôt chaque année",
       "Le même versement ne rend pas la même chose à tout le monde : c'est le taux qui décide.",
-      grapheBarres(valAn, libTaux)));
+      grapheBarres(valAn, libTaux));
+    bt.setAttribute("data-ancre", "graphe-taux");
+    f.appendChild(bt);
 
     var series = T.taux.map(function (x) {
       return r.serieCumulParTaux[String(Math.round(x * 100))] || [];
     }).filter(function (s) { return s.length; });
     if (series.length) {
-      f.appendChild(bloc("Ce que cela cumule sur " + T.horizonAns + " ans",
+      var bc = bloc("Ce que cela cumule sur " + T.horizonAns + " ans",
         "À versement constant et à taux constant. Ni rendement ni revalorisation : ce graphique " +
         "n'additionne que des économies d'impôt.",
-        grapheCourbes(series, libTaux, T.horizonAns)));
+        grapheCourbes(series, libTaux, T.horizonAns));
+      bc.setAttribute("data-ancre", "graphe-cumul");
+      f.appendChild(bc);
     }
 
     var w2 = el("div", "table-wrap"), t2 = el("table");
@@ -490,7 +643,12 @@
 
   function rendreAccueil() {
     var m = $("#acc-mouvement");
-    if (m) { m.innerHTML = ""; m.appendChild(blocMouvement()); }
+    if (m) {
+      m.innerHTML = "";
+      var bm = blocMouvement();
+      bm.setAttribute("data-ancre", "mouvement");
+      m.appendChild(bm);
+    }
 
     if (!entree) entree = casParDefaut();
     rendreCas("#acc-cas");
@@ -519,6 +677,7 @@
         li.appendChild(t);
         ol.appendChild(li);
       });
+      ol.setAttribute("data-ancre", "moments");
       p.appendChild(ol);
     }
 
@@ -538,6 +697,7 @@
         "l'avantage obtenu à l'entrée est repris. Deux motifs y échappent, la maladie grave et " +
         "l'invalidité."]].forEach(function (x, i) {
         var d = el("div", "qcard");
+        d.setAttribute("data-ancre", "condition-" + i);
         var b = el("span", "qcard-ic");
         b.appendChild(icone(["calendrier", "territoire", "duree"][i]));
         d.appendChild(b);
@@ -569,12 +729,8 @@
 
     var r = $("#acc-reserves");
     if (r) { r.innerHTML = ""; r.appendChild(blocReserves()); }
-    var s = $("#acc-sources");
-    if (s) { s.innerHTML = ""; s.appendChild(blocSources()); }
     var s2 = $("#sim-reserves");
     if (s2) { s2.innerHTML = ""; s2.appendChild(blocReserves()); }
-    var s3 = $("#sim-sources");
-    if (s3) { s3.innerHTML = ""; s3.appendChild(blocSources()); }
   }
 
   function blocReserves() {
@@ -588,20 +744,6 @@
     return f;
   }
 
-  function blocSources() {
-    var b = el("div", "srcbox");
-    b.appendChild(el("strong", null, "Sources officielles"));
-    var ul = el("ul");
-    T.sources.forEach(function (x) {
-      var li = el("li");
-      var a = el("a", null, x.t);
-      a.href = x.u; a.target = "_blank"; a.rel = "noopener noreferrer";
-      li.appendChild(a);
-      ul.appendChild(li);
-    });
-    b.appendChild(ul);
-    return b;
-  }
 
   // ---------- Questions frequentes ----------
 
@@ -857,7 +999,15 @@
     if (e.reserve) m.appendChild(el("span", "sous reserve", e.reserve));
     m.appendChild(blocCitations(e));
     var ch = el("div", "chips");
-    if (e.ouvreSimulateur) {
+    var cible = ouVoir(e);
+    if (cible) {
+      var bv = el("button", "chip vise");
+      bv.appendChild(icone("cible"));
+      bv.appendChild(document.createTextNode("Voir sur la page"));
+      bv.addEventListener("click", function () { montrer(cible); });
+      ch.appendChild(bv);
+    }
+    if (e.ouvreSimulateur && (!cible || ANCRES[cible].vue !== "simulateur")) {
       var bs = el("button", "chip", "Chiffrer sur ma situation");
       bs.addEventListener("click", function () { ouvrir("simulateur"); });
       ch.appendChild(bs);
@@ -918,26 +1068,62 @@
   // ---------- Pied de page ----------
 
   function initPied() {
+    // Les sources du pied sont celles que le repertoire cite reellement, sans
+    // doublon : une liste ecrite a la main finirait par mentir le jour ou une
+    // source change.
     var z = $("#pied-sources");
-    if (!z) return;
-    z.innerHTML = "";
-    var a = el("a", "lien-guide");
-    a.href = "../";
-    a.appendChild(document.createTextNode("Guide d'installation au Luxembourg"));
-    a.appendChild(icone("fleche"));
-    z.appendChild(a);
+    if (z) {
+      z.innerHTML = "";
+      var vues = {};
+      Q.entrees.forEach(function (e) {
+        (e.sources || []).forEach(function (src) {
+          if (vues[src.u]) return;
+          vues[src.u] = 1;
+          var li = el("li"), a = el("a");
+          a.href = src.u;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.appendChild(document.createTextNode(src.t));
+          a.appendChild(icone("lien"));
+          li.appendChild(a);
+          z.appendChild(li);
+        });
+      });
+    }
+
+    var l = $("#pied-liens");
+    if (l) {
+      l.innerHTML = "";
+      var li2 = el("li"), g = el("a", "lien-guide");
+      g.href = "../";
+      g.appendChild(document.createTextNode("Guide d'installation au Luxembourg"));
+      g.appendChild(icone("fleche"));
+      li2.appendChild(g);
+      l.appendChild(li2);
+
+      var li3 = el("li"), q = el("a");
+      q.href = "#questions";
+      q.appendChild(document.createTextNode("Toutes les questions"));
+      q.appendChild(icone("fleche"));
+      li3.appendChild(q);
+      l.appendChild(li3);
+    }
   }
 
   // ---------- Demarrage ----------
 
   function depuisHash() {
     var h = (window.location.hash || "").replace("#", "");
+    // #assistant reste une adresse valable : elle ouvre le panneau, sans
+    // changer la vue qu'on regardait.
+    if (h === "assistant") { ouvrirPanneau(); return; }
     ouvrir(h || "accueil", true);
   }
 
   initNav();
   initQuestions();
   initAssistant();
+  initPanneau();
   initPied();
   rendreAccueil();
   rendreSimulateur();

@@ -138,6 +138,23 @@ nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; 
   nav.tabs button { padding: 8px 10px; font-size: 13.5px; }
 }
 @media (max-width: 620px) { .brand-desc { display: none; } }
+/* Sous 520 px, le nom de la marque prend la moitie de la barre au detriment
+   des onglets, qui eux servent a naviguer. La marque garde son signe, qui
+   ramene a l'accueil et se reconnait aussi bien. */
+@media (max-width: 520px) { .brand-txt { display: none; } }
+
+/* Sous 760 px, trois elements se disputent la barre et les onglets sont les
+   perdants : ils tombent a la largeur d'une icone. Le bouton de l'assistant
+   passe donc au seul pictogramme, et les onglets a leur libelle seul. Ce sont
+   les onglets qui portent la navigation, ils gardent le texte. */
+@media (max-width: 760px) {
+  .btn-assistant { padding: 0; width: 38px; height: 38px; justify-content: center; }
+  .btn-assistant span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .btn-assistant .ic { width: 1.3em; height: 1.3em; }
+  nav.tabs { flex: 1 1 auto; }
+  nav.tabs button .ic { display: none; }
+  nav.tabs button { gap: 0; }
+}
 
 /* ---------- Structure ---------- */
 
@@ -303,10 +320,6 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .srcs { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--border); font-size: 13px; }
 .srcs strong { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: var(--micro); margin-bottom: 5px; }
 .srcs a { display: block; margin: 3px 0; }
-.srcbox { margin-top: 34px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); font-size: 14px; }
-.srcbox strong { color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: var(--micro); }
-.srcbox ul { margin: 10px 0 0; padding-left: 20px; }
-.srcbox li { margin: 5px 0; }
 
 /* ---------- Assistant ---------- */
 
@@ -373,40 +386,147 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
   .graphe { width: 660px; max-width: none; }
 }
 
-/* ---------- Pied ----------
-   Il est visible sur les quatre vues. Quatre lignes de mentions repetees a
-   chaque ecran ne sont plus lues : elles tiennent donc sur une ligne, et le
-   detail s'ouvre pour qui le cherche. */
+
+/* ---------- Le panneau de l'assistant ----------
+   Fixe, hauteur d'ecran, defilement propre. Un cadre qui defile a l'interieur
+   d'une page qui defile oblige a viser pour choisir lequel bouge ; ici les
+   deux zones sont separees a l'ecran et chacune porte le sien. */
+
+.btn-assistant {
+  flex: none; display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border: 1px solid var(--border-fort); border-radius: var(--r-s);
+  background: var(--surface); color: var(--text-2); cursor: pointer;
+  font: inherit; font-size: 13.5px; font-weight: 500; white-space: nowrap;
+  transition: color .16s, border-color .16s, background .16s;
+}
+.btn-assistant:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.btn-assistant.actif { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+.voile {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(1, 33, 60, .34);
+  -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px);
+}
+
+.panneau {
+  position: fixed; z-index: 80;
+  top: var(--h-top); right: 0; bottom: 0; width: min(420px, 100vw);
+  display: flex; flex-direction: column;
+  background: var(--surface); border-left: 1px solid var(--border);
+  box-shadow: var(--ombre-m);
+  padding-right: env(safe-area-inset-right);
+}
+.pan-tete {
+  flex: none; display: flex; align-items: center; gap: 10px;
+  padding: 14px 12px 14px 20px; border-bottom: 1px solid var(--border);
+}
+.pan-tete h2 {
+  flex: 1; margin: 0; font-family: var(--titre); font-weight: 600; font-size: 16px;
+  display: flex; align-items: center; gap: 9px; color: var(--text);
+}
+.pan-fermer {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-s); background: none; color: var(--muted);
+  cursor: pointer; font-size: 17px; transition: color .16s, background .16s;
+}
+.pan-fermer:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* Un seul element defile : ce corps. La barre de saisie reste au bas du
+   panneau, ou le pouce la trouve sans faire remonter la conversation. */
+.pan-corps { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 20px 4px; }
+.pan-intro { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.pan-perimetre { margin: 0 0 14px; }
+.pan-perimetre summary {
+  cursor: pointer; list-style: none; font-size: 13px; color: var(--accent);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.pan-perimetre summary::-webkit-details-marker { display: none; }
+.pan-perimetre .perimetre { margin-top: 12px; }
+.panneau .chat-log { max-height: none; overflow: visible; padding: 0; }
+.panneau .chat-bar {
+  flex: none; border-top: 1px solid var(--border); padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: var(--surface);
+}
+.panneau .msg { max-width: 100%; }
+
+/* Au-dela de 1180 px le panneau pousse le contenu au lieu de le recouvrir :
+   on peut lire le simulateur et poser sa question en meme temps, ce qui est
+   tout l'interet de le sortir de son onglet. */
+@media (min-width: 1180px) {
+  body[data-panneau="1"] main,
+  body[data-panneau="1"] .pied { margin-right: min(420px, 100vw); }
+  body[data-panneau="1"] main, body[data-panneau="1"] .pied { transition: margin-right .22s cubic-bezier(.2,.7,.2,1); }
+}
+
+/* ---------- Renvoyer vers un endroit de la page ----------
+   Le surlignage dure le temps qu'il faut pour trouver, puis s'efface : une
+   marque qui reste devient une decoration et on cesse de la voir. */
+
+.chip.vise { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border-fort)); }
+.chip.vise:hover { background: var(--accent-soft); }
+
+.surligne { animation: sursaut 2.8s cubic-bezier(.2,.7,.2,1); border-radius: var(--r-m); }
+@keyframes sursaut {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); background-color: var(--accent-soft); }
+  12%  { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 26%, transparent); background-color: var(--accent-soft); }
+  70%  { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 26%, transparent); background-color: var(--accent-soft); }
+  100% { box-shadow: 0 0 0 0 transparent; background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surligne { animation: none; box-shadow: 0 0 0 3px var(--accent); }
+}
+
+/* ---------- Pied de page ----------
+   Ce qu'il porte d'utile, ce sont les sources : le site s'interdit d'afficher
+   une reponse sans elles, autant les rassembler. La mention legale tient sur
+   une ligne, en bas, sans accordeon : trois lignes ne meritent pas un
+   mecanisme a ouvrir. */
 
 .pied {
   border-top: 1px solid var(--border); background: var(--surface-2);
-  padding: 16px max(22px, env(safe-area-inset-left));
-  font-size: 12.5px;
+  padding: 34px max(22px, env(safe-area-inset-left)) 0;
+  font-size: 13px;
 }
-.pied-in {
+.pied-grille {
   max-width: var(--max); margin: 0 auto;
-  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
-  color: var(--muted);
+  display: grid; gap: 26px 40px;
+  grid-template-columns: 1.5fr 1.2fr 1fr;
 }
-.pied-note { color: var(--muted); }
-.pied-plus { margin: 0; }
-.pied-plus summary {
-  cursor: pointer; color: var(--muted); list-style: none;
-  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+.pied-marque { display: flex; gap: 12px; align-items: flex-start; }
+.pied-marque .mark {
+  width: 32px; height: 32px; border-radius: var(--r-s); flex: none;
+  display: grid; place-items: center; background: var(--accent); color: #fff;
 }
-.pied-plus summary::-webkit-details-marker { display: none; }
-.pied-plus summary:hover { color: var(--accent); }
-.pied-plus p { margin: 9px 0 0; max-width: 70ch; }
-#pied-sources { margin-left: auto; }
-.pied a { color: var(--accent); }
-.lien-guide {
-  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
-  color: var(--muted); text-decoration: none; font-size: 12.5px;
-  transition: color .16s;
+.pied-marque .mark svg { width: 18px; height: 18px; }
+.pied-marque strong { display: block; font-family: var(--titre); font-size: 14.5px; color: var(--text); }
+.pied-marque p { margin: 4px 0 0; color: var(--muted); max-width: 34ch; }
+.pied-col h2 {
+  margin: 0 0 10px; font-family: var(--sans); font-size: var(--micro);
+  font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
 }
-.lien-guide .ic { transition: transform .18s cubic-bezier(.2,.7,.2,1); }
-.lien-guide:hover .ic { transform: translateX(3px); }
-.lien-guide:hover { color: var(--accent); border-color: var(--accent); }
+.pied-col ul { list-style: none; margin: 0; padding: 0; }
+.pied-col li { margin-bottom: 7px; line-height: 1.45; }
+.pied-col a {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  color: var(--text-2); text-decoration: none;
+}
+.pied-col a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.pied-col a .ic { opacity: .5; }
+.pied-col a:hover .ic { opacity: 1; }
+.pied-bas {
+  max-width: var(--max); margin: 26px auto 0; padding: 14px 0 18px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); max-width: var(--max);
+}
+
+@media (max-width: 860px) {
+  .pied-grille { grid-template-columns: 1fr 1fr; }
+  .pied-marque { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .pied-grille { grid-template-columns: 1fr; }
+}
 
 /* ---------- Cibles tactiles ---------- */
 
@@ -419,8 +539,7 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
   .check input { width: 22px; height: 22px; }
   .check label { min-height: 44px; font-size: 15px; }
   .qitem summary { min-height: 52px; }
-  .srcs a, .srcbox a { min-height: 40px; display: flex; align-items: center; }
-  input, select { font-size: 16px; }
+  .srcs a,   input, select { font-size: 16px; }
 }
 
 @media (max-width: 700px) {

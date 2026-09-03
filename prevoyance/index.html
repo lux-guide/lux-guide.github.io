@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Épargne-retraite au Luxembourg</title>
 <meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
-<link rel="stylesheet" href="app/site.css?v=2">
+<link rel="stylesheet" href="app/site.css?v=3">
 </head>
 <body>
 
@@ -35,6 +35,8 @@
     <symbol id="i-bouclier" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 5 6v6c0 4.2 3 7.4 7 8.8 4-1.4 7-4.6 7-8.8V6z"/><path d="M9.2 12.2l2 2 3.6-3.9"/></symbol>
     <symbol id="i-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14"/><path d="M13.5 7l5 5-5 5"/></symbol>
     <symbol id="i-lien" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1.4 1.4"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.4-1.4"/></symbol>
+    <symbol id="i-fermer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-cible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6"/></symbol>
     <symbol id="i-source" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l5 5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M13.5 3.5V9H19"/><path d="M8 13h8M8 16.5h5"/></symbol>
   </defs>
 </svg>
@@ -60,9 +62,14 @@
     <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
       <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-accueil"/></svg><span>Accueil</span></button>
       <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calcul"/></svg><span>Simulateur</span></button>
-      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-questions"/></svg><span>Questions fréquentes</span></button>
-      <button role="tab" id="tab-assistant" data-vue="assistant" aria-selected="false" aria-controls="vue-assistant" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg><span>Poser une question</span></button>
+      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-questions"/></svg><span>Questions</span></button>
     </nav>
+    <!-- L'assistant n'est pas une destination, c'est un compagnon : il s'ouvre
+         par-dessus la vue courante et y reste pendant qu'on lit. -->
+    <button id="assistant-btn" class="btn-assistant" aria-expanded="false" aria-controls="panneau">
+      <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg>
+      <span>Assistant</span>
+    </button>
   </div>
 </header>
 
@@ -110,7 +117,6 @@
     <div class="grid" id="acc-questions"></div>
 
     <div class="notice small" id="acc-reserves"></div>
-    <div id="acc-sources"></div>
   </section>
 
   <!-- Ce que cela rapporte -->
@@ -125,7 +131,6 @@
     </div>
     <div id="sim-resultat"></div>
     <div class="notice small" id="sim-reserves"></div>
-    <div id="sim-sources"></div>
   </section>
 
   <!-- Questions fréquentes -->
@@ -145,46 +150,78 @@
   </section>
 
   <!-- Poser une question -->
-  <section class="vue" role="tabpanel" aria-labelledby="tab-assistant" id="vue-assistant" hidden>
-    <h1>Poser une question</h1>
-    <p class="lead">
-      Les réponses sont écrites et relues à l'avance, chacune avec sa source. Aucun modèle de
-      langue ne rédige ici : sur une déduction fiscale, une phrase juste la plupart du temps
-      n'est pas un niveau de service, et l'erreur ne se verrait pas.
-    </p>
-
-    <div class="perimetre" id="as-perimetre"></div>
-
-    <div class="card conv">
-      <div class="chat-log" id="as-log"></div>
-      <div class="chat-bar">
-        <input type="text" id="as-input" placeholder="Votre question, en français courant" autocomplete="off">
-        <button class="btn" id="as-envoyer">Demander</button>
-      </div>
-    </div>
-  </section>
 
 </main>
 
+<!-- Le panneau est fixe et porte son propre defilement. Un cadre qui defile a
+     l'interieur d'une page qui defile oblige a viser pour choisir lequel
+     bouge : ici les deux zones sont separees a l'ecran, et chacune la sienne. -->
+<div class="voile" id="voile" hidden></div>
+<aside class="panneau" id="panneau" aria-labelledby="pan-titre" hidden>
+  <div class="pan-tete">
+    <h2 id="pan-titre">
+      <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg>
+      Poser une question
+    </h2>
+    <button class="pan-fermer" id="pan-fermer" aria-label="Fermer l'assistant">
+      <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-fermer"/></svg>
+    </button>
+  </div>
+  <div class="pan-corps" id="pan-corps">
+    <p class="pan-intro">
+      Les réponses sont écrites et relues à l'avance, chacune avec sa source. Aucun modèle de
+      langue ne rédige ici.
+    </p>
+    <details class="pan-perimetre">
+      <summary>Ce que je sais, ce que je ne sais pas</summary>
+      <div class="perimetre" id="as-perimetre"></div>
+    </details>
+    <div class="chat-log" id="as-log"></div>
+  </div>
+  <div class="chat-bar">
+    <input type="text" id="as-input" placeholder="Votre question, en français courant" autocomplete="off">
+    <button class="btn" id="as-envoyer">Demander</button>
+  </div>
+</aside>
+
 <!-- Une mention qu'on lit sur les quatre vues n'est plus lue nulle part. Elle
      tient donc sur une ligne, et le detail s'ouvre pour qui le cherche. -->
+<!-- Ce qu'un pied de page porte d'utile ici, ce sont les sources : le site
+     s'interdit d'afficher une reponse sans elles, autant les rassembler. La
+     mention legale tient sur une ligne, en bas, et ne se replie pas derriere
+     un accordeon : trois lignes de texte ne meritent pas un mecanisme. -->
 <footer class="pied">
-  <div class="pied-in">
-    <span class="pied-note">Démonstration. Rien de ce que vous saisissez ne quitte votre navigateur.</span>
-    <details class="pied-plus">
-      <summary>Mentions</summary>
-      <p>
-        Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
-        source. Ce site ne compare aucun contrat du marché, ne recommande aucun placement et ne
-        collecte aucune donnée.
-      </p>
-    </details>
-    <span id="pied-sources"></span>
+  <div class="pied-grille">
+    <div class="pied-marque">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M3 17.5 9 11l4 3.5L21 6"/>
+          <path d="M15.5 6H21v5.5"/>
+        </svg>
+      </span>
+      <div>
+        <strong>Épargne-retraite au Luxembourg</strong>
+        <p>Démonstration. Sans compte, sans nom, et sans modèle de langue.</p>
+      </div>
+    </div>
+    <div class="pied-col">
+      <h2>Sources officielles</h2>
+      <ul id="pied-sources"></ul>
+    </div>
+    <div class="pied-col">
+      <h2>Voir aussi</h2>
+      <ul id="pied-liens"></ul>
+    </div>
   </div>
+  <p class="pied-bas">
+    Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
+    source. Ce site ne compare aucun contrat du marché et ne recommande aucun placement. Rien de
+    ce que vous saisissez ne quitte votre navigateur.
+  </p>
 </footer>
 
-<script src="app/prevoyance.js?v=2"></script>
-<script src="app/questions.js?v=2"></script>
-<script src="app/site.js?v=2"></script>
+<script src="app/prevoyance.js?v=3"></script>
+<script src="app/questions.js?v=3"></script>
+<script src="app/site.js?v=3"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Le site epargne-retraite : quatre onglets, et les regles de fond.
+# Le site epargne-retraite : trois onglets, un panneau, et les regles de fond.
 #
 # Lancer un serveur sur le dossier, puis ce fichier :
 #   python -m http.server 8932 --directory prevoyance
@@ -34,10 +34,11 @@ with sync_playwright() as p:
     pg.wait_for_timeout(900)
 
     print("1. Un site a part, pas un onglet du guide")
-    verifie(pg.locator("#tabs button").count() == 4, "quatre onglets et pas davantage")
+    verifie(pg.locator("#tabs button").count() == 3, "trois onglets, l'assistant n'en est plus un")
+    verifie(pg.locator("#assistant-btn").count() == 1, "il s'ouvre par un bouton a part")
     verifie(pg.locator("nav.tabs button[data-panel]").count() == 0, "aucune barre du guide d'installation")
     verifie("installation" not in pg.inner_text("header").lower(), "le mot installation n'est pas dans l'en-tete")
-    verifie(pg.locator(".lien-guide").count() == 1, "un lien discret vers le guide, dans le pied")
+    verifie(pg.locator(".lien-guide").count() == 1, "un lien vers le guide, dans le pied")
     verifie(pg.get_attribute(".lien-guide", "href") == "../", "il pointe vers le site voisin")
 
     print("2. L'accueil chiffre avant de demander quoi que ce soit")
@@ -125,11 +126,32 @@ with sync_playwright() as p:
     verifie("Pas nécessairement" in fq, "la nature du contrat n'est plus donnee pour une assurance vie")
     verifie("établissements de crédit" in fq, "les deux familles de prestataires figurent")
 
-    print("9. L'assistant annonce son perimetre avant qu'on lui parle")
-    pg.click("#tabs button[data-vue='assistant']")
+    print("9. L'assistant s'ouvre a cote de la page, pas a sa place")
+    pg.set_viewport_size({"width": 1440, "height": 950})
+    pg.goto(URL)
     pg.wait_for_timeout(600)
+    verifie(not pg.locator("#panneau").is_visible(), "il est ferme au premier chargement")
+    pg.click("#assistant-btn")
+    pg.wait_for_timeout(500)
+    verifie(pg.locator("#panneau").is_visible(), "le bouton l'ouvre")
+    verifie(pg.locator("#vue-accueil").is_visible(), "et la vue qu'on lisait reste ouverte")
+    # Au-dela de 1180 px il pousse le contenu au lieu de le recouvrir : c'est
+    # tout l'interet de le sortir de son onglet, lire et demander a la fois.
+    mg = pg.evaluate("parseInt(getComputedStyle(document.querySelector('main')).marginRight)")
+    verifie(mg > 300, "sur grand ecran il pousse le contenu (%d px)" % mg)
+    verifie(not pg.locator("#voile").is_visible(), "et n'assombrit rien, puisqu'il ne masque rien")
+    # Le panneau est fixe et porte son propre defilement : plus de cadre qui
+    # defile a l'interieur d'une page qui defile.
+    fixe = pg.evaluate("getComputedStyle(document.querySelector('#panneau')).position")
+    verifie(fixe == "fixed", "il est fixe, pas pose dans le flux")
+    imbrique = pg.evaluate("""() => {
+      const log = document.querySelector('#as-log');
+      const s = getComputedStyle(log);
+      return s.overflowY === 'auto' || s.overflowY === 'scroll';
+    }""")
+    verifie(not imbrique, "la conversation ne defile pas dans son propre cadre")
     verifie(pg.locator("#as-perimetre .per-bloc").count() == 2, "ce qu'il sait et ce qu'il ne sait pas")
-    per = pg.inner_text("#as-perimetre")
+    per = pg.eval_on_selector("#as-perimetre", "e => e.textContent")
     verifie("rendement" in per and "contrat choisir" in per, "les limites sont nommees")
 
     print("10. Quatre statuts, quatre rendus")
@@ -193,10 +215,14 @@ with sync_playwright() as p:
             "aucun chiffre de rendement annonce")
 
     print("15. Chaque vue a son adresse")
-    for v in ["simulateur", "questions", "assistant"]:
+    for v in ["simulateur", "questions"]:
         pg.goto(URL + "#" + v)
         pg.wait_for_timeout(500)
         verifie(pg.locator("#vue-" + v).is_visible(), "#%s s'ouvre par son adresse" % v)
+    # L'assistant n'est plus une vue, mais son adresse reste valable.
+    pg.goto(URL + "#assistant")
+    pg.wait_for_timeout(600)
+    verifie(pg.locator("#panneau").is_visible(), "#assistant ouvre le panneau")
 
     print("16. Rien ne deborde, sur telephone comme sur bureau")
     # Les graphiques font 720 de large : c'est la vue qui les porte qu'il faut
@@ -235,7 +261,7 @@ with sync_playwright() as p:
     pg.goto(URL)
     pg.wait_for_timeout(500)
     verifie(pg.locator("#theme-btn").count() == 0, "aucun selecteur de theme")
-    verifie(pg.locator("nav.tabs button .ic").count() == 4, "chaque onglet porte son icone")
+    verifie(pg.locator("nav.tabs button .ic").count() == 3, "chaque onglet porte son icone")
     verifie(pg.locator(".etapes .etape-ic .ic").count() == 4, "chacun des quatre moments porte la sienne")
     verifie(pg.locator(".qcard-ic .ic").count() >= 3, "et chacune des trois conditions")
     glyphes = pg.evaluate("""() => {
@@ -244,11 +270,20 @@ with sync_playwright() as p:
     }""")
     verifie(not glyphes, "aucun caractere-image dans le texte rendu %s" % (glyphes or ""))
 
-    print("17c. Une mention lue partout n'est plus lue : le pied tient sur une ligne")
-    h = pg.evaluate("document.querySelector('footer.pied').getBoundingClientRect().height")
-    verifie(h < 90, "le pied de page fait %d px, pas un pave" % h)
-    verifie(pg.locator(".pied-plus").count() == 1, "le detail des mentions reste accessible")
-    verifie(not pg.locator(".pied-plus p").first.is_visible(), "mais il est replie par defaut")
+    print("17c. Le pied porte les sources, et elles ne sont pas ecrites a la main")
+    # Une liste de sources recopiee finit par mentir le jour ou une source
+    # change. Celle du pied est construite depuis les sources que le
+    # repertoire cite reellement.
+    citees = pg.evaluate("""() => {
+      const u = new Set();
+      window.QUESTIONS.entrees.forEach(e => (e.sources || []).forEach(s => u.add(s.u)));
+      return [...u];
+    }""")
+    liens = pg.eval_on_selector_all("#pied-sources a", "e => e.map(x => x.href)")
+    verifie(sorted(liens) == sorted(citees),
+            "le pied liste exactement les %d sources citees" % len(citees))
+    verifie(pg.locator(".pied-plus").count() == 0, "aucun accordeon pour trois lignes de mentions")
+    verifie(pg.locator(".pied-bas").count() == 1, "la mention legale tient en un paragraphe")
 
     print("18. Le texte se lit, mesure et non juge a l'oeil")
     # Un gris trop clair passe l'inspection visuelle et rate la mesure. Celui
@@ -292,7 +327,7 @@ with sync_playwright() as p:
       });
       return [...new Set(out)];
     }"""
-    for vue in ["", "#simulateur", "#questions", "#assistant"]:
+    for vue in ["", "#simulateur", "#questions"]:
         pg.goto(URL + vue)
         pg.wait_for_timeout(600)
         mauvais = pg.evaluate(CONTRASTE)
@@ -326,6 +361,36 @@ with sync_playwright() as p:
     verifie(pg.eval_on_selector_all(".graphe", "e => e.every(x => x.getAttribute('aria-hidden') === 'true')"),
             "les graphiques ne sont pas lus deux fois par un lecteur d'ecran")
     verifie(pg.locator("#sim-resultat table").count() >= 2, "les memes chiffres restent en tableau")
+
+    print("20. L'assistant renvoie a l'endroit exact de la page")
+    # Une reponse gagne a montrer d'ou elle vient. Le bouton ouvre la bonne
+    # vue, y defile et surligne l'element, le temps de le trouver.
+    pg.set_viewport_size({"width": 1440, "height": 950})
+    pg.goto(URL + "#assistant")
+    pg.wait_for_timeout(700)
+
+    def demander_pan(q):
+        pg.fill("#as-input", q)
+        pg.press("#as-input", "Enter")
+        pg.wait_for_timeout(700)
+
+    for q, vue, ancre in [
+        ("un frontalier y a t il droit", "accueil", "condition-1"),
+        ("combien ca me rapporte selon mon taux", "simulateur", "graphe-taux"),
+        ("l argent est il bloque dix ans", "accueil", "condition-2"),
+    ]:
+        demander_pan(q)
+        vise = pg.locator("#as-log .chip.vise").last
+        verifie(vise.count() > 0, "« %s » propose de voir sur la page" % q)
+        vise.click()
+        pg.wait_for_timeout(900)
+        ouverte = pg.evaluate("[...document.querySelectorAll('.vue')].filter(v => !v.hidden).map(v => v.id)")
+        verifie(ouverte == ["vue-" + vue], "elle ouvre %s" % vue)
+        marque = pg.eval_on_selector_all(".surligne", "e => e.map(x => x.getAttribute('data-ancre'))")
+        verifie(marque == [ancre], "et surligne %s, un seul element" % ancre)
+        # Le panneau ne s'est pas ferme : on lit la reponse et l'endroit
+        # qu'elle designe en meme temps.
+        verifie(pg.locator("#panneau").is_visible(), "sans fermer le panneau")
 
     b.close()
 
