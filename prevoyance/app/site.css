@@ -66,7 +66,11 @@
   vertical-align: -.18em; color: inherit; pointer-events: none;
 }
 [hidden] { display: none !important; }
-html, body { overflow-x: hidden; }
+/* « clip » et non « hidden » : hidden fait du corps un conteneur de
+   defilement, et un element sticky pose dedans se cale alors sur un conteneur
+   qui ne defile jamais. Il glissait donc avec la page au lieu de rester en
+   haut. « clip » coupe le debordement sans creer ce conteneur. */
+html, body { overflow-x: clip; }
 /* La colonne de page contient ses marges : sans quoi celle du premier titre
    ressortirait au-dessus d'elle et le defilement commencerait de travers. */
 .page { display: flow-root; }
@@ -108,7 +112,7 @@ header.top {
 .brand-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1; }
 .brand-txt { font-family: var(--titre); font-weight: 700; font-size: 18px; letter-spacing: -.2px; white-space: nowrap; }
 .brand-desc {
-  font-size: 9.5px; font-weight: 620; letter-spacing: 1.6px;
+  font-size: var(--micro); font-weight: 620; letter-spacing: 1.2px;
   text-transform: uppercase; color: var(--muted); white-space: nowrap;
 }
 
@@ -256,7 +260,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   background: var(--accent-soft); color: var(--accent); font-size: 18px;
 }
 .qcard h3 { margin: 0 0 6px; }
-.qcard p { margin: 0; font-size: 14px; color: var(--muted); }
+.qcard p { margin: 0; font-size: 14px; color: var(--muted); max-width: 68ch; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); margin: 18px 0; }
 table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
@@ -304,7 +308,7 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
   background: var(--accent-soft); color: var(--accent); font-size: 18px;
 }
 .etapes strong { display: block; font-size: 16.5px; margin-bottom: 3px; }
-.etapes p { margin: 0; font-size: 14.5px; }
+.etapes p { margin: 0; font-size: 14.5px; max-width: 74ch; }
 .etapes li > div { padding-top: 6px; }
 
 /* ---------- Questions ---------- */
@@ -617,6 +621,19 @@ body[data-redim="1"] .pan-poignee { pointer-events: auto; }
   }
 }
 
+/* Sur telephone, le volet prend tout l'ecran. Un panneau de 257 px sur un
+   ecran de 390 laisse derriere lui une bande de page qu'on ne peut ni lire ni
+   utiliser : autant s'y consacrer entierement, et revenir par la croix. */
+@media (max-width: 760px) {
+  .panneau { width: 100%; }
+  /* Rien a redimensionner quand on occupe deja tout. */
+  .pan-poignee { display: none; }
+  /* Celui du volet n'a plus rien a assombrir, puisque le volet couvre tout.
+     La regle vise donc ce voile-la, et non la classe : celui de la fiche doit
+     continuer a assombrir ce qui est derriere elle. */
+  body[data-panneau="1"] #voile { display: none; }
+}
+
 /* ---------- Renvoyer vers un endroit de la page ----------
    Le surlignage dure le temps qu'il faut pour trouver, puis s'efface : une
    marque qui reste devient une decoration et on cesse de la voir. */
@@ -633,6 +650,79 @@ body[data-redim="1"] .pan-poignee { pointer-events: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .surligne { animation: none; box-shadow: 0 0 0 3px var(--accent); }
+}
+
+
+/* ---------- La fiche d'une source ----------
+   Sur telephone, un titre de source tient sur trois lignes et l'on tape dessus
+   sans savoir ou l'on va. La fiche dit ce que la source est avant qu'on quitte
+   le site : l'organisme, la nature du document, ce qu'il etablit ici, et la
+   date ou le lien a ete verifie. */
+
+.fiche-voile { z-index: 90; }
+.fiche {
+  position: fixed; z-index: 91; left: 0; right: 0; bottom: 0;
+  max-height: 86vh; overflow-y: auto;
+  background: var(--surface); border-top: 1px solid var(--border);
+  border-radius: 14px 14px 0 0; box-shadow: var(--ombre-m);
+  padding: 22px 20px max(22px, env(safe-area-inset-bottom));
+}
+/* Elle monte du bas sur telephone, la ou se trouve le pouce. Sur un ecran
+   large, elle se pose au centre : une feuille collee au bas d'un grand ecran
+   oblige a descendre les yeux pour rien. */
+@media (min-width: 640px) {
+  .fiche {
+    left: 50%; right: auto; bottom: auto; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(520px, calc(100vw - 40px));
+    border-radius: var(--r-m); border: 1px solid var(--border);
+  }
+}
+.fiche-fermer {
+  position: absolute; top: 12px; right: 12px;
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-s); background: none; color: var(--muted); cursor: pointer;
+}
+.fiche-fermer:hover { color: var(--accent); background: var(--accent-soft); }
+.fiche-haut { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; padding-right: 40px; }
+.fiche-organisme {
+  font-size: var(--micro); font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-soft); padding: 4px 9px; border-radius: var(--r-s);
+}
+.fiche-nature { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.fiche h3 { margin: 0 0 10px; font-size: 17px; line-height: 1.35; }
+.fiche-porte { margin: 0 0 14px; font-size: 14px; color: var(--text-2); }
+.fiche-verif { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; font-size: 13px; color: var(--ok); }
+/* L'adresse en entier, coupee proprement : elle dit ou l'on va, et une adresse
+   tronquee par des points de suspension ne dit plus rien. */
+.fiche-adresse {
+  margin: 0 0 18px; font-size: 12px; color: var(--muted);
+  word-break: break-all; line-height: 1.5;
+  background: var(--surface-2); border-radius: var(--r-s); padding: 9px 11px;
+}
+.fiche-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.fiche-actions .btn { flex: 1 1 auto; justify-content: center; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
+
+/* Le nom court sur telephone, le titre entier des qu'il y a la place. */
+.src-long { display: none; }
+.src-court { display: inline; }
+@media (min-width: 761px) {
+  .src-long { display: inline; }
+  .src-court { display: none; }
+}
+@media (max-width: 760px) {
+  /* Une source devient une ligne qu'on peut viser du doigt. */
+  .srcs a {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 44px; margin: 0; padding: 4px 0;
+    border-bottom: 1px solid var(--border); text-decoration: none;
+  }
+  .srcs a:last-child { border-bottom: 0; }
+  .srcs a::after {
+    content: ""; flex: none; width: 7px; height: 7px;
+    border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor;
+    transform: rotate(-45deg);
+  }
 }
 
 /* ---------- Pied de page ----------
@@ -675,8 +765,11 @@ body[data-redim="1"] .pan-poignee { pointer-events: auto; }
 .pied-bas {
   max-width: var(--max); margin: 26px auto 0; padding: 14px 0 18px;
   border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--muted); max-width: var(--max);
+  font-size: 12px; color: var(--muted);
 }
+/* La mention legale fait trois lignes sur un ecran large et 116 caracteres
+   par ligne sans borne : l'oeil perd le debut de la ligne suivante. */
+.pied-bas { max-width: 80ch; }
 
 @media (max-width: 860px) {
   .pied-grille { grid-template-columns: 1fr 1fr; }
@@ -697,7 +790,15 @@ body[data-redim="1"] .pan-poignee { pointer-events: auto; }
   .check input { width: 22px; height: 22px; }
   .check label { min-height: 44px; font-size: 15px; }
   .qitem summary { min-height: 52px; }
-  .srcs a,   input, select { font-size: 16px; }
+  .srcs a, input, select { font-size: 16px; }
+  /* Tout ce qui se tape fait au moins 44 px de haut, y compris ce qui n'a
+     l'air que d'un lien : le pied de page, les resumes qui se deplient, les
+     sources d'une reponse. */
+  .pied-col a, .pied-plus summary, .pan-perimetre summary,
+  .srcs a, summary, .lien-guide { min-height: 44px; display: flex; align-items: center; }
+  .pied-col a { gap: 8px; }
+  .brand { min-height: 44px; }
+  .fiche-actions .btn { min-height: 48px; }
 }
 
 @media (max-width: 700px) {

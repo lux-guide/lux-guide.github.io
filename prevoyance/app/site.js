@@ -310,15 +310,21 @@
   var CLE_LARGEUR = "prevoyance.panneau.largeur.v1";
   var L_MIN = 320, L_MAX = 720;
 
+  // La largeur voulue et la largeur affichee sont deux choses. Le plafond des
+  // deux tiers borne l'affichage, jamais la preference : sinon un passage par
+  // une fenetre etroite efface un reglage qu'on avait pris la peine de faire,
+  // et l'on ne le retrouve plus en reagrandissant.
+  var largeurVoulue = 420;
+
   function poserLargeur(px) {
-    var l = Math.max(L_MIN, Math.min(L_MAX, Math.round(px)));
-    // Jamais plus des deux tiers de l'ecran : au-dela, ce n'est plus un
-    // panneau a cote de la page, c'est la page qui devient une marge.
-    l = Math.min(l, Math.round(window.innerWidth * 0.66));
+    if (px !== null && px !== undefined) {
+      largeurVoulue = Math.max(L_MIN, Math.min(L_MAX, Math.round(px)));
+    }
+    var l = Math.min(largeurVoulue, Math.round(window.innerWidth * 0.66));
     document.documentElement.style.setProperty("--pan-l", l + "px");
     var p = $("#pan-poignee");
     if (p) p.setAttribute("aria-valuenow", String(l));
-    return l;
+    return largeurVoulue;
   }
 
   function initLargeur() {
@@ -343,10 +349,7 @@
       document.removeEventListener("touchmove", glisser);
       document.removeEventListener("mouseup", finir);
       document.removeEventListener("touchend", finir);
-      try {
-        var n = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10);
-        localStorage.setItem(CLE_LARGEUR, String(n));
-      } catch (e) {}
+      try { localStorage.setItem(CLE_LARGEUR, String(largeurVoulue)); } catch (e) {}
     }
     function commencer(e) {
       document.body.setAttribute("data-redim", "1");
@@ -363,9 +366,8 @@
     // separateur. Sans cela, la largeur ne serait reglable qu'a la souris.
     p.addEventListener("keydown", function (e) {
       var pas = e.shiftKey ? 60 : 16, l = null;
-      var a = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10);
-      if (e.key === "ArrowLeft") l = a + pas;
-      else if (e.key === "ArrowRight") l = a - pas;
+      if (e.key === "ArrowLeft") l = largeurVoulue + pas;
+      else if (e.key === "ArrowRight") l = largeurVoulue - pas;
       else if (e.key === "Home") l = L_MAX;
       else if (e.key === "End") l = L_MIN;
       if (l === null) return;
@@ -427,7 +429,8 @@
     });
     window.addEventListener("resize", function () {
       if (panOuvert) majPanneau();
-      poserLargeur(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10));
+      // Sans argument : on recalcule l'affichage sans toucher a la preference.
+      poserLargeur(null);
     });
 
     var vider = $("#pan-vider");
@@ -1009,12 +1012,117 @@
 
   // Pas de source, pas de reponse : le rendu refuse d'afficher un texte sans
   // ses citations.
+  // ---------- La fiche d'une source ----------
+  //
+  // Sur telephone, un titre de source tient sur trois lignes et l'on tape
+  // dessus sans savoir ou l'on va. La fiche dit d'abord ce que la source est,
+  // ce qu'elle etablit ici, et quand le lien a ete verifie. On y va ensuite
+  // en connaissance de cause, ou l'on copie l'adresse pour plus tard.
+  //
+  // Elle ne montre pas la page officielle : aucune ne se laisse encadrer, et
+  // un document de seize pages ouvert sur un telephone, sans savoir ou
+  // regarder, ne prouve rien a personne.
+
+  var sourceAvant = null;
+
+  function fermerFiche() {
+    var f = $("#fiche");
+    if (!f || f.hidden) return;
+    f.hidden = true;
+    var v = $("#fiche-voile");
+    if (v) v.hidden = true;
+    if (sourceAvant && sourceAvant.focus) sourceAvant.focus();
+    sourceAvant = null;
+  }
+
+  function ouvrirFiche(s) {
+    var f = $("#fiche"), c = $("#fiche-corps"), v = $("#fiche-voile");
+    if (!f || !c) return;
+    sourceAvant = document.activeElement;
+    c.innerHTML = "";
+
+    var haut = el("div", "fiche-haut");
+    haut.appendChild(el("span", "fiche-organisme", s.court || "Source"));
+    var nat = el("span", "fiche-nature");
+    nat.appendChild(icone(s.type === "document" ? "source" : "lien"));
+    nat.appendChild(document.createTextNode(
+      s.type === "document"
+        ? "Document" + (s.pages ? " de " + s.pages + " pages" : "")
+        : "Page du site officiel"));
+    haut.appendChild(nat);
+    c.appendChild(haut);
+
+    c.appendChild(el("h3", null, s.t));
+    if (s.porte) c.appendChild(el("p", "fiche-porte", s.porte));
+
+    var d = el("p", "fiche-verif");
+    d.appendChild(icone("valide"));
+    d.appendChild(document.createTextNode(
+      s.verifie ? "Lien ouvert et vérifié le " + s.verifie : "Lien non daté"));
+    c.appendChild(d);
+
+    var adr = el("p", "fiche-adresse", s.u);
+    c.appendChild(adr);
+
+    var acts = el("div", "fiche-actions");
+    var a = el("a", "btn");
+    a.href = s.u; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.appendChild(document.createTextNode("Ouvrir le site officiel"));
+    a.appendChild(icone("lien"));
+    a.addEventListener("click", fermerFiche);
+    acts.appendChild(a);
+
+    // Copier vaut mieux qu'ouvrir quand on lit dans les transports : on
+    // retrouve l'adresse plus tard, sans perdre ce qu'on etait en train de
+    // lire.
+    var cp = el("button", "btn contour", "Copier le lien");
+    cp.addEventListener("click", function () {
+      var fini = function (ok) { cp.textContent = ok ? "Lien copié" : "Copie impossible"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(s.u).then(function () { fini(true); }, function () { fini(false); });
+      } else fini(false);
+    });
+    acts.appendChild(cp);
+    c.appendChild(acts);
+
+    f.hidden = false;
+    if (v) v.hidden = false;
+    var p = f.querySelector(".fiche-fermer");
+    if (p) p.focus();
+  }
+
+  function initFiche() {
+    var v = $("#fiche-voile"), x = $("#fiche-fermer");
+    if (v) v.addEventListener("click", fermerFiche);
+    if (x) x.addEventListener("click", fermerFiche);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") fermerFiche();
+    });
+  }
+
+  // Sous 760 px, un lien de source ouvre sa fiche au lieu de quitter le site.
+  // Au-dessus, la place ne manque pas et le lien reste un lien : une fiche
+  // serait une etape de plus pour rien.
+  function fichePlutotQueLien() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+  }
+
   function blocCitations(e) {
     var d = el("div", "srcs");
     d.appendChild(el("strong", null, "Sources"));
     (e.sources || []).forEach(function (s) {
-      var a = el("a", null, s.t);
+      var a = el("a");
       a.href = s.u; a.target = "_blank"; a.rel = "noopener noreferrer";
+      // Le nom court sur telephone, le titre entier des qu'il y a la place :
+      // « Circulaire L.I.R. n° 111bis/1 - 111ter/1 du 27 avril 2022 » tient
+      // sur trois lignes dans une bulle de 300 px.
+      a.appendChild(el("span", "src-court", s.court || s.t));
+      a.appendChild(el("span", "src-long", s.t));
+      a.addEventListener("click", function (ev) {
+        if (!fichePlutotQueLien()) return;
+        ev.preventDefault();
+        ouvrirFiche(s);
+      });
       d.appendChild(a);
     });
     return d;
@@ -1319,6 +1427,7 @@
   initQuestions();
   initAssistant();
   initPanneau();
+  initFiche();
   initPied();
   rendreAccueil();
   rendreSimulateur();

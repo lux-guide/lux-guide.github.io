@@ -15,17 +15,37 @@
 window.QUESTIONS = (function () {
   "use strict";
 
+  // Chaque source dit qui la publie, ce qu'elle est, et ce qu'elle etablit
+  // ici. Un titre seul ne suffit pas sur un telephone : il tient sur trois
+  // lignes et l'on tape dessus sans savoir si l'on ouvre une page de deux
+  // ecrans ou un document de seize.
+  //   court   le nom de l'organisme, en deux mots
+  //   type    « page » ou « document », pour savoir ou l'on va
+  //   porte   ce que cette source etablit sur ce site
+  //   verifie la date ou le lien a ete ouvert et a repondu
   var ACD = { t: "Administration des contributions directes, prévoyance-vieillesse",
-              u: "https://impotsdirects.public.lu/fr/az/p/prevoyance_vieillesse.html", officielle: true };
+              u: "https://impotsdirects.public.lu/fr/az/p/prevoyance_vieillesse.html",
+              court: "Contributions directes", type: "page", verifie: "3 septembre 2026",
+              porte: "La présentation générale du régime : conditions, âges, imposition à la sortie.",
+              officielle: true };
   var GUI = { t: "Guichet.lu, déduire les primes d'un contrat de prévoyance-vieillesse",
-              u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/depenses-deductibles/contrat-prevoyance-resident.html", officielle: true };
+              u: "https://guichet.public.lu/fr/citoyens/fiscalite/declaration-impot-decompte/depenses-deductibles/contrat-prevoyance-resident.html",
+              court: "Guichet.lu", type: "page", verifie: "3 septembre 2026",
+              porte: "La démarche du contribuable : qui déclare quoi, et comment.",
+              officielle: true };
   // Les pages A a Z de l'administration resument. La circulaire, elle, est le
   // texte d'application : c'est elle qui tranche quand un resume parait se
   // contredire.
   var CIR = { t: "Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022",
-              u: "https://impotsdirects.public.lu/dam-assets/fr/legislation/legi22/2022-04-27-lir-111bis-1-111ter-1-du-2742022.pdf", officielle: true };
+              u: "https://impotsdirects.public.lu/dam-assets/fr/legislation/legi22/2022-04-27-lir-111bis-1-111ter-1-du-2742022.pdf",
+              court: "Circulaire d'application", type: "document", pages: 16, verifie: "3 septembre 2026",
+              porte: "Le texte d'application, qui fait foi quand un résumé paraît se contredire : prestataires admis, remboursement anticipé, décès.",
+              officielle: true };
   var GOU = { t: "Gouvernement luxembourgeois, nouveautés 2026",
-              u: "https://gouvernement.lu/fr/actualites/toutes_actualites/articles/2025/12-decembre/nouveautes-2026.html", officielle: true };
+              u: "https://gouvernement.lu/fr/actualites/toutes_actualites/articles/2025/12-decembre/nouveautes-2026.html",
+              court: "Gouvernement", type: "page", verifie: "3 septembre 2026",
+              porte: "Le relèvement du plafond au 1er janvier 2026.",
+              officielle: true };
 
   var THEMES = [
     { id: "principe", nom: "Le principe" },

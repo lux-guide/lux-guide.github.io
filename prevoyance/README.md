@@ -33,7 +33,7 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 
 **L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit.
 
-**Au-delà de 1180 px, ce n'est pas un calque posé sur la page : c'est une seconde colonne.** La distinction n'est pas cosmétique, et elle a coûté un défaut avant d'être comprise. Un volet en `position: fixed` collé au bord droit recouvre la barre de défilement de la fenêtre, qui vit exactement là : on défilait à l'aveugle, derrière le panneau. En colonne, c'est la colonne de page qui défile, sa barre tombe à sa droite, donc juste à gauche du volet, et reste visible. C'est la disposition des volets de navigateur, et ce n'est pas un hasard. En dessous de 1180 px, il recouvre, avec un voile.
+**Au-delà de 1180 px, ce n'est pas un calque posé sur la page : c'est une seconde colonne.** La distinction n'est pas cosmétique, et elle a coûté un défaut avant d'être comprise. Un volet en `position: fixed` collé au bord droit recouvre la barre de défilement de la fenêtre, qui vit exactement là : on défilait à l'aveugle, derrière le panneau. En colonne, c'est la colonne de page qui défile, sa barre tombe à sa droite, donc juste à gauche du volet, et reste visible. C'est la disposition des volets de navigateur, et ce n'est pas un hasard. En dessous de 1180 px il recouvre, avec un voile, et **sous 760 px il prend tout l'écran** : un panneau de 257 px sur un écran de 390 laisse derrière lui une bande de page qu'on ne peut ni lire ni utiliser.
 
 Chaque zone porte alors son propre défilement, et jamais l'une dans l'autre. Un cadre qui défile à l'intérieur d'une page qui défile oblige à viser pour choisir lequel bouge.
 
@@ -55,12 +55,17 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-trente-neuf contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Cent-trente-neuf contrôles de fond, dans [test_prevoyance.py](test_prevoyance.py), et un audit de forme séparé, dans [audit_responsive.py](audit_responsive.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
-python prevoyance/test_prevoyance.py
+python prevoyance/test_prevoyance.py       # les règles de fond
+python prevoyance/audit_responsive.py      # la forme, sur treize largeurs
 ```
+
+L'audit mesure six familles de défauts sur treize largeurs, de 320 à 1680 px, et quatre états : ce qui déborde, ce qui descend sous le plancher de taille, ce qui fait une cible plus petite que le doigt, les lignes trop longues pour se relire, les blocs qui se chevauchent, les textes coupés par leur conteneur. Il tourne avec `pointer: coarse` en dessous de 820 px, ce qui change les seuils : 12 px de plancher au lieu de 11, et 44 px de cible.
+
+Il a trouvé ce que l'œil laissait passer : le descripteur de la marque à 9,5 px, des liens de pied de page à 39 px de haut, la marque elle-même à 34 px, et une mention légale à 116 caractères par ligne sur grand écran. Il rend zéro aujourd'hui.
 
 ### 1. Une seule table de chiffres
 
@@ -146,7 +151,17 @@ Ce qu'un pied de page porte d'utile ici, ce sont les sources : le site s'interdi
 
 La mention légale tient en un paragraphe, en bas, sans repli.
 
-### 15. L'âge de sortie est calculé, jamais affiché par défaut
+### 15. Sur téléphone, une source dit ce qu'elle est avant qu'on la quitte
+
+« Circulaire L.I.R. n° 111bis/1 – 111ter/1 du 27 avril 2022 » tient sur trois lignes dans une bulle de 300 px, et taper dessus fait quitter le site pour un document dont on ne sait rien. Un PDF de seize pages ouvert sur un téléphone, sans savoir où regarder, ne prouve rien à personne.
+
+**Afficher la page officielle n'était pas une option** : aucune ne se laisse encadrer, et ce serait de toute façon illisible. En dessous de 760 px, un lien de source ouvre donc une fiche : l'organisme, la nature du document (page ou document de seize pages), ce que cette source établit ici, la date où le lien a été ouvert et a répondu, l'adresse en entier, puis deux actions. « Ouvrir le site officiel » dans un nouvel onglet, et « Copier le lien », qui vaut souvent mieux quand on lit dans les transports : on retrouve l'adresse plus tard sans perdre ce qu'on lisait.
+
+Au-dessus de 760 px, la place ne manque pas et le lien reste un lien : une fiche serait une étape de plus pour rien. Le titre complet s'affiche alors, contre le nom court de l'organisme sur téléphone.
+
+Les quatre liens ont été ouverts le 3 septembre 2026 et répondaient tous.
+
+### 16. L'âge de sortie est calculé, jamais affiché par défaut
 
 `ageSortieEffectif(age)` rend la plus tardive des deux dates : l'âge légal, ou l'année de souscription plus la durée minimale du contrat. Écrire « à partir de 60 ans » en dur serait faux pour toute personne qui souscrit après 50 ans, et faux dans le sens qui compte, puisque c'est précisément à cet âge qu'on regarde le dispositif de près.
 

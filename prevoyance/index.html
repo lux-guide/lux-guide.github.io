@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Épargne-retraite au Luxembourg</title>
 <meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
-<link rel="stylesheet" href="app/site.css?v=4">
+<link rel="stylesheet" href="app/site.css?v=5">
 </head>
 <body>
 
@@ -198,6 +198,16 @@
 </div><!-- .page -->
 
 <div class="voile" id="voile" hidden></div>
+
+<!-- La fiche d'une source. Elle ne montre pas la page officielle, aucune ne se
+     laisse encadrer : elle dit ce que la source est avant qu'on la quitte. -->
+<div class="voile fiche-voile" id="fiche-voile" hidden></div>
+<div class="fiche" id="fiche" role="dialog" aria-modal="true" aria-label="La source" hidden>
+  <button class="fiche-fermer" id="fiche-fermer" aria-label="Fermer">
+    <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-fermer"/></svg>
+  </button>
+  <div id="fiche-corps"></div>
+</div>
 <aside class="panneau" id="panneau" aria-labelledby="pan-titre" hidden>
   <!-- La poignee de redimensionnement, comme un volet de navigateur. 420 px
        conviennent a une question courte, pas a une reponse qui porte quatre
@@ -250,8 +260,8 @@
      mention legale tient sur une ligne, en bas, et ne se replie pas derriere
      un accordeon : trois lignes de texte ne meritent pas un mecanisme. -->
 
-<script src="app/prevoyance.js?v=4"></script>
-<script src="app/questions.js?v=4"></script>
-<script src="app/site.js?v=4"></script>
+<script src="app/prevoyance.js?v=5"></script>
+<script src="app/questions.js?v=5"></script>
+<script src="app/site.js?v=5"></script>
 </body>
 </html>
