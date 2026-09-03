@@ -31,13 +31,15 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 2. **Simulateur.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
 3. **Questions.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
 
-**L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit. Au-delà de 1180 px il pousse le contenu au lieu de le recouvrir : on lit et on demande en même temps. En dessous, il recouvre, avec un voile.
+**L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit.
 
-Il est fixe et porte son propre défilement. Un cadre qui défile à l'intérieur d'une page qui défile oblige à viser pour choisir lequel bouge ; ici les deux zones sont séparées à l'écran et chacune porte le sien.
+**Au-delà de 1180 px, ce n'est pas un calque posé sur la page : c'est une seconde colonne.** La distinction n'est pas cosmétique, et elle a coûté un défaut avant d'être comprise. Un volet en `position: fixed` collé au bord droit recouvre la barre de défilement de la fenêtre, qui vit exactement là : on défilait à l'aveugle, derrière le panneau. En colonne, c'est la colonne de page qui défile, sa barre tombe à sa droite, donc juste à gauche du volet, et reste visible. C'est la disposition des volets de navigateur, et ce n'est pas un hasard. En dessous de 1180 px, il recouvre, avec un voile.
+
+Chaque zone porte alors son propre défilement, et jamais l'une dans l'autre. Un cadre qui défile à l'intérieur d'une page qui défile oblige à viser pour choisir lequel bouge.
 
 Sept choix de conception, chacun vérifié par un test :
 
-1. **L'en-tête se décale avec le reste du contenu.** Sans cela le volet monte par-dessus lui et recouvre le bouton qui l'a ouvert, qu'on ne retrouve plus pour le refermer.
+1. **Tout ce qui n'est pas le volet vit dans une colonne de page**, en-tête et pied compris. Sans cela le volet monte par-dessus l'en-tête et recouvre le bouton qui l'a ouvert, qu'on ne retrouve plus pour le refermer.
 2. **La largeur se règle en tirant le bord gauche**, et se retient. 420 px conviennent à une question courte, pas à une réponse qui porte quatre sources et trois suggestions. La zone sensible de la poignée fait 11 px pour un trait visible de 1 : viser un filet à la souris est un exercice, pas une interface. Les flèches du clavier la déplacent aussi, sans quoi la largeur ne serait réglable qu'à la souris.
 3. **Le volet ne dépasse jamais les deux tiers de l'écran.** Au-delà, ce n'est plus un panneau à côté de la page, c'est la page qui devient une marge.
 4. **Échap ferme, que le volet recouvre la page ou qu'il la pousse.** On ne se souvient pas d'un raccourci qui marche une fois sur deux. Quand il recouvre, le clavier reste dedans : la tabulation partirait sinon se promener dans une page qu'on ne voit plus.
@@ -53,7 +55,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-vingt-quatre contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Cent-trente-deux contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -114,7 +116,17 @@ Deux règles tenues par des tests. **L'axe monte au palier rond juste au-dessus 
 
 Une nuance de tracé qui compte : les étiquettes de fin de courbe sont dans la couleur du texte, pas dans celle de leur série. La teinte la plus claire de l'échelle rend 1,9 sur blanc, illisible dès qu'elle sert à écrire. C'est le point coloré au bout de la ligne qui la relie à son étiquette.
 
-### 12. L'assistant renvoie à l'endroit exact de la page
+### 12. Le bouton de l'assistant n'a pas de texte, et s'anime trois fois
+
+Une icône seule n'est comprise que si elle porte son nom autrement : le libellé vit dans `title` et `aria-label`, et `aria-expanded` dit si le volet est ouvert. Un bouton muet pour la souris comme pour un lecteur d'écran n'est pas un bouton, c'est une devinette.
+
+Deux étincelles disent l'aide automatique. **Elles ne promettent pas un modèle de langue**, et le volet dit dès sa première ligne qu'il n'y en a pas : l'icône nomme la fonction, la phrase dit comment elle marche, les deux ne se contredisent pas.
+
+Elles sont tracées en clair dans le bouton et non appelées par `<use>` comme le reste du jeu, pour une raison technique : ce qu'un `<use>` instancie vit dans un arbre fantôme, où une règle CSS de la page ne peut pas entrer pour animer une étincelle à la fois.
+
+**Elles ne bougent qu'au survol, à l'ouverture, et trois fois à la toute première visite.** Une animation permanente dans une barre fixe finit par se voir en travaillant, et l'on ferme l'onglet. L'appel du regard sert une fois, quand personne ne sait encore qu'il y a un assistant ; ensuite le bouton est connu et n'a plus rien à signaler.
+
+### 13. L'assistant renvoie à l'endroit exact de la page
 
 Une réponse gagne à montrer d'où elle vient. Un bouton « Voir sur la page » ouvre la bonne vue, y défile et **surligne l'élément** : la carte « Imposé au Luxembourg » pour la question sur les frontaliers, le graphique par taux pour celle sur ce que la déduction rapporte, la condition de durée pour le mythe des dix ans.
 
@@ -124,7 +136,7 @@ Trois choix de conception derrière ce petit bouton :
 2. **La table des ancres vit dans `site.js`, pas dans `questions.js`.** Le répertoire de questions ne connaît pas le DOM de ce site et doit rester lisible sans lui.
 3. **Un seul endroit surligné à la fois**, et la marque s'efface après trois secondes. Deux marques en même temps, dont une qui répond à une question déjà oubliée, ne désignent plus rien ; une marque qui reste devient une décoration et on cesse de la voir.
 
-### 13. Le pied de page porte les sources, et elles ne sont pas écrites à la main
+### 14. Le pied de page porte les sources, et elles ne sont pas écrites à la main
 
 Il portait quatre lignes de mentions répétées sur chaque vue, derrière un accordéon. Une mention lue partout n'est plus lue nulle part, et trois lignes de texte ne méritent pas un mécanisme à ouvrir.
 
@@ -132,7 +144,7 @@ Ce qu'un pied de page porte d'utile ici, ce sont les sources : le site s'interdi
 
 La mention légale tient en un paragraphe, en bas, sans repli.
 
-### 14. L'âge de sortie est calculé, jamais affiché par défaut
+### 15. L'âge de sortie est calculé, jamais affiché par défaut
 
 `ageSortieEffectif(age)` rend la plus tardive des deux dates : l'âge légal, ou l'année de souscription plus la durée minimale du contrat. Écrire « à partir de 60 ans » en dur serait faux pour toute personne qui souscrit après 50 ans, et faux dans le sens qui compte, puisque c'est précisément à cet âge qu'on regarde le dispositif de près.
 

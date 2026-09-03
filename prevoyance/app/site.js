@@ -81,7 +81,11 @@
     }
     if (nom === "questions") rendreQuestions();
     if (nom === "assistant") demarrerAssistant();
-    window.scrollTo(0, 0);
+    // C'est la colonne de page qui defile quand le volet est ouvert, et la
+    // fenetre sinon. Remonter la mauvaise des deux ne fait rien du tout.
+    var pg = $("#page");
+    if (pg && pg.scrollHeight > pg.clientHeight + 1 && pg.scrollTop > 0) pg.scrollTop = 0;
+    else window.scrollTo(0, 0);
     setTimeout(majDefilement, 320);
   }
 
@@ -378,11 +382,22 @@
     b.hidden = reste < 120;
   }
 
+  var CLE_VU = "prevoyance.assistant.vu.v1";
+
   function initPanneau() {
     var b = $("#assistant-btn");
     if (b) b.addEventListener("click", function () {
       if (panOuvert) fermerPanneau(); else ouvrirPanneau();
+      b.classList.remove("appel");
+      try { localStorage.setItem(CLE_VU, "1"); } catch (e) {}
     });
+
+    // L'appel du regard ne sert qu'une fois : a la premiere visite, personne
+    // ne sait qu'il y a un assistant. Ensuite le bouton est connu, et une
+    // animation qui se repete a chaque page devient du bruit.
+    try {
+      if (b && localStorage.getItem(CLE_VU) !== "1") b.classList.add("appel");
+    } catch (e) {}
     var f = $("#pan-fermer");
     if (f) f.addEventListener("click", fermerPanneau);
     var v = $("#voile");

@@ -47,6 +47,10 @@
      Aucune barre du guide d'installation, aucun selecteur d'audience. Ce site
      s'adresse aussi bien a quelqu'un qui vient d'arriver qu'a quelqu'un qui vit
      ici depuis dix ans, et sa navigation doit le dire. -->
+<!-- Tout ce qui n'est pas le volet vit dans cette colonne. C'est elle qui
+     defile quand le volet est ouvert, et sa barre tombe alors a sa droite,
+     juste a gauche du volet, au lieu de disparaitre derriere lui. -->
+<div class="page" id="page">
 <header class="top">
   <div class="top-in">
     <button class="brand" id="brand" title="Retour à l'accueil" aria-label="Épargne-retraite au Luxembourg, retour à l'accueil">
@@ -68,9 +72,13 @@
     </nav>
     <!-- L'assistant n'est pas une destination, c'est un compagnon : il s'ouvre
          par-dessus la vue courante et y reste pendant qu'on lit. -->
-    <button id="assistant-btn" class="btn-assistant" aria-expanded="false" aria-controls="panneau">
-      <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg>
-      <span>Assistant</span>
+    <button id="assistant-btn" class="btn-assistant" aria-expanded="false" aria-controls="panneau"
+            title="Assistant" aria-label="Ouvrir l'assistant">
+      <svg class="ic-ia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path class="et et-1" d="M10 3.2l1.5 4.1 4.1 1.5-4.1 1.5L10 14.4 8.5 10.3 4.4 8.8l4.1-1.5z"/>
+        <path class="et et-2" d="M17.6 13.6l.75 2.05 2.05.75-2.05.75-.75 2.05-.75-2.05-2.05-.75 2.05-.75z"/>
+      </svg>
     </button>
   </div>
 </header>
@@ -158,6 +166,37 @@
 <!-- Le panneau est fixe et porte son propre defilement. Un cadre qui defile a
      l'interieur d'une page qui defile oblige a viser pour choisir lequel
      bouge : ici les deux zones sont separees a l'ecran, et chacune la sienne. -->
+<footer class="pied">
+  <div class="pied-grille">
+    <div class="pied-marque">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M3 17.5 9 11l4 3.5L21 6"/>
+          <path d="M15.5 6H21v5.5"/>
+        </svg>
+      </span>
+      <div>
+        <strong>Épargne-retraite au Luxembourg</strong>
+        <p>Démonstration. Sans compte, sans nom, et sans modèle de langue.</p>
+      </div>
+    </div>
+    <div class="pied-col">
+      <h2>Sources officielles</h2>
+      <ul id="pied-sources"></ul>
+    </div>
+    <div class="pied-col">
+      <h2>Voir aussi</h2>
+      <ul id="pied-liens"></ul>
+    </div>
+  </div>
+  <p class="pied-bas">
+    Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
+    source. Ce site ne compare aucun contrat du marché et ne recommande aucun placement. Rien de
+    ce que vous saisissez ne quitte votre navigateur.
+  </p>
+</footer>
+</div><!-- .page -->
+
 <div class="voile" id="voile" hidden></div>
 <aside class="panneau" id="panneau" aria-labelledby="pan-titre" hidden>
   <!-- La poignee de redimensionnement, comme un volet de navigateur. 420 px
@@ -210,35 +249,6 @@
      s'interdit d'afficher une reponse sans elles, autant les rassembler. La
      mention legale tient sur une ligne, en bas, et ne se replie pas derriere
      un accordeon : trois lignes de texte ne meritent pas un mecanisme. -->
-<footer class="pied">
-  <div class="pied-grille">
-    <div class="pied-marque">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-          <path d="M3 17.5 9 11l4 3.5L21 6"/>
-          <path d="M15.5 6H21v5.5"/>
-        </svg>
-      </span>
-      <div>
-        <strong>Épargne-retraite au Luxembourg</strong>
-        <p>Démonstration. Sans compte, sans nom, et sans modèle de langue.</p>
-      </div>
-    </div>
-    <div class="pied-col">
-      <h2>Sources officielles</h2>
-      <ul id="pied-sources"></ul>
-    </div>
-    <div class="pied-col">
-      <h2>Voir aussi</h2>
-      <ul id="pied-liens"></ul>
-    </div>
-  </div>
-  <p class="pied-bas">
-    Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
-    source. Ce site ne compare aucun contrat du marché et ne recommande aucun placement. Rien de
-    ce que vous saisissez ne quitte votre navigateur.
-  </p>
-</footer>
 
 <script src="app/prevoyance.js?v=4"></script>
 <script src="app/questions.js?v=4"></script>

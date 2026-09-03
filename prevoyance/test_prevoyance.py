@@ -135,15 +135,30 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500)
     verifie(pg.locator("#panneau").is_visible(), "le bouton l'ouvre")
     verifie(pg.locator("#vue-accueil").is_visible(), "et la vue qu'on lisait reste ouverte")
-    # Au-dela de 1180 px il pousse le contenu au lieu de le recouvrir : c'est
-    # tout l'interet de le sortir de son onglet, lire et demander a la fois.
-    mg = pg.evaluate("parseInt(getComputedStyle(document.querySelector('main')).marginRight)")
-    verifie(mg > 300, "sur grand ecran il pousse le contenu (%d px)" % mg)
-    verifie(not pg.locator("#voile").is_visible(), "et n'assombrit rien, puisqu'il ne masque rien")
-    # Le panneau est fixe et porte son propre defilement : plus de cadre qui
-    # defile a l'interieur d'une page qui defile.
-    fixe = pg.evaluate("getComputedStyle(document.querySelector('#panneau')).position")
-    verifie(fixe == "fixed", "il est fixe, pas pose dans le flux")
+    # Au-dela de 1180 px, page et volet sont deux colonnes cote a cote. Ce
+    # n'est pas cosmetique : pose par-dessus la page, le volet recouvrait sa
+    # barre de defilement, collee au bord droit de la fenetre, et l'on
+    # defilait a l'aveugle derriere lui.
+    d = pg.evaluate("""() => {
+      const p = document.querySelector('#page'), a = document.querySelector('#panneau');
+      const rp = p.getBoundingClientRect(), ra = a.getBoundingClientRect();
+      return {
+        colle: Math.round(ra.left - rp.right),
+        barre: Math.round(p.offsetWidth - p.clientWidth),
+        colonne_defile: p.scrollHeight > p.clientHeight + 1,
+        corps_defile: document.body.scrollHeight > innerHeight + 1,
+        pleine_hauteur: Math.round(ra.height) === Math.round(innerHeight)
+      };
+    }""")
+    verifie(abs(d["colle"]) <= 1, "page et volet se touchent sans se recouvrir")
+    verifie(d["pleine_hauteur"], "le volet fait toute la hauteur")
+    # La barre de defilement appartient a la colonne de page. Elle tombe donc
+    # a la droite de celle-ci, c'est-a-dire juste a gauche du volet, et reste
+    # visible au lieu de passer dessous.
+    verifie(d["barre"] > 0, "la colonne de page porte sa propre barre (%d px)" % d["barre"])
+    verifie(d["colonne_defile"] and not d["corps_defile"],
+            "c'est elle qui defile, plus la fenetre")
+    verifie(not pg.locator("#voile").is_visible(), "et rien n'est assombri, puisque rien n'est masque")
     imbrique = pg.evaluate("""() => {
       const log = document.querySelector('#as-log');
       const s = getComputedStyle(log);
@@ -400,8 +415,12 @@ with sync_playwright() as p:
     pg.wait_for_timeout(400)
     large2 = pg.evaluate("Math.round(document.querySelector('#panneau').getBoundingClientRect().width)")
     verifie(large2 > m["large"] + 100, "la poignee l'elargit (%d puis %d px)" % (m["large"], large2))
-    marge = pg.evaluate("parseInt(getComputedStyle(document.querySelector('main')).marginRight)")
-    verifie(abs(marge - large2) < 3, "et la page suit exactement")
+    colle = pg.evaluate("""() => {
+      const p = document.querySelector('#page').getBoundingClientRect();
+      const a = document.querySelector('#panneau').getBoundingClientRect();
+      return Math.round(a.left - p.right);
+    }""")
+    verifie(abs(colle) <= 1, "et la colonne de page se retrecit d'autant")
     pg.reload()
     pg.wait_for_timeout(700)
     verifie(pg.evaluate("Math.round(document.querySelector('#panneau').getBoundingClientRect().width)") == large2,
@@ -453,6 +472,27 @@ with sync_playwright() as p:
     pg.wait_for_timeout(250)
     h2 = pg.evaluate("document.querySelector('#as-input').getBoundingClientRect().height")
     verifie(h2 > h1, "la saisie grandit avec la question (%d puis %d px)" % (h1, h2))
+
+    print("19e. Le bouton de l'assistant, sans texte et nomme quand meme")
+    # Une icone seule n'est comprise que si elle porte son nom autrement : un
+    # bouton muet pour la souris comme pour un lecteur d'ecran n'est pas un
+    # bouton, c'est une devinette.
+    pg.goto(URL)
+    pg.wait_for_timeout(500)
+    bt = pg.locator("#assistant-btn")
+    verifie(bt.inner_text().strip() == "", "il ne porte aucun texte visible")
+    verifie((bt.get_attribute("aria-label") or "").strip() != "", "mais il a un nom accessible")
+    verifie((bt.get_attribute("title") or "").strip() != "", "et une infobulle a la souris")
+    verifie(bt.get_attribute("aria-expanded") in ("true", "false"), "il annonce s'il est ouvert")
+    # Les etincelles sont ecrites en clair dans le bouton : ce qu'un <use>
+    # instancie vit dans un arbre fantome, ou une regle de la page ne peut pas
+    # entrer pour en animer une a la fois.
+    verifie(pg.locator("#assistant-btn .ic-ia .et").count() == 2, "deux etincelles, tracees dans le bouton")
+    anim = pg.evaluate("""() => {
+      const e = document.querySelector('#assistant-btn .et-1');
+      return getComputedStyle(e).transformBox === 'fill-box';
+    }""")
+    verifie(anim, "chacune tourne autour de son propre centre")
 
     print("20. L'assistant renvoie a l'endroit exact de la page")
     # Une reponse gagne a montrer d'ou elle vient. Le bouton ouvre la bonne
