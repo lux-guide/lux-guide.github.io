@@ -408,9 +408,11 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .btn-assistant.actif { color: #fff; background: var(--accent); border-color: var(--accent); }
 .ic-ia { width: 21px; height: 21px; overflow: visible; }
 
-/* Les etincelles ne bougent qu'au survol, a l'ouverture, et trois fois a la
-   toute premiere visite. Une animation permanente dans une barre fixe finit
-   par se voir en travaillant, et l'on ferme l'onglet.
+/* Une animation sert a attirer. Elle n'a donc plus d'objet des que l'assistant
+   est connu : le halo ne joue qu'a la toute premiere visite, et les etincelles
+   ne repondent plus qu'au survol, qui est un geste volontaire et non un appel.
+   Elles rejouaient a chaque ouverture, ce qui n'attirait vers rien puisque le
+   volet s'ouvrait deja devant soi.
    Le trace est ecrit en clair dans le bouton et non appele par <use> : ce
    qu'un <use> instancie vit dans un arbre fantome, ou une regle de la page
    ne peut pas entrer pour animer une etincelle a la fois. */
@@ -419,8 +421,6 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .btn-assistant:focus-visible .et-1 { animation: scintille .9s ease-in-out; }
 .btn-assistant:hover .et-2,
 .btn-assistant:focus-visible .et-2 { animation: scintille .9s ease-in-out .12s; }
-.btn-assistant.actif .et-1 { animation: scintille .7s ease-in-out; }
-.btn-assistant.actif .et-2 { animation: scintille .7s ease-in-out .1s; }
 @keyframes scintille {
   0%   { transform: scale(1) rotate(0deg); }
   45%  { transform: scale(1.28) rotate(22deg); }

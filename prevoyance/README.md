@@ -55,7 +55,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-trente-deux contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Cent-trente-neuf contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -124,7 +124,9 @@ Deux étincelles disent l'aide automatique. **Elles ne promettent pas un modèle
 
 Elles sont tracées en clair dans le bouton et non appelées par `<use>` comme le reste du jeu, pour une raison technique : ce qu'un `<use>` instancie vit dans un arbre fantôme, où une règle CSS de la page ne peut pas entrer pour animer une étincelle à la fois.
 
-**Elles ne bougent qu'au survol, à l'ouverture, et trois fois à la toute première visite.** Une animation permanente dans une barre fixe finit par se voir en travaillant, et l'on ferme l'onglet. L'appel du regard sert une fois, quand personne ne sait encore qu'il y a un assistant ; ensuite le bouton est connu et n'a plus rien à signaler.
+**Une animation sert à attirer, donc elle ne sert qu'une fois.** Le halo joue à la toute première visite, quand personne ne sait encore qu'il y a un assistant, et jamais ensuite. Les étincelles ne répondent plus qu'au survol, qui est un geste volontaire et non un appel : elles rejouaient à chaque ouverture, ce qui n'attirait vers rien puisque le volet s'ouvrait déjà devant soi. Une animation permanente dans une barre fixe finit d'ailleurs par se voir en travaillant, et l'on ferme l'onglet.
+
+Trois chemins mènent au volet, et l'appel doit s'éteindre par les trois : le bouton, l'adresse `#assistant`, et un volet resté ouvert depuis la dernière visite. Il ne s'éteignait que par le premier, donc il revenait à chaque page pour qui passait par les autres. Il était aussi posé avant qu'on sache si le volet se rouvrait de lui-même, ce qui appelait le regard vers un volet déjà ouvert. Un test parcourt les trois chemins.
 
 ### 13. L'assistant renvoie à l'endroit exact de la page
 

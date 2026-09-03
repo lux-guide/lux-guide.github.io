@@ -494,6 +494,58 @@ with sync_playwright() as p:
     }""")
     verifie(anim, "chacune tourne autour de son propre centre")
 
+    print("19f. Une animation sert a attirer, donc elle ne sert qu'une fois")
+    # Trois chemins menent au volet : le bouton, l'adresse #assistant, et un
+    # volet reste ouvert depuis la derniere visite. Un appel du regard qui ne
+    # s'eteint que par le premier revient a chaque page pour qui passe par les
+    # autres.
+    def visite(prepare=None, adresse=""):
+        ctx = b.new_context(viewport={"width": 1440, "height": 880})
+        p2 = ctx.new_page()
+        p2.goto(URL)
+        p2.wait_for_timeout(400)
+        if prepare:
+            p2.evaluate(prepare)
+        p2.goto(URL + adresse)
+        p2.wait_for_timeout(700)
+        return ctx, p2
+
+    ctx, p2 = visite()
+    verifie(p2.locator("#assistant-btn.appel").count() == 1, "a la premiere visite, le bouton appelle")
+    p2.reload()
+    p2.wait_for_timeout(600)
+    verifie(p2.locator("#assistant-btn.appel").count() == 1,
+            "et tant qu'on ne l'a pas ouvert, il appelle encore")
+    p2.click("#assistant-btn")
+    p2.wait_for_timeout(400)
+    verifie(p2.locator("#assistant-btn.appel").count() == 0, "l'ouvrir eteint l'appel")
+    p2.click("#pan-fermer")
+    p2.reload()
+    p2.wait_for_timeout(700)
+    verifie(p2.locator("#assistant-btn.appel").count() == 0, "et il ne revient pas d'une visite a l'autre")
+    # Les etincelles ne rejouent plus a l'ouverture : attirer vers un volet
+    # qui s'ouvre deja devant soi n'attire vers rien.
+    p2.click("#assistant-btn")
+    p2.wait_for_timeout(250)
+    n_anim = p2.evaluate("document.querySelector('#assistant-btn .et-1').getAnimations().length")
+    verifie(n_anim == 0, "et rien ne s'anime a l'ouverture")
+    ctx.close()
+
+    ctx, p2 = visite(adresse="#assistant")
+    p2.goto(URL)
+    p2.wait_for_timeout(600)
+    verifie(p2.locator("#assistant-btn.appel").count() == 0,
+            "ouvrir par l'adresse #assistant eteint l'appel aussi")
+    ctx.close()
+
+    ctx, p2 = visite(prepare="""() => {
+      localStorage.setItem('prevoyance.panneau.v1', '1');
+      localStorage.removeItem('prevoyance.assistant.vu.v1');
+    }""")
+    verifie(p2.locator("#panneau").is_visible() and p2.locator("#assistant-btn.appel").count() == 0,
+            "et un volet deja ouvert ne s'appelle pas lui-meme")
+    ctx.close()
+
     print("20. L'assistant renvoie a l'endroit exact de la page")
     # Une reponse gagne a montrer d'ou elle vient. Le bouton ouvre la bonne
     # vue, y defile et surligne l'element, le temps de le trouver.

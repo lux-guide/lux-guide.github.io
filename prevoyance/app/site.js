@@ -276,6 +276,10 @@
 
   function ouvrirPanneau(focus) {
     if (!panOuvert) {
+      // Connu, donc plus rien a signaler. Peu importe par ou l'on est passe :
+      // le bouton, l'adresse #assistant, ou un volet reste ouvert depuis la
+      // derniere visite.
+      connu();
       avantPan = document.activeElement;
       panOuvert = true;
       majPanneau();
@@ -384,20 +388,18 @@
 
   var CLE_VU = "prevoyance.assistant.vu.v1";
 
+  function connu() {
+    var b = $("#assistant-btn");
+    if (b) b.classList.remove("appel");
+    try { localStorage.setItem(CLE_VU, "1"); } catch (e) {}
+  }
+
   function initPanneau() {
     var b = $("#assistant-btn");
     if (b) b.addEventListener("click", function () {
       if (panOuvert) fermerPanneau(); else ouvrirPanneau();
-      b.classList.remove("appel");
-      try { localStorage.setItem(CLE_VU, "1"); } catch (e) {}
+      connu();
     });
-
-    // L'appel du regard ne sert qu'une fois : a la premiere visite, personne
-    // ne sait qu'il y a un assistant. Ensuite le bouton est connu, et une
-    // animation qui se repete a chaque page devient du bruit.
-    try {
-      if (b && localStorage.getItem(CLE_VU) !== "1") b.classList.add("appel");
-    } catch (e) {}
     var f = $("#pan-fermer");
     if (f) f.addEventListener("click", fermerPanneau);
     var v = $("#voile");
@@ -452,8 +454,15 @@
 
     var ouvre = false;
     try { ouvre = localStorage.getItem(CLE_PAN) === "1"; } catch (e) {}
-    if (ouvre) { panOuvert = true; majPanneau(); demarrerAssistant(); }
+    if (ouvre) { panOuvert = true; majPanneau(); demarrerAssistant(); connu(); }
     else majPanneau();
+
+    // L'appel du regard se pose en dernier, une fois su si le volet se rouvre
+    // de lui-meme : appeler le regard vers un volet deja ouvert n'attire rien
+    // et fait douter de ce que le bouton demande.
+    var vu = true;
+    try { vu = localStorage.getItem(CLE_VU) === "1"; } catch (e) {}
+    if (b && !vu && !panOuvert) b.classList.add("appel");
   }
 
   // Le bouton « repartir de zero » n'a de sens qu'une fois qu'on a demande
