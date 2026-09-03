@@ -53,34 +53,18 @@
   --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Le mode sombre est bati sur le marine de la charte plutot que sur un
-   gris neutre : c'est la meme identite, pas un second theme sans
-   rapport. Le bleu vif du clair n'y passerait pas le contraste, il
-   monte donc d'un cran vers #7c9ade. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #020e1a; --surface: #01213c; --surface-2: #052a4a;
-    --border: #0c3358; --border-fort: #17497c;
-    --text: #f8f9fc; --text-2: #cdd5e4; --muted: #9aa7c1;
-    --accent: #7c9ade; --accent-2: #a9bce9; --accent-soft: #0f2f5c;
-    --profond: #010b16;
-    --ok: #4db2a2; --warn: #fc9e5f; --warn-soft: #2d1301;
-    --ombre-s: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
-    --ombre-m: 0 6px 14px -4px rgba(0,0,0,.42), 0 18px 34px -10px rgba(0,0,0,.40);
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #020e1a; --surface: #01213c; --surface-2: #052a4a;
-  --border: #0c3358; --border-fort: #17497c;
-  --text: #f8f9fc; --text-2: #cdd5e4; --muted: #9aa7c1;
-  --accent: #7c9ade; --accent-2: #a9bce9; --accent-soft: #0f2f5c;
-  --profond: #010b16;
-  --ok: #4db2a2; --warn: #fc9e5f; --warn-soft: #2d1301;
-  --ombre-s: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.24);
-  --ombre-m: 0 6px 14px -4px rgba(0,0,0,.42), 0 18px 34px -10px rgba(0,0,0,.40);
-}
-
 *, *::before, *::after { box-sizing: border-box; }
+
+/* ---------- Les icones ----------
+   Une icone est un mot de la phrase, pas une image posee a cote : elle
+   s'aligne sur la ligne de base du texte et en prend la couleur, par
+   currentColor. Sa taille suit celle du texte, en em et non en pixels, ce qui
+   la garde juste quand la police grossit sur telephone. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ic {
+  width: 1.15em; height: 1.15em; flex: none;
+  vertical-align: -.18em; color: inherit; pointer-events: none;
+}
 [hidden] { display: none !important; }
 html, body { overflow-x: hidden; }
 body {
@@ -137,17 +121,16 @@ nav.tabs button {
   border: 0; background: none; color: var(--muted); cursor: pointer;
   padding: 9px 13px; border-radius: var(--r-s); font: inherit; font-size: 14px; font-weight: 500;
   flex: none; white-space: nowrap; transition: color .18s, background .18s;
+  display: inline-flex; align-items: center; gap: 7px;
 }
+/* L'icone d'un onglet inactif se retire d'un cran : c'est le libelle qui porte
+   le sens, l'icone n'aide qu'a le retrouver du coin de l'oeil. */
+nav.tabs button .ic { opacity: .6; transition: opacity .18s; }
+nav.tabs button:hover .ic,
+nav.tabs button[aria-selected="true"] .ic { opacity: 1; }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
 nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
 
-.outil {
-  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
-  width: 34px; height: 34px; border-radius: var(--r-s); cursor: pointer; flex: none;
-  display: grid; place-items: center; font-size: 15px; line-height: 1; padding: 0;
-  transition: color .16s, border-color .16s, background .16s;
-}
-.outil:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
 @media (max-width: 900px) {
   :root { --h-top: 58px; }
@@ -247,6 +230,13 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   transition: transform .2s cubic-bezier(.2,.8,.3,1), box-shadow .2s, border-color .2s;
 }
 .qcard:hover { transform: translateY(-3px); box-shadow: var(--ombre-m); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+/* Le carre teinte donne a l'icone le poids d'un titre. Sans lui, elle se lit
+   comme une decoration posee a cote du texte. */
+.qcard-ic {
+  display: grid; place-items: center;
+  width: 37px; height: 37px; border-radius: var(--r-s); margin-bottom: 13px;
+  background: var(--accent-soft); color: var(--accent); font-size: 18px;
+}
 .qcard h3 { margin: 0 0 6px; }
 .qcard p { margin: 0; font-size: 14px; color: var(--muted); }
 
@@ -282,15 +272,22 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .calcul { font-size: 13px; color: var(--muted); max-width: 40ch; }
 .sous { display: block; margin-top: 5px; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 .sous.reserve { color: var(--warn); }
-.etapes { counter-reset: e; list-style: none; padding-left: 0; }
-.etapes li { counter-increment: e; position: relative; padding-left: 46px; margin: 0 0 20px; }
-.etapes li::before {
-  content: counter(e); position: absolute; left: 0; top: 0; width: 30px; height: 30px;
-  border-radius: 50%; background: var(--accent-soft); color: var(--accent);
-  display: grid; place-items: center; font-weight: 650; font-size: 14px;
+.etapes { list-style: none; padding-left: 0; margin: 18px 0; }
+.etapes li { position: relative; display: flex; gap: 15px; align-items: flex-start; padding-bottom: 22px; }
+/* Un trait relie les quatre moments : c'est lui qui dit la suite, a la place
+   des numeros. Le dernier n'en porte pas, il ne mene nulle part. */
+.etapes li:not(:last-child)::before {
+  content: ""; position: absolute; left: 18px; top: 40px; bottom: 4px;
+  width: 1px; background: var(--border-fort);
+}
+.etape-ic {
+  flex: none; display: grid; place-items: center;
+  width: 37px; height: 37px; border-radius: var(--r-s);
+  background: var(--accent-soft); color: var(--accent); font-size: 18px;
 }
 .etapes strong { display: block; font-size: 16.5px; margin-bottom: 3px; }
 .etapes p { margin: 0; font-size: 14.5px; }
+.etapes li > div { padding-top: 6px; }
 
 /* ---------- Questions ---------- */
 
@@ -342,20 +339,73 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 .msg .chips { margin: 10px 0 0; }
 .msg .chip { font-size: 12.5px; padding: 6px 12px; }
 
-/* ---------- Pied ---------- */
+
+/* ---------- Graphiques ----------
+   Le SVG porte le dessin, la feuille porte le style : les couleurs de trait
+   restent dans le JS, ou elles suivent la donnee, et tout ce qui est typographie
+   vient d'ici, ou il suit le reste du site. */
+
+.graphe-bloc {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 20px 22px 14px; margin: 20px 0;
+  box-shadow: var(--ombre-s);
+}
+.graphe-titre {
+  font-family: var(--titre); font-weight: 600; font-size: 16px;
+  color: var(--text); margin-bottom: 10px;
+}
+.graphe { display: block; width: 100%; height: auto; overflow: visible; }
+.g-grille { stroke: var(--border); stroke-width: 1; }
+.g-axe { stroke: var(--border-fort); stroke-width: 1; }
+.g-lab {
+  font-family: var(--sans); font-size: 12px; fill: var(--muted);
+  text-anchor: middle; dominant-baseline: auto;
+}
+.g-lab-y { text-anchor: end; }
+.g-val { font-weight: 650; fill: var(--text-2); font-size: 12.5px; }
+.g-fin { text-anchor: start; font-weight: 650; fill: var(--text-2); }
+.graphe-note { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); max-width: 72ch; }
+
+/* Sous 620 px, un graphique de 720 de large rend un texte de 12 px a 10 px
+   reels. Il defile alors a sa taille plutot que de retrecir. */
+@media (max-width: 620px) {
+  .graphe-bloc { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .graphe { width: 660px; max-width: none; }
+}
+
+/* ---------- Pied ----------
+   Il est visible sur les quatre vues. Quatre lignes de mentions repetees a
+   chaque ecran ne sont plus lues : elles tiennent donc sur une ligne, et le
+   detail s'ouvre pour qui le cherche. */
 
 .pied {
   border-top: 1px solid var(--border); background: var(--surface-2);
-  padding: 30px max(22px, env(safe-area-inset-left));
+  padding: 16px max(22px, env(safe-area-inset-left));
+  font-size: 12.5px;
 }
-.pied > * { max-width: var(--max); margin: 0 auto 10px; font-size: 13px; color: var(--muted); }
+.pied-in {
+  max-width: var(--max); margin: 0 auto;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+  color: var(--muted);
+}
+.pied-note { color: var(--muted); }
+.pied-plus { margin: 0; }
+.pied-plus summary {
+  cursor: pointer; color: var(--muted); list-style: none;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.pied-plus summary::-webkit-details-marker { display: none; }
+.pied-plus summary:hover { color: var(--accent); }
+.pied-plus p { margin: 9px 0 0; max-width: 70ch; }
+#pied-sources { margin-left: auto; }
 .pied a { color: var(--accent); }
 .lien-guide {
-  display: inline-flex; align-items: center; gap: 7px; margin-top: 6px;
-  padding: 8px 14px; border: 1px solid var(--border-fort); border-radius: 999px;
-  background: var(--surface); color: var(--text-2); text-decoration: none; font-size: 13px;
-  transition: color .16s, border-color .16s;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  color: var(--muted); text-decoration: none; font-size: 12.5px;
+  transition: color .16s;
 }
+.lien-guide .ic { transition: transform .18s cubic-bezier(.2,.7,.2,1); }
+.lien-guide:hover .ic { transform: translateX(3px); }
 .lien-guide:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ---------- Cibles tactiles ---------- */
@@ -365,7 +415,6 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
   nav.tabs button { min-height: 44px; }
   .chip { min-height: 40px; padding: 10px 16px; }
   .btn { min-height: 46px; }
-  .outil { width: 42px; height: 42px; }
   .check { min-height: 44px; }
   .check input { width: 22px; height: 22px; }
   .check label { min-height: 44px; font-size: 15px; }

@@ -113,33 +113,129 @@
     majDefilement();
   }
 
-  // ---------- Theme ----------
+  // ---------- Les icones ----------
+  // Le trace vit dans le sprite de index.html. Ici on ne pose qu'une
+  // reference : une icone affichee cent fois reste un seul trace en memoire.
 
-  var CLE_THEME = "prevoyance.theme.v1";
-  var THEMES = ["systeme", "clair", "sombre"];
-  var ICONES = { systeme: "◐", clair: "☀", sombre: "☾" };
-  var LIB = { systeme: "Thème du système", clair: "Thème clair", sombre: "Thème sombre" };
+  function icone(nom, cls) {
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("class", "ic" + (cls ? " " + cls : ""));
+    s.setAttribute("aria-hidden", "true");
+    s.setAttribute("focusable", "false");
+    var u = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    u.setAttribute("href", "#i-" + nom);
+    s.appendChild(u);
+    return s;
+  }
 
-  function initTheme() {
-    // Clair par defaut, et non « comme le systeme » : ce site se lit surtout
-    // de jour, sur un ecran de bureau, et la palette est batie pour le blanc.
-    // Les deux autres etats restent a un clic.
-    var t = "clair";
-    try { var v = localStorage.getItem(CLE_THEME); if (THEMES.indexOf(v) !== -1) t = v; } catch (e) {}
-    var b = $("#theme-btn");
-    function appliquer() {
-      var r = document.documentElement;
-      if (t === "clair") r.setAttribute("data-theme", "light");
-      else if (t === "sombre") r.setAttribute("data-theme", "dark");
-      else r.removeAttribute("data-theme");
-      if (b) { b.textContent = ICONES[t]; b.title = LIB[t] + " (cliquer pour changer)"; b.setAttribute("aria-label", LIB[t]); }
+  // ---------- Les graphiques ----------
+  //
+  // Traces a la main en SVG, depuis les memes donnees que les tableaux qui les
+  // suivent. Trois raisons de ne pas charger une librairie : elle pesterait
+  // cent fois le poids de ce code pour quatre series, elle imposerait sa
+  // palette et ses polices contre celles du site, et elle rendrait du canvas,
+  // qu'on ne peut ni selectionner ni relire a la loupe.
+  //
+  // Chaque graphique est accompagne du tableau des memes chiffres. C'est lui
+  // qui porte l'information pour un lecteur d'ecran : le SVG est donc marque
+  // aria-hidden plutot que decrit deux fois.
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function n(nom, attrs, texte) {
+    var e = document.createElementNS(SVGNS, nom);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) e.setAttribute(k, String(attrs[k]));
+    if (texte !== undefined) e.textContent = texte;
+    return e;
+  }
+
+  // Une echelle sequentielle tiree de la charte, du plus clair au plus fonce :
+  // le taux le plus eleve porte la couleur la plus dense, ce qui se lit sans
+  // legende.
+  var TEINTES = ["#a9bce9", "#7c9ade", "#2957c8", "#041d58"];
+
+  // Un axe qui monte jusqu'au maximum exact donne des graduations illisibles
+  // (3 217, 6 434...). On arrondit vers le haut au pas rond superieur.
+  function plafondRond(v) {
+    if (v <= 0) return 1;
+    var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10));
+    // Une echelle a quatre paliers laisse la plus haute barre a mi-hauteur : sur
+    // 2 737, elle monte l'axe a 5 000. Des paliers plus serres collent au
+    // chiffre sans donner de graduations illisibles.
+    var pas = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+    for (var i = 0; i < pas.length; i++) {
+      if (v <= pas[i] * p) return pas[i] * p;
     }
-    appliquer();
-    if (b) b.addEventListener("click", function () {
-      t = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length];
-      appliquer();
-      try { localStorage.setItem(CLE_THEME, t); } catch (e) {}
+    return 10 * p;
+  }
+
+  function grapheBarres(valeurs, libelles) {
+    var L = 720, H = 250, mg = 60, mb = 34, mh = 26;
+    var s = n("svg", { viewBox: "0 0 " + L + " " + H, class: "graphe",
+                       preserveAspectRatio: "xMidYMid meet", "aria-hidden": "true", focusable: "false" });
+    var max = plafondRond(Math.max.apply(null, valeurs));
+    var y = function (v) { return mh + (H - mh - mb) * (1 - v / max); };
+
+    for (var g = 0; g <= 4; g++) {
+      var v = max * g / 4;
+      s.appendChild(n("line", { x1: mg, x2: L - 8, y1: y(v), y2: y(v), class: "g-grille" }));
+      s.appendChild(n("text", { x: mg - 10, y: y(v) + 4, class: "g-lab g-lab-y" }, eur(v)));
+    }
+
+    var large = (L - mg - 8) / valeurs.length;
+    valeurs.forEach(function (v, i) {
+      var l = Math.min(74, large * 0.5);
+      var x = mg + large * i + (large - l) / 2;
+      s.appendChild(n("rect", { x: x, y: y(v), width: l, height: Math.max(1, y(0) - y(v)),
+                                rx: 3, fill: TEINTES[i % TEINTES.length] }));
+      s.appendChild(n("text", { x: x + l / 2, y: y(v) - 9, class: "g-lab g-val" }, eur(v)));
+      s.appendChild(n("text", { x: x + l / 2, y: H - 11, class: "g-lab" }, libelles[i]));
     });
+    s.appendChild(n("line", { x1: mg, x2: L - 8, y1: y(0), y2: y(0), class: "g-axe" }));
+    return s;
+  }
+
+  function grapheCourbes(series, libelles, ans) {
+    var L = 720, H = 270, mg = 66, mb = 34, mh = 22, md = 56;
+    var s = n("svg", { viewBox: "0 0 " + L + " " + H, class: "graphe",
+                       preserveAspectRatio: "xMidYMid meet", "aria-hidden": "true", focusable: "false" });
+    var tout = [];
+    series.forEach(function (se) { tout = tout.concat(se); });
+    var max = plafondRond(Math.max.apply(null, tout));
+    var x = function (i) { return mg + (L - mg - md) * (i / (ans - 1)); };
+    var y = function (v) { return mh + (H - mh - mb) * (1 - v / max); };
+
+    for (var g = 0; g <= 4; g++) {
+      var v = max * g / 4;
+      s.appendChild(n("line", { x1: mg, x2: L - md, y1: y(v), y2: y(v), class: "g-grille" }));
+      s.appendChild(n("text", { x: mg - 10, y: y(v) + 4, class: "g-lab g-lab-y" }, eur(v)));
+    }
+    [0, Math.floor((ans - 1) / 2), ans - 1].forEach(function (i) {
+      s.appendChild(n("text", { x: x(i), y: H - 11, class: "g-lab" }, "an " + (i + 1)));
+    });
+
+    series.forEach(function (se, k) {
+      var d = se.map(function (v, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
+      s.appendChild(n("path", { d: d, fill: "none", stroke: TEINTES[k % TEINTES.length],
+                                "stroke-width": 2.4, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+      var fin = se[se.length - 1];
+      s.appendChild(n("circle", { cx: x(ans - 1), cy: y(fin), r: 3.4, fill: TEINTES[k % TEINTES.length] }));
+      // L'etiquette reste dans la couleur du texte : la teinte la plus claire
+      // de l'echelle rend 1.9 sur blanc, illisible des qu'elle sert a ecrire.
+      // C'est le point qui relie la ligne a son etiquette, pas la couleur des
+      // lettres.
+      s.appendChild(n("text", { x: L - md + 9, y: y(fin) + 4, class: "g-lab g-fin" }, libelles[k]));
+    });
+    s.appendChild(n("line", { x1: mg, x2: L - md, y1: y(0), y2: y(0), class: "g-axe" }));
+    return s;
+  }
+
+  function bloc(titre, legende, svg) {
+    var d = el("div", "graphe-bloc");
+    d.appendChild(el("div", "graphe-titre", titre));
+    d.appendChild(svg);
+    if (legende) d.appendChild(el("p", "graphe-note", legende));
+    return d;
   }
 
   // ---------- Le plafond comme un mouvement ----------
@@ -155,7 +251,9 @@
       return d;
     }
     g.appendChild(bloc("mvt-av", "En " + T.anneePrecedente, eur(p.plafondPrecedent)));
-    g.appendChild(el("span", "mvt-fleche", "→"));
+    var fl = el("span", "mvt-fleche");
+    fl.appendChild(icone("fleche"));
+    g.appendChild(fl);
     g.appendChild(bloc("mvt-ap", "Depuis " + T.annee, eur(p.plafond)));
     g.appendChild(bloc("mvt-delta", "Soit", "+ " + eur(p.plafond - p.plafondPrecedent)));
     c.appendChild(g);
@@ -292,6 +390,25 @@
     f.appendChild(el("p", "hint",
       "Votre taux dépend de votre revenu et de votre classe d'impôt. Ce site ne le devine pas : " +
       "situez-vous dans la colonne qui vous correspond."));
+
+    var libTaux = T.taux.map(function (x) { return Math.round(x * 100) + " %"; });
+    var valAn = T.taux.map(function (x) {
+      return r.economieAnnuelleParTaux[String(Math.round(x * 100))] || 0;
+    });
+    f.appendChild(bloc("Économie d'impôt chaque année",
+      "Le même versement ne rend pas la même chose à tout le monde : c'est le taux qui décide.",
+      grapheBarres(valAn, libTaux)));
+
+    var series = T.taux.map(function (x) {
+      return r.serieCumulParTaux[String(Math.round(x * 100))] || [];
+    }).filter(function (s) { return s.length; });
+    if (series.length) {
+      f.appendChild(bloc("Ce que cela cumule sur " + T.horizonAns + " ans",
+        "À versement constant et à taux constant. Ni rendement ni revalorisation : ce graphique " +
+        "n'additionne que des économies d'impôt.",
+        grapheCourbes(series, libTaux, T.horizonAns)));
+    }
+
     var w2 = el("div", "table-wrap"), t2 = el("table");
     var th2 = el("thead"), tr1 = el("tr");
     tr1.appendChild(el("th", null, "Taux d'imposition"));
@@ -382,6 +499,7 @@
     var p = $("#acc-principe");
     if (p && !p.children.length) {
       var ol = el("ol", "etapes");
+      var ICO_ETAPE = ["verser", "retrancher", "declarer", "recuperer"];
       [["Vous versez", "Sur un contrat de prévoyance-vieillesse, jusqu'au plafond de l'année. " +
         "Ce que vous ne versez pas est perdu : le plafond ne se reporte pas."],
        ["Le montant sort de votre revenu imposable", "Vous ne payez pas d'impôt dessus. Ce que " +
@@ -392,8 +510,13 @@
         "En capital, en rente viagère, ou les deux. Le capital est imposé à la moitié du taux " +
         "global, la rente sur la moitié de son montant."]].forEach(function (e) {
         var li = el("li");
-        li.appendChild(el("strong", null, e[0]));
-        li.appendChild(el("p", null, e[1]));
+        var b = el("span", "etape-ic");
+        b.appendChild(icone(ICO_ETAPE[ol.children.length]));
+        li.appendChild(b);
+        var t = el("div");
+        t.appendChild(el("strong", null, e[0]));
+        t.appendChild(el("p", null, e[1]));
+        li.appendChild(t);
         ol.appendChild(li);
       });
       p.appendChild(ol);
@@ -409,10 +532,15 @@
         "C'est le lieu d'imposition qui décide, pas le lieu d'habitation. Un frontalier imposé " +
         "au Luxembourg y a droit, un résident imposé ailleurs n'y a pas droit. C'est la " +
         "confusion la plus fréquente sur ce dispositif."],
-       ["Bloqué jusqu'à " + T.prevoyance.sortieMin + " ans",
-        "L'épargne n'est pas disponible avant. Le remboursement anticipé n'existe qu'en cas de " +
-        "maladie grave ou d'invalidité, et il est alors imposé au taux plein."]].forEach(function (x) {
+       ["Une épargne de long terme",
+        "Récupérable entre " + T.prevoyance.sortieMin + " et " + T.prevoyance.sortieMax + " ans. " +
+        "Sortir avant reste possible, mais la somme est alors imposée au tarif normal et " +
+        "l'avantage obtenu à l'entrée est repris. Deux motifs y échappent, la maladie grave et " +
+        "l'invalidité."]].forEach(function (x, i) {
         var d = el("div", "qcard");
+        var b = el("span", "qcard-ic");
+        b.appendChild(icone(["calendrier", "territoire", "duree"][i]));
+        d.appendChild(b);
         d.appendChild(el("h3", null, x[0]));
         d.appendChild(el("p", null, x[1]));
         g.appendChild(d);
@@ -793,8 +921,10 @@
     var z = $("#pied-sources");
     if (!z) return;
     z.innerHTML = "";
-    var a = el("a", "lien-guide", "Vous venez d'arriver ? Le guide d'installation au Luxembourg →");
+    var a = el("a", "lien-guide");
     a.href = "../";
+    a.appendChild(document.createTextNode("Guide d'installation au Luxembourg"));
+    a.appendChild(icone("fleche"));
     z.appendChild(a);
   }
 
@@ -805,7 +935,6 @@
     ouvrir(h || "accueil", true);
   }
 
-  initTheme();
   initNav();
   initQuestions();
   initAssistant();

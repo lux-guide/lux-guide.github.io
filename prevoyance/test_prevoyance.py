@@ -199,35 +199,56 @@ with sync_playwright() as p:
         verifie(pg.locator("#vue-" + v).is_visible(), "#%s s'ouvre par son adresse" % v)
 
     print("16. Rien ne deborde, sur telephone comme sur bureau")
+    # Les graphiques font 720 de large : c'est la vue qui les porte qu'il faut
+    # eprouver, pas seulement l'accueil.
     for w, h in [(375, 667), (390, 844), (820, 1180), (1400, 900)]:
-        pg.set_viewport_size({"width": w, "height": h})
-        pg.goto(URL)
-        pg.wait_for_timeout(400)
-        over = pg.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1")
-        verifie(not over, "%d px sans debordement" % w)
+        for vue in ["", "#simulateur"]:
+            pg.set_viewport_size({"width": w, "height": h})
+            pg.goto(URL + vue)
+            pg.wait_for_timeout(450)
+            over = pg.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1")
+            verifie(not over, "%d px %s sans debordement" % (w, vue or "#accueil"))
 
-    print("17. Les champs tombent a la meme hauteur, dans les deux themes")
+    print("17. Les champs tombent a la meme hauteur")
     # Un input et un select ne se mesurent pas pareil : le select suit les
     # metriques du systeme, l'input celles de la police. Avec le meme padding
     # ils ne tombent pas a la meme hauteur, et cela se voit des qu'ils sont
     # cote a cote. Le defaut se mesure, il ne se juge pas a l'oeil.
     pg.set_viewport_size({"width": 1280, "height": 900})
-    for theme in ["clair", "sombre"]:
-        pg.goto(URL + "#simulateur")
-        pg.wait_for_timeout(400)
-        pg.evaluate("t => localStorage.setItem('prevoyance.theme.v1', t)", theme)
-        pg.reload()
-        pg.wait_for_timeout(700)
-        m = pg.evaluate("""() => {
-          const b = s => document.querySelector(s).getBoundingClientRect();
-          const a = b('#ch-age'), e = b('#ch-enfants');
-          const ch = getComputedStyle(document.querySelector('.champ-sel'), '::after');
-          return { dh: Math.abs(a.height - e.height), dy: Math.abs(a.top - e.top),
-                   chevron: ch.content !== 'none' && ch.width !== 'auto' };
-        }""")
-        verifie(m["dh"] < 0.5, "%s : meme hauteur (ecart %.2f px)" % (theme, m["dh"]))
-        verifie(m["dy"] < 0.5, "%s : meme ligne de base (ecart %.2f px)" % (theme, m["dy"]))
-        verifie(m["chevron"], "%s : le chevron du select est bien redessine" % theme)
+    pg.goto(URL + "#simulateur")
+    pg.wait_for_timeout(700)
+    m = pg.evaluate("""() => {
+      const b = s => document.querySelector(s).getBoundingClientRect();
+      const a = b('#ch-age'), e = b('#ch-enfants');
+      const ch = getComputedStyle(document.querySelector('.champ-sel'), '::after');
+      return { dh: Math.abs(a.height - e.height), dy: Math.abs(a.top - e.top),
+               chevron: ch.content !== 'none' && ch.width !== 'auto' };
+    }""")
+    verifie(m["dh"] < 0.5, "meme hauteur (ecart %.2f px)" % m["dh"])
+    verifie(m["dy"] < 0.5, "meme ligne de base (ecart %.2f px)" % m["dy"])
+    verifie(m["chevron"], "le chevron du select est bien redessine")
+
+    print("17b. Un seul theme, et des icones tracees et non ecrites")
+    # Le site n'a plus de selecteur de theme : une seule palette, batie pour le
+    # blanc. Et les icones sont des SVG du jeu, pas des caracteres : un glyphe
+    # ne se colore pas, ne s'aligne pas et ne rend pas la meme chose partout.
+    pg.goto(URL)
+    pg.wait_for_timeout(500)
+    verifie(pg.locator("#theme-btn").count() == 0, "aucun selecteur de theme")
+    verifie(pg.locator("nav.tabs button .ic").count() == 4, "chaque onglet porte son icone")
+    verifie(pg.locator(".etapes .etape-ic .ic").count() == 4, "chacun des quatre moments porte la sienne")
+    verifie(pg.locator(".qcard-ic .ic").count() >= 3, "et chacune des trois conditions")
+    glyphes = pg.evaluate("""() => {
+      const t = document.body.innerText;
+      return [...new Set([...t].filter(c => /[\\u2190-\\u21FF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uFE0F]/.test(c)))];
+    }""")
+    verifie(not glyphes, "aucun caractere-image dans le texte rendu %s" % (glyphes or ""))
+
+    print("17c. Une mention lue partout n'est plus lue : le pied tient sur une ligne")
+    h = pg.evaluate("document.querySelector('footer.pied').getBoundingClientRect().height")
+    verifie(h < 90, "le pied de page fait %d px, pas un pave" % h)
+    verifie(pg.locator(".pied-plus").count() == 1, "le detail des mentions reste accessible")
+    verifie(not pg.locator(".pied-plus p").first.is_visible(), "mais il est replie par defaut")
 
     print("18. Le texte se lit, mesure et non juge a l'oeil")
     # Un gris trop clair passe l'inspection visuelle et rate la mesure. Celui
@@ -271,19 +292,40 @@ with sync_playwright() as p:
       });
       return [...new Set(out)];
     }"""
-    for theme in ["clair", "sombre"]:
-        for vue in ["", "#simulateur", "#questions"]:
-            pg.goto(URL + vue)
-            pg.wait_for_timeout(300)
-            pg.evaluate("t => localStorage.setItem('prevoyance.theme.v1', t)", theme)
-            pg.reload()
-            pg.wait_for_timeout(600)
-            mauvais = pg.evaluate(CONTRASTE)
-            for x in mauvais:
-                print("     ", x)
-            verifie(not mauvais, "%s %s : tout le texte passe le seuil de contraste"
-                    % (theme, vue or "#accueil"))
-    pg.evaluate("localStorage.removeItem('prevoyance.theme.v1')")
+    for vue in ["", "#simulateur", "#questions", "#assistant"]:
+        pg.goto(URL + vue)
+        pg.wait_for_timeout(600)
+        mauvais = pg.evaluate(CONTRASTE)
+        for x in mauvais:
+            print("     ", x)
+        verifie(not mauvais, "%s : tout le texte passe le seuil de contraste" % (vue or "#accueil"))
+
+    print("19. Les graphiques disent la meme chose que les tableaux")
+    pg.set_viewport_size({"width": 1280, "height": 900})
+    pg.goto(URL + "#simulateur")
+    pg.wait_for_timeout(800)
+    verifie(pg.locator(".graphe").count() == 2, "deux graphiques")
+    verifie(pg.locator(".graphe rect").count() == 4, "une barre par taux")
+    verifie(pg.locator(".graphe path").count() == 4, "une courbe par taux")
+    # Un graphique trace sans librairie doit encore etre un bon graphique : un
+    # axe monte au palier rond superieur, jamais tres au-dela, faute de quoi la
+    # plus haute barre reste a mi-hauteur et la comparaison ne se voit plus.
+    ech = pg.evaluate("""() => {
+      const b = document.querySelectorAll('.graphe-bloc')[0];
+      const nb = s => Number(s.replace(/[^0-9]/g, ''));
+      const axe = [...b.querySelectorAll('.g-lab-y')].map(e => nb(e.textContent));
+      const val = [...b.querySelectorAll('.g-val')].map(e => nb(e.textContent));
+      return { haut: Math.max(...axe), max: Math.max(...val) };
+    }""")
+    verifie(ech["haut"] >= ech["max"], "l'axe contient la plus haute valeur")
+    verifie(ech["haut"] < ech["max"] * 1.5,
+            "et ne la depasse pas de moitie (axe %d, valeur %d)" % (ech["haut"], ech["max"]))
+    # Le SVG est marque aria-hidden : c'est le tableau qui suit qui porte
+    # l'information pour un lecteur d'ecran, et la decrire deux fois la
+    # ferait lire deux fois.
+    verifie(pg.eval_on_selector_all(".graphe", "e => e.every(x => x.getAttribute('aria-hidden') === 'true')"),
+            "les graphiques ne sont pas lus deux fois par un lecteur d'ecran")
+    verifie(pg.locator("#sim-resultat table").count() >= 2, "les memes chiffres restent en tableau")
 
     b.close()
 

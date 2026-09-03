@@ -5,9 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Épargne-retraite au Luxembourg</title>
 <meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
-<link rel="stylesheet" href="app/site.css?v=1">
+<link rel="stylesheet" href="app/site.css?v=2">
 </head>
 <body>
+
+<!-- Le jeu d'icones du site. Defini une seule fois ici, appele par <use> :
+     un seul trace en memoire, quelle que soit la frequence d'affichage, et
+     aucune requete. Grille de 24, trait de 1.7, bouts ronds, currentColor,
+     donc chaque icone prend la couleur du texte qui l'entoure. -->
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    <symbol id="i-accueil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-calcul" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></symbol>
+    <symbol id="i-questions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 2.9c-.5.2-.8.7-.8 1.2v.6"/><path d="M12 17.2h.01"/></symbol>
+    <symbol id="i-dialogue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5V6.5A2.5 2.5 0 0 1 7.5 4h10A2.5 2.5 0 0 1 20 6.5z"/><path d="M9 9h7M9 12.5h4.5"/></symbol>
+    <symbol id="i-soleil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+    <symbol id="i-lune" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.4 8.4 0 0 1 9.8 4 8.5 8.5 0 1 0 20 14.2z"/></symbol>
+    <symbol id="i-systeme" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 20.5a8.5 8.5 0 0 0 0-17" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-verser" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 10.5 12 14.5l4-4"/><path d="M4 17.5v1.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"/></symbol>
+    <symbol id="i-retrancher" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M7.5 12h9"/></symbol>
+    <symbol id="i-declarer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l5 5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 15l2.2 2.2L15 12.8"/></symbol>
+    <symbol id="i-recuperer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5h17v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 9.5 6 3.8h12l2.5 5.7"/><path d="M16.5 15h1.5"/></symbol>
+    <symbol id="i-calendrier" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-territoire" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></symbol>
+    <symbol id="i-duree" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/></symbol>
+    <symbol id="i-valide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.4 12.3l2.5 2.5 4.7-5"/></symbol>
+    <symbol id="i-bifurque" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5V13"/><path d="M12 13 6.5 8.2V3.5"/><path d="M12 13l5.5-4.8V3.5"/><circle cx="12" cy="21" r="1.4"/></symbol>
+    <symbol id="i-hors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M6.2 6.2l11.6 11.6"/></symbol>
+    <symbol id="i-bouclier" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 5 6v6c0 4.2 3 7.4 7 8.8 4-1.4 7-4.6 7-8.8V6z"/><path d="M9.2 12.2l2 2 3.6-3.9"/></symbol>
+    <symbol id="i-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14"/><path d="M13.5 7l5 5-5 5"/></symbol>
+    <symbol id="i-lien" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1.4 1.4"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.4-1.4"/></symbol>
+    <symbol id="i-source" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l5 5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M13.5 3.5V9H19"/><path d="M8 13h8M8 16.5h5"/></symbol>
+  </defs>
+</svg>
 
 <!-- Coquille propre a ce site : une marque, quatre liens, un pied de page.
      Aucune barre du guide d'installation, aucun selecteur d'audience. Ce site
@@ -28,12 +58,11 @@
       </span>
     </button>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0">Accueil</button>
-      <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1">Ce que cela rapporte</button>
-      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1">Questions fréquentes</button>
-      <button role="tab" id="tab-assistant" data-vue="assistant" aria-selected="false" aria-controls="vue-assistant" tabindex="-1">Poser une question</button>
+      <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-accueil"/></svg><span>Accueil</span></button>
+      <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calcul"/></svg><span>Simulateur</span></button>
+      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-questions"/></svg><span>Questions fréquentes</span></button>
+      <button role="tab" id="tab-assistant" data-vue="assistant" aria-selected="false" aria-controls="vue-assistant" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg><span>Poser une question</span></button>
     </nav>
-    <button id="theme-btn" class="outil" title="Changer de thème" aria-label="Changer de thème"></button>
   </div>
 </header>
 
@@ -137,17 +166,25 @@
 
 </main>
 
+<!-- Une mention qu'on lit sur les quatre vues n'est plus lue nulle part. Elle
+     tient donc sur une ligne, et le detail s'ouvre pour qui le cherche. -->
 <footer class="pied">
-  <p>
-    Démonstration. Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée
-    sur chaque source. Ce site ne compare aucun contrat du marché, ne recommande aucun placement
-    et ne collecte aucune donnée : rien de ce que vous saisissez ne quitte votre navigateur.
-  </p>
-  <p id="pied-sources"></p>
+  <div class="pied-in">
+    <span class="pied-note">Démonstration. Rien de ce que vous saisissez ne quitte votre navigateur.</span>
+    <details class="pied-plus">
+      <summary>Mentions</summary>
+      <p>
+        Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
+        source. Ce site ne compare aucun contrat du marché, ne recommande aucun placement et ne
+        collecte aucune donnée.
+      </p>
+    </details>
+    <span id="pied-sources"></span>
+  </div>
 </footer>
 
-<script src="app/prevoyance.js?v=1"></script>
-<script src="app/questions.js?v=1"></script>
-<script src="app/site.js?v=1"></script>
+<script src="app/prevoyance.js?v=2"></script>
+<script src="app/questions.js?v=2"></script>
+<script src="app/site.js?v=2"></script>
 </body>
 </html>

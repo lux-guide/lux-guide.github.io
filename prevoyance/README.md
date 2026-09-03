@@ -19,6 +19,7 @@ Ce qui trahit, quand on héberge un sujet dans un produit qui n'est pas le sien,
 | Vu en premier | un parcours de démarches | un chiffre, avant toute question |
 | Coquille | huit sections, un assistant global | quatre onglets, un assistant dédié |
 | Typographie | Fraunces et Inter | Barlow et Inter |
+| Thème | clair, sombre, système | un seul, clair |
 
 Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C'est le seul point de contact, et il est volontairement en bas.
 
@@ -27,7 +28,7 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 ## Les quatre onglets
 
 1. **Accueil.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
-2. **Ce que cela rapporte.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, et l'économie par taux d'imposition.
+2. **Simulateur.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
 3. **Questions fréquentes.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
 4. **Poser une question.** L'assistant, qui annonce son périmètre avant qu'on lui parle.
 
@@ -37,7 +38,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`, `#assistant`) : elle s
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Soixante-quatorze contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Quatre-vingt-huit contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance
@@ -84,7 +85,25 @@ Une colonne par taux, de 20 à 42 %, et la personne se situe. Afficher le plus �
 
 Une colonne du tableau porte le mode d'obtention, par exemple « 6 000 de base + 2 × 1 200 par enfant puis + 8 % par année au-delà de 30 ans ».
 
-### 10. L'âge de sortie est calculé, jamais affiché par défaut
+### 10. Les icônes sont tracées, jamais écrites
+
+Un jeu de vingt-deux SVG, défini une fois dans `index.html` et appelé par `<use>` : un seul tracé en mémoire quelle que soit la fréquence d'affichage, et aucune requête. Trois règles de tracé pour que l'ensemble tienne comme un jeu et non comme une collection : grille de 24, trait de 1,7 uniquement, bouts et jointures ronds. `currentColor` partout, donc une icône prend la couleur du texte qui l'entoure.
+
+Aucun caractère-image, aucun emoji, aucune police d'icônes. Un glyphe ne se colore pas, ne s'aligne pas et ne rend pas la même chose d'un système à l'autre. Un test relit le texte de la page et échoue s'il y trouve une flèche ou un pictogramme Unicode.
+
+### 11. Les graphiques sont tracés à la main, et doublés d'un tableau
+
+Deux graphiques en SVG, l'économie annuelle par taux en barres et le cumul sur dix ans en courbes, tracés depuis les mêmes données que les tableaux qui les suivent. Pas de librairie : elle pèserait cent fois ce code pour quatre séries, imposerait sa palette et ses polices contre celles du site, et rendrait du canvas, qu'on ne peut ni sélectionner ni relire.
+
+Deux règles tenues par des tests. **L'axe monte au palier rond juste au-dessus de la plus haute valeur**, jamais très au-delà : une échelle à quatre paliers montait l'axe à 5 000 pour une valeur de 2 737, et la comparaison entre barres ne se voyait plus. Et **le SVG est marqué `aria-hidden`** : c'est le tableau qui suit qui porte l'information pour un lecteur d'écran, le décrire deux fois le ferait lire deux fois.
+
+Une nuance de tracé qui compte : les étiquettes de fin de courbe sont dans la couleur du texte, pas dans celle de leur série. La teinte la plus claire de l'échelle rend 1,9 sur blanc, illisible dès qu'elle sert à écrire. C'est le point coloré au bout de la ligne qui la relie à son étiquette.
+
+### 12. Une mention lue partout n'est plus lue nulle part
+
+Le pied de page portait quatre lignes de mentions, visibles sur les quatre vues. Elles tiennent maintenant sur une ligne, et le détail s'ouvre pour qui le cherche. Un test mesure la hauteur du pied et échoue au-delà de 90 px.
+
+### 13. L'âge de sortie est calculé, jamais affiché par défaut
 
 `ageSortieEffectif(age)` rend la plus tardive des deux dates : l'âge légal, ou l'année de souscription plus la durée minimale du contrat. Écrire « à partir de 60 ans » en dur serait faux pour toute personne qui souscrit après 50 ans, et faux dans le sens qui compte, puisque c'est précisément à cet âge qu'on regarde le dispositif de près.
 
@@ -112,12 +131,11 @@ Couleurs et typographie relevées sur le site institutionnel du groupe, en mesur
 
 La reprise s'arrête là. **Aucun logo, aucun nom, aucune signature :** ce site traite un dispositif fiscal public, il ne doit passer pour la page officielle de personne. Le test cherche les noms d'assureurs dans tous les fichiers et échoue s'il en trouve un.
 
-Deux écarts assumés par rapport à la charte relevée :
+Un écart assumé par rapport à la charte relevée : **le gris a été assombri**, de `#67768e` à `#5f6d85`. Le gris d'origine rend 4,38 sur le fond de page et 3,97 sur le bleu clair, sous le seuil de 4,5 exigé pour du petit texte. Un test mesure le contraste de chaque texte visible sur son fond réel, sur les quatre vues.
 
-1. **Le gris a été assombri**, de `#67768e` à `#5f6d85`. Le gris d'origine rend 4,38 sur le fond de page et 3,97 sur le bleu clair, sous le seuil de 4,5 exigé pour du petit texte. Un test mesure le contraste de chaque texte visible sur son fond réel, dans les deux thèmes et sur trois vues.
-2. **Le mode sombre est bâti sur le marine de la charte** plutôt que sur un gris neutre, et le bleu vif y monte d'un cran vers `#7c9ade`, faute de quoi il ne passerait pas le contraste. C'est la même identité, pas un second thème sans rapport.
+Les graphiques utilisent une échelle séquentielle tirée de la même charte, `#a9bce9`, `#7c9ade`, `#2957c8`, `#041d58` : le taux le plus élevé porte la couleur la plus dense, ce qui se lit sans légende.
 
-Le site ouvre en clair, et non « comme le système » : la palette est bâtie pour le blanc. Les deux autres états restent à un clic.
+**Un seul thème.** Il n'y a pas de mode sombre, et donc pas de sélecteur : la palette est bâtie pour le blanc, et deux thèmes veulent dire deux fois les réglages de contraste à tenir pour un site de démonstration qui se lit de jour.
 
 ---
 
