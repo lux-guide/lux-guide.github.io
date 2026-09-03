@@ -31,9 +31,21 @@ Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C
 2. **Simulateur.** Quatre questions, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
 3. **Questions.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
 
-**L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en panneau latéral, par un bouton de l'en-tête, et reste ouvert pendant qu'on lit. Au-delà de 1180 px il pousse le contenu au lieu de le recouvrir : on lit et on demande en même temps. En dessous, il recouvre, avec un voile, et se ferme par Échap.
+**L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit. Au-delà de 1180 px il pousse le contenu au lieu de le recouvrir : on lit et on demande en même temps. En dessous, il recouvre, avec un voile.
 
 Il est fixe et porte son propre défilement. Un cadre qui défile à l'intérieur d'une page qui défile oblige à viser pour choisir lequel bouge ; ici les deux zones sont séparées à l'écran et chacune porte le sien.
+
+Sept choix de conception, chacun vérifié par un test :
+
+1. **L'en-tête se décale avec le reste du contenu.** Sans cela le volet monte par-dessus lui et recouvre le bouton qui l'a ouvert, qu'on ne retrouve plus pour le refermer.
+2. **La largeur se règle en tirant le bord gauche**, et se retient. 420 px conviennent à une question courte, pas à une réponse qui porte quatre sources et trois suggestions. La zone sensible de la poignée fait 11 px pour un trait visible de 1 : viser un filet à la souris est un exercice, pas une interface. Les flèches du clavier la déplacent aussi, sans quoi la largeur ne serait réglable qu'à la souris.
+3. **Le volet ne dépasse jamais les deux tiers de l'écran.** Au-delà, ce n'est plus un panneau à côté de la page, c'est la page qui devient une marge.
+4. **Échap ferme, que le volet recouvre la page ou qu'il la pousse.** On ne se souvient pas d'un raccourci qui marche une fois sur deux. Quand il recouvre, le clavier reste dedans : la tabulation partirait sinon se promener dans une page qu'on ne voit plus.
+5. **Le périmètre est replié au départ.** Neuf puces avant de pouvoir poser sa question, ce sont neuf puces qu'on ne lit pas. Il sert quand une question échoue, et la réponse « hors de ce que je sais » le rappelle déjà à ce moment-là.
+6. **Le bouton d'envoi reste éteint tant qu'il n'y a rien à envoyer**, et celui qui efface la conversation reste gris tant qu'il n'y a rien à effacer. Un bouton actif qui ne fait rien apprend à ne plus lui faire confiance.
+7. **Entrée envoie, Maj+Entrée passe à la ligne**, et la saisie grandit avec la question jusqu'à cinq lignes. Un champ d'une ligne pour une question de deux la fait défiler sous les yeux pendant qu'on l'écrit.
+
+Un défaut que ce déplacement a créé, et qu'un test attrape désormais : la conversation ne descendait plus toute seule. Le code défilait `#as-log`, qui avait cessé de porter sa propre barre. C'est le corps du volet qu'il faut suivre, et à la frame suivante, sinon on défile vers une hauteur périmée. Quand on remonte, un bouton ramène au dernier message ; il n'apparaît que si l'on a vraiment remonté, affiché en permanence il masquerait la conversation pour ne rien dire.
 
 Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre le panneau sans changer la vue qu'on regardait.
 
@@ -41,7 +53,7 @@ Chaque onglet a son adresse (`#simulateur`, `#questions`), et `#assistant` ouvre
 
 ## Les règles qui tiennent le site
 
-Chacune est vérifiée par un test. Cent-sept contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
+Chacune est vérifiée par un test. Cent-vingt-quatre contrôles, dans [test_prevoyance.py](test_prevoyance.py) :
 
 ```bash
 python -m http.server 8932 --directory prevoyance

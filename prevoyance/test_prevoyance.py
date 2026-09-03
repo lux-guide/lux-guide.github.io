@@ -362,6 +362,98 @@ with sync_playwright() as p:
             "les graphiques ne sont pas lus deux fois par un lecteur d'ecran")
     verifie(pg.locator("#sim-resultat table").count() >= 2, "les memes chiffres restent en tableau")
 
+    print("19b. Le panneau se comporte comme un volet, pas comme une boite")
+    pg.set_viewport_size({"width": 1440, "height": 900})
+    pg.goto(URL)
+    pg.wait_for_timeout(600)
+    # Le panneau retient son etat d'une visite a l'autre : il faut le refermer
+    # avant de verifier que le bouton l'ouvre, sans quoi le clic le ferme.
+    pg.evaluate("""() => {
+      localStorage.removeItem('prevoyance.panneau.largeur.v1');
+      localStorage.setItem('prevoyance.panneau.v1', '0');
+    }""")
+    pg.reload()
+    pg.wait_for_timeout(600)
+    verifie(not pg.locator("#panneau").is_visible(), "ferme, il reste ferme au rechargement")
+    pg.click("#assistant-btn")
+    pg.wait_for_timeout(500)
+    m = pg.evaluate("""() => {
+      const p = document.querySelector('#panneau').getBoundingClientRect();
+      return { haut: Math.round(p.top), bas: Math.round(innerHeight - p.bottom), large: Math.round(p.width) };
+    }""")
+    verifie(m["haut"] == 0 and m["bas"] == 0, "il va du haut au bas de l'ecran")
+    # L'en-tete se decale avec le reste : sans cela le panneau monte par-dessus
+    # lui et recouvre le bouton qui l'a ouvert, qu'on ne retrouve plus.
+    bouton = pg.evaluate("""() => {
+      const b = document.querySelector('#assistant-btn').getBoundingClientRect();
+      const p = document.querySelector('#panneau').getBoundingClientRect();
+      return b.right <= p.left + 1;
+    }""")
+    verifie(bouton, "et ne recouvre pas le bouton qui l'a ouvert")
+
+    # La largeur se regle a la souris et se retient.
+    poi = pg.locator("#pan-poignee").bounding_box()
+    pg.mouse.move(poi["x"] + 5, poi["y"] + 400)
+    pg.mouse.down()
+    pg.mouse.move(poi["x"] - 150, poi["y"] + 400, steps=8)
+    pg.mouse.up()
+    pg.wait_for_timeout(400)
+    large2 = pg.evaluate("Math.round(document.querySelector('#panneau').getBoundingClientRect().width)")
+    verifie(large2 > m["large"] + 100, "la poignee l'elargit (%d puis %d px)" % (m["large"], large2))
+    marge = pg.evaluate("parseInt(getComputedStyle(document.querySelector('main')).marginRight)")
+    verifie(abs(marge - large2) < 3, "et la page suit exactement")
+    pg.reload()
+    pg.wait_for_timeout(700)
+    verifie(pg.evaluate("Math.round(document.querySelector('#panneau').getBoundingClientRect().width)") == large2,
+            "la largeur est retenue d'une visite a l'autre")
+
+    print("19c. La conversation descend toute seule")
+    # Depuis que le panneau porte le defilement, defiler #as-log ne fait plus
+    # rien : c'est #pan-corps qu'il faut suivre. Le defaut ne se voit qu'avec
+    # assez de messages pour depasser la hauteur.
+    for q in ["combien je peux deduire", "un frontalier y a t il droit",
+              "quand puis je recuperer", "comment declarer les versements",
+              "sur quoi l argent est place", "puis je reporter"]:
+        pg.fill("#as-input", q)
+        pg.press("#as-input", "Enter")
+        pg.wait_for_timeout(350)
+    z = pg.evaluate("""() => {
+      const z = document.querySelector('#pan-corps');
+      return { reste: Math.round(z.scrollHeight - z.scrollTop - z.clientHeight),
+               depasse: z.scrollHeight > z.clientHeight + 40 };
+    }""")
+    verifie(z["depasse"], "la conversation depasse la hauteur du panneau")
+    verifie(z["reste"] < 8, "et reste collee au dernier message (%d px)" % z["reste"])
+    pg.evaluate("document.querySelector('#pan-corps').scrollTop = 0")
+    pg.wait_for_timeout(350)
+    verifie(pg.locator("#pan-bas").is_visible(), "remonter fait apparaitre le retour au dernier message")
+    pg.click("#pan-bas")
+    pg.wait_for_timeout(700)
+    verifie(not pg.locator("#pan-bas").is_visible(), "et il disparait une fois revenu")
+
+    print("19d. La saisie et la remise a zero")
+    pg.click("#pan-vider")
+    pg.wait_for_timeout(400)
+    verifie(pg.locator("#as-log .msg.moi").count() == 0, "la remise a zero efface les questions")
+    verifie(pg.locator("#pan-debut").is_visible(), "et remontre ce que l'assistant sait")
+    verifie(pg.locator("#pan-vider").is_disabled(), "puis se grise, n'ayant plus rien a effacer")
+    # Un bouton actif qui ne fait rien apprend a ne plus lui faire confiance.
+    verifie(pg.locator("#as-envoyer").is_disabled(), "le bouton d'envoi attend qu'il y ait une question")
+    pg.fill("#as-input", "combien")
+    pg.wait_for_timeout(200)
+    verifie(not pg.locator("#as-envoyer").is_disabled(), "et s'allume des qu'on ecrit")
+    # Maj+Entree passe a la ligne, comme dans n'importe quelle messagerie.
+    pg.press("#as-input", "Shift+Enter")
+    pg.wait_for_timeout(250)
+    verifie(pg.locator("#as-log .msg.moi").count() == 0, "Maj+Entree n'envoie pas")
+    pg.fill("#as-input", "une ligne")
+    pg.wait_for_timeout(250)
+    h1 = pg.evaluate("document.querySelector('#as-input').getBoundingClientRect().height")
+    pg.fill("#as-input", "une question\nqui tient\nsur trois lignes")
+    pg.wait_for_timeout(250)
+    h2 = pg.evaluate("document.querySelector('#as-input').getBoundingClientRect().height")
+    verifie(h2 > h1, "la saisie grandit avec la question (%d puis %d px)" % (h1, h2))
+
     print("20. L'assistant renvoie a l'endroit exact de la page")
     # Une reponse gagne a montrer d'ou elle vient. Le bouton ouvre la bonne
     # vue, y defile et surligne l'element, le temps de le trouver.

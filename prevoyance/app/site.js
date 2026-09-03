@@ -295,6 +295,89 @@
     avantPan = null;
   }
 
+  // ---------- La largeur du panneau ----------
+  // 420 px conviennent a une question courte, pas a une reponse qui porte
+  // quatre sources et trois suggestions. La largeur se regle et se retient.
+
+  var CLE_LARGEUR = "prevoyance.panneau.largeur.v1";
+  var L_MIN = 320, L_MAX = 720;
+
+  function poserLargeur(px) {
+    var l = Math.max(L_MIN, Math.min(L_MAX, Math.round(px)));
+    // Jamais plus des deux tiers de l'ecran : au-dela, ce n'est plus un
+    // panneau a cote de la page, c'est la page qui devient une marge.
+    l = Math.min(l, Math.round(window.innerWidth * 0.66));
+    document.documentElement.style.setProperty("--pan-l", l + "px");
+    var p = $("#pan-poignee");
+    if (p) p.setAttribute("aria-valuenow", String(l));
+    return l;
+  }
+
+  function initLargeur() {
+    var l = 420;
+    try {
+      var v = parseInt(localStorage.getItem(CLE_LARGEUR), 10);
+      if (v >= L_MIN && v <= L_MAX) l = v;
+    } catch (e) {}
+    poserLargeur(l);
+
+    var p = $("#pan-poignee");
+    if (!p) return;
+
+    function glisser(e) {
+      var x = e.touches ? e.touches[0].clientX : e.clientX;
+      poserLargeur(window.innerWidth - x);
+      if (e.cancelable) e.preventDefault();
+    }
+    function finir() {
+      document.body.removeAttribute("data-redim");
+      document.removeEventListener("mousemove", glisser);
+      document.removeEventListener("touchmove", glisser);
+      document.removeEventListener("mouseup", finir);
+      document.removeEventListener("touchend", finir);
+      try {
+        var n = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10);
+        localStorage.setItem(CLE_LARGEUR, String(n));
+      } catch (e) {}
+    }
+    function commencer(e) {
+      document.body.setAttribute("data-redim", "1");
+      document.addEventListener("mousemove", glisser);
+      document.addEventListener("touchmove", glisser, { passive: false });
+      document.addEventListener("mouseup", finir);
+      document.addEventListener("touchend", finir);
+      if (e.cancelable) e.preventDefault();
+    }
+    p.addEventListener("mousedown", commencer);
+    p.addEventListener("touchstart", commencer, { passive: false });
+
+    // Au clavier : les fleches deplacent la separation, comme n'importe quel
+    // separateur. Sans cela, la largeur ne serait reglable qu'a la souris.
+    p.addEventListener("keydown", function (e) {
+      var pas = e.shiftKey ? 60 : 16, l = null;
+      var a = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10);
+      if (e.key === "ArrowLeft") l = a + pas;
+      else if (e.key === "ArrowRight") l = a - pas;
+      else if (e.key === "Home") l = L_MAX;
+      else if (e.key === "End") l = L_MIN;
+      if (l === null) return;
+      e.preventDefault();
+      var n = poserLargeur(l);
+      try { localStorage.setItem(CLE_LARGEUR, String(n)); } catch (x) {}
+    });
+  }
+
+  // ---------- Revenir au dernier message ----------
+  // Un bouton qui n'apparait que si l'on a vraiment remonte : affiche en
+  // permanence, il masquerait la conversation pour ne rien dire.
+
+  function majBoutonBas() {
+    var z = $("#pan-corps"), b = $("#pan-bas");
+    if (!z || !b) return;
+    var reste = z.scrollHeight - z.scrollTop - z.clientHeight;
+    b.hidden = reste < 120;
+  }
+
   function initPanneau() {
     var b = $("#assistant-btn");
     if (b) b.addEventListener("click", function () {
@@ -304,14 +387,65 @@
     if (f) f.addEventListener("click", fermerPanneau);
     var v = $("#voile");
     if (v) v.addEventListener("click", fermerPanneau);
+
+    // Echap ferme, que le panneau recouvre la page ou qu'il la pousse. La
+    // regle ne doit pas dependre de la largeur de la fenetre : on ne se
+    // souvient pas d'un raccourci qui marche une fois sur deux.
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && panOuvert && !largeEcran()) fermerPanneau();
+      if (e.key === "Escape" && panOuvert) { fermerPanneau(); return; }
+
+      // Quand le panneau recouvre la page, le clavier reste dedans. Sans cela
+      // la tabulation part se promener dans une page qu'on ne voit plus, et
+      // l'on ne sait plus ou l'on est. Quand il pousse la page au lieu de la
+      // couvrir, les deux sont visibles et il n'y a rien a retenir.
+      if (e.key !== "Tab" || !panOuvert || largeEcran()) return;
+      var p = $("#panneau");
+      var f = p.querySelectorAll("button, [href], input, textarea, select, [tabindex]:not([tabindex=\"-1\"])");
+      var vis = [];
+      for (var i = 0; i < f.length; i++) if (f[i].offsetParent !== null && !f[i].disabled) vis.push(f[i]);
+      if (!vis.length) return;
+      var prem = vis[0], der = vis[vis.length - 1];
+      if (e.shiftKey && document.activeElement === prem) { e.preventDefault(); der.focus(); }
+      else if (!e.shiftKey && document.activeElement === der) { e.preventDefault(); prem.focus(); }
     });
-    window.addEventListener("resize", function () { if (panOuvert) majPanneau(); });
+    window.addEventListener("resize", function () {
+      if (panOuvert) majPanneau();
+      poserLargeur(parseInt(getComputedStyle(document.documentElement).getPropertyValue("--pan-l"), 10));
+    });
+
+    var vider = $("#pan-vider");
+    if (vider) vider.addEventListener("click", function () {
+      var log = $("#as-log");
+      if (log) log.innerHTML = "";
+      assistantDemarre = false;
+      var d = $("#pan-debut");
+      if (d) d.hidden = false;
+      demarrerAssistant();
+      var i = $("#as-input");
+      if (i) i.focus();
+      majOutils();
+    });
+
+    var z = $("#pan-corps");
+    if (z) z.addEventListener("scroll", majBoutonBas);
+    var bb = $("#pan-bas");
+    if (bb) bb.addEventListener("click", function () {
+      z.scrollTo({ top: z.scrollHeight, behavior: doux() });
+    });
+
+    initLargeur();
+
     var ouvre = false;
     try { ouvre = localStorage.getItem(CLE_PAN) === "1"; } catch (e) {}
     if (ouvre) { panOuvert = true; majPanneau(); demarrerAssistant(); }
     else majPanneau();
+  }
+
+  // Le bouton « repartir de zero » n'a de sens qu'une fois qu'on a demande
+  // quelque chose. Grise avant, il dit ce qu'il attend.
+  function majOutils() {
+    var v = $("#pan-vider"), log = $("#as-log");
+    if (v && log) v.disabled = log.querySelectorAll(".msg.moi").length === 0;
   }
 
   // ---------- Renvoyer vers un endroit de la page ----------
@@ -934,11 +1068,22 @@
     if (statut) m.appendChild(el("span", "statut", statut));
     if (texte) m.appendChild(document.createTextNode(texte));
     log.appendChild(m);
-    log.scrollTop = log.scrollHeight;
+    // C'est le corps du panneau qui defile, pas la conversation : defiler
+    // #as-log ne faisait plus rien depuis qu'il a cesse de porter sa barre.
+    // Le report a la frame suivante laisse le navigateur mesurer la bulle
+    // qu'on vient d'ajouter, sinon on defile vers une hauteur perimee.
+    var z = $("#pan-corps");
+    if (z) requestAnimationFrame(function () { z.scrollTop = z.scrollHeight; });
     return m;
   }
 
   function repondre(q) {
+    // Ce qu'on a lu une fois n'a pas a occuper l'ecran ensuite : le perimetre
+    // se replie de lui-meme des la premiere question, sans qu'on ait a le
+    // fermer.
+    var deb = $("#pan-debut");
+    if (deb) deb.hidden = true;
+
     // Aucune donnee personnelle n'est lue ni affichee. Un echo est deja une
     // conservation : meme le message de l'utilisateur n'est pas rendu tel quel,
     // il resterait dans la page et dans une capture d'ecran.
@@ -994,6 +1139,8 @@
     repondreEntree(best.entree);
   }
 
+
+
   function repondreEntree(e) {
     var m = bulle("rep", "Réponse", remplir(e.reponse));
     if (e.reserve) m.appendChild(el("span", "sous reserve", e.reserve));
@@ -1039,14 +1186,15 @@
     }
     if (assistantDemarre) return;
     assistantDemarre = true;
-    var m = bulle("rep", null,
-      "Posez votre question en français courant. Les réponses sont écrites et relues à l'avance, " +
-      "chacune avec sa source, et je dis quand je ne sais pas.");
+    // L'intro du panneau dit deja comment les reponses sont faites : la
+    // repeter ici ferait lire deux fois la meme phrase avant d'avoir rien
+    // demande. Cette bulle ne porte que l'invitation et de quoi commencer.
+    var m = bulle("rep", null, "Par où commencer ?");
     var ch = el("div", "chips");
     ["Combien puis-je déduire par an ?", "Un frontalier y a-t-il droit ?",
      "Puis-je sortir avant soixante ans ?"].forEach(function (t) {
       var b = el("button", "chip", t);
-      b.addEventListener("click", function () { repondre(t); });
+      b.addEventListener("click", function () { repondre(t); majOutils(); });
       ch.appendChild(b);
     });
     m.appendChild(ch);
@@ -1055,14 +1203,37 @@
   function initAssistant() {
     var i = $("#as-input"), b = $("#as-envoyer");
     if (!i || !b) return;
+
+    // La saisie grandit avec la question, jusqu'a la hauteur que le style
+    // autorise. Un champ d'une ligne pour une question de deux la fait defiler
+    // sous les yeux pendant qu'on l'ecrit.
+    function ajuster() {
+      i.style.height = "auto";
+      i.style.height = Math.min(i.scrollHeight, 136) + "px";
+    }
     function envoyer() {
       var q = i.value.trim();
       if (!q) return;
       i.value = "";
+      ajuster();
+      b.disabled = true;
       repondre(q);
+      majOutils();
     }
     b.addEventListener("click", envoyer);
-    i.addEventListener("keydown", function (e) { if (e.key === "Enter") envoyer(); });
+    i.addEventListener("input", function () {
+      ajuster();
+      // Un bouton actif qui ne fait rien apprend a ne plus lui faire
+      // confiance : il ne s'allume que quand il y a quelque chose a envoyer.
+      b.disabled = !i.value.trim();
+    });
+    i.addEventListener("keydown", function (e) {
+      // Entree envoie, Maj+Entree passe a la ligne : c'est ce que fait
+      // n'importe quelle messagerie, et la saisie tient plusieurs lignes.
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); envoyer(); }
+    });
+    ajuster();
+    majOutils();
   }
 
   // ---------- Pied de page ----------

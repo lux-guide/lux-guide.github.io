@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Épargne-retraite au Luxembourg</title>
 <meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
-<link rel="stylesheet" href="app/site.css?v=3">
+<link rel="stylesheet" href="app/site.css?v=4">
 </head>
 <body>
 
@@ -35,6 +35,8 @@
     <symbol id="i-bouclier" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 5 6v6c0 4.2 3 7.4 7 8.8 4-1.4 7-4.6 7-8.8V6z"/><path d="M9.2 12.2l2 2 3.6-3.9"/></symbol>
     <symbol id="i-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14"/><path d="M13.5 7l5 5-5 5"/></symbol>
     <symbol id="i-lien" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1.4 1.4"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.4-1.4"/></symbol>
+    <symbol id="i-refaire" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5.5v5h-5"/><path d="M19.6 10.5A8 8 0 1 0 20 14"/></symbol>
+    <symbol id="i-bas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13"/><path d="M6.5 12.5 12 18l5.5-5.5"/></symbol>
     <symbol id="i-fermer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
     <symbol id="i-cible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6"/></symbol>
     <symbol id="i-source" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l5 5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2z"/><path d="M13.5 3.5V9H19"/><path d="M8 13h8M8 16.5h5"/></symbol>
@@ -158,29 +160,47 @@
      bouge : ici les deux zones sont separees a l'ecran, et chacune la sienne. -->
 <div class="voile" id="voile" hidden></div>
 <aside class="panneau" id="panneau" aria-labelledby="pan-titre" hidden>
+  <!-- La poignee de redimensionnement, comme un volet de navigateur. 420 px
+       conviennent a une question courte, pas a une reponse qui porte quatre
+       sources et trois suggestions. -->
+  <div class="pan-poignee" id="pan-poignee" role="separator" aria-orientation="vertical"
+       aria-label="Largeur du panneau" tabindex="0" aria-valuemin="320" aria-valuemax="720"></div>
   <div class="pan-tete">
     <h2 id="pan-titre">
       <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-dialogue"/></svg>
       Poser une question
     </h2>
-    <button class="pan-fermer" id="pan-fermer" aria-label="Fermer l'assistant">
+    <button class="pan-outil" id="pan-vider" title="Repartir de zéro" aria-label="Effacer la conversation">
+      <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-refaire"/></svg>
+    </button>
+    <button class="pan-outil" id="pan-fermer" title="Fermer" aria-label="Fermer l'assistant">
       <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-fermer"/></svg>
     </button>
   </div>
   <div class="pan-corps" id="pan-corps">
-    <p class="pan-intro">
-      Les réponses sont écrites et relues à l'avance, chacune avec sa source. Aucun modèle de
-      langue ne rédige ici.
-    </p>
-    <details class="pan-perimetre">
-      <summary>Ce que je sais, ce que je ne sais pas</summary>
-      <div class="perimetre" id="as-perimetre"></div>
-    </details>
+    <!-- L'etat de depart annonce le perimetre en clair, et se replie de
+         lui-meme des la premiere question : ce qu'on a lu une fois n'a pas a
+         occuper l'ecran ensuite. -->
+    <div class="pan-debut" id="pan-debut">
+      <p class="pan-intro">
+        Les réponses sont écrites et relues à l'avance, chacune avec sa source. Aucun modèle de
+        langue ne rédige ici, et je dis quand je ne sais pas.
+      </p>
+      <details class="pan-perimetre">
+        <summary>Ce que je sais, ce que je ne sais pas</summary>
+        <div class="perimetre" id="as-perimetre"></div>
+      </details>
+    </div>
     <div class="chat-log" id="as-log"></div>
   </div>
+  <button class="pan-bas" id="pan-bas" hidden aria-label="Revenir au dernier message">
+    <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-bas"/></svg>
+    Dernier message
+  </button>
   <div class="chat-bar">
-    <input type="text" id="as-input" placeholder="Votre question, en français courant" autocomplete="off">
-    <button class="btn" id="as-envoyer">Demander</button>
+    <label class="visuellement-cache" for="as-input">Votre question</label>
+    <textarea id="as-input" rows="1" placeholder="Posez votre question" autocomplete="off"></textarea>
+    <button class="btn" id="as-envoyer" disabled>Demander</button>
   </div>
 </aside>
 
@@ -220,8 +240,8 @@
   </p>
 </footer>
 
-<script src="app/prevoyance.js?v=3"></script>
-<script src="app/questions.js?v=3"></script>
-<script src="app/site.js?v=3"></script>
+<script src="app/prevoyance.js?v=4"></script>
+<script src="app/questions.js?v=4"></script>
+<script src="app/site.js?v=4"></script>
 </body>
 </html>

@@ -410,15 +410,19 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
 
 .panneau {
   position: fixed; z-index: 80;
-  top: var(--h-top); right: 0; bottom: 0; width: min(420px, 100vw);
+  top: 0; right: 0; bottom: 0; width: min(var(--pan-l, 420px), 100vw);
   display: flex; flex-direction: column;
   background: var(--surface); border-left: 1px solid var(--border);
   box-shadow: var(--ombre-m);
   padding-right: env(safe-area-inset-right);
 }
+/* Sa tete tombe a la hauteur de celle du site : le panneau va du haut au bas
+   de l'ecran, les deux barres se lisent alors comme une seule ligne. */
 .pan-tete {
   flex: none; display: flex; align-items: center; gap: 10px;
-  padding: 14px 12px 14px 20px; border-bottom: 1px solid var(--border);
+  min-height: var(--h-top); padding: 10px 12px 10px 20px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border);
 }
 .pan-tete h2 {
   flex: 1; margin: 0; font-family: var(--titre); font-weight: 600; font-size: 16px;
@@ -430,6 +434,98 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
   cursor: pointer; font-size: 17px; transition: color .16s, background .16s;
 }
 .pan-fermer:hover { color: var(--accent); background: var(--accent-soft); }
+
+
+/* Poignee de redimensionnement. Sa zone sensible depasse largement le trait
+   visible : viser un filet de 1 px a la souris est un exercice, pas une
+   interface. */
+.pan-poignee {
+  position: absolute; left: -5px; top: 0; bottom: 0; width: 11px; z-index: 2;
+  cursor: col-resize; background: none; border: 0;
+}
+.pan-poignee::after {
+  content: ""; position: absolute; left: 5px; top: 0; bottom: 0; width: 1px;
+  background: transparent; transition: background .16s;
+}
+.pan-poignee:hover::after, .pan-poignee:focus-visible::after,
+body[data-redim="1"] .pan-poignee::after { background: var(--accent); width: 2px; }
+.pan-poignee:focus-visible { outline: none; }
+/* Pendant le glissement, le curseur ne doit pas changer au survol du texte, et
+   rien ne doit se selectionner sous la souris. */
+body[data-redim="1"] { cursor: col-resize; user-select: none; }
+body[data-redim="1"] * { pointer-events: none; }
+body[data-redim="1"] .pan-poignee { pointer-events: auto; }
+
+.pan-outil {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-s); background: none; color: var(--muted);
+  cursor: pointer; transition: color .16s, background .16s;
+}
+.pan-outil:hover { color: var(--accent); background: var(--accent-soft); }
+.pan-outil[disabled] { opacity: .35; cursor: default; }
+.pan-outil[disabled]:hover { color: var(--muted); background: none; }
+
+.pan-debut { margin-bottom: 18px; }
+/* Neuf puces avant de pouvoir poser sa question, c'est neuf puces qu'on ne
+   lit pas. Le perimetre reste a un clic : il sert quand une question echoue,
+   et la reponse « hors de ce que je sais » le rappelle deja a ce moment-la. */
+.pan-perimetre { margin: 0; }
+.pan-perimetre summary {
+  cursor: pointer; list-style: none; font-size: 13px; color: var(--accent);
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.pan-perimetre summary::-webkit-details-marker { display: none; }
+.pan-perimetre summary::before {
+  content: ""; width: 6px; height: 6px; flex: none;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(-45deg); transition: transform .18s;
+}
+.pan-perimetre[open] summary::before { transform: rotate(45deg); }
+.pan-perimetre .perimetre { margin-top: 12px; }
+.pan-debut[hidden] { display: none; }
+.pan-intro { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.panneau .perimetre { display: block; margin: 0; }
+.panneau .per-bloc { padding: 12px 14px; margin-bottom: 8px; border-radius: var(--r-s); }
+.panneau .per-bloc h3 { font-size: 11px; margin-bottom: 6px; }
+.panneau .per-bloc ul { font-size: 13px; padding-left: 16px; }
+
+/* Le bouton de retour en bas flotte au-dessus de la barre de saisie, la ou
+   l'oeil revient. Il n'apparait que si l'on a vraiment remonte. */
+.pan-bas {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: 74px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border-fort);
+  background: var(--surface); color: var(--text-2); box-shadow: var(--ombre-m);
+  font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.pan-bas:hover { color: var(--accent); border-color: var(--accent); }
+
+.visuellement-cache {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* La saisie grandit avec la question, jusqu'a cinq lignes. Un champ d'une
+   ligne pour une question de deux la fait defiler sous les yeux pendant
+   qu'on l'ecrit. */
+.panneau .chat-bar { align-items: flex-end; }
+.panneau .chat-bar textarea {
+  flex: 1 1 10rem; min-width: 0; resize: none; overflow-y: auto;
+  min-height: var(--h-champ); max-height: 8.5em; padding: 11px 13px;
+  line-height: 1.45; border: 1px solid var(--border-fort); border-radius: var(--r-s);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 15px;
+  transition: border-color .16s, box-shadow .16s;
+}
+.panneau .chat-bar textarea:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Dans un panneau, le bouton d'envoi se serre : chaque pixel qu'il prend est
+   un pixel de moins pour la question. */
+.panneau .chat-bar .btn { padding: 0 16px; height: var(--h-champ); flex: none; }
+.panneau .btn[disabled] { opacity: .45; cursor: default; transform: none; }
+.panneau .btn[disabled]:hover { background: var(--accent); border-color: var(--accent); transform: none; }
 
 /* Un seul element defile : ce corps. La barre de saisie reste au bas du
    panneau, ou le pouce la trouve sans faire remonter la conversation. */
@@ -454,9 +550,18 @@ tr.total td { background: var(--surface-2); border-top: 2px solid var(--border-f
    on peut lire le simulateur et poser sa question en meme temps, ce qui est
    tout l'interet de le sortir de son onglet. */
 @media (min-width: 1180px) {
+  /* L'en-tete se decale avec le reste. Sans cela, le panneau monte par-dessus
+     lui et recouvre le bouton qui l'a ouvert, qu'on ne retrouve plus pour le
+     refermer. */
+  body[data-panneau="1"] header.top,
   body[data-panneau="1"] main,
-  body[data-panneau="1"] .pied { margin-right: min(420px, 100vw); }
-  body[data-panneau="1"] main, body[data-panneau="1"] .pied { transition: margin-right .22s cubic-bezier(.2,.7,.2,1); }
+  body[data-panneau="1"] .pied {
+    margin-right: min(var(--pan-l, 420px), 100vw);
+    transition: margin-right .22s cubic-bezier(.2,.7,.2,1);
+  }
+  body[data-redim="1"] header.top,
+  body[data-redim="1"] main,
+  body[data-redim="1"] .pied { transition: none; }
 }
 
 /* ---------- Renvoyer vers un endroit de la page ----------
