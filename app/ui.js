@@ -2145,8 +2145,11 @@
       sauverConversation();
       var b = $("#mode-badge");
       if (b) {
-        b.textContent = "mode " + (r.via || "local");
-        b.className = "badge" + (String(r.via).indexOf("api") === 0 ? " on" : "");
+        // Le libelle dit au visiteur ce qu'il a devant lui, pas comment c'est
+        // branche : sans modele derriere, l'assistant est une demonstration.
+        var api = String(r.via).indexOf("api") === 0;
+        b.textContent = api ? "mode api" : "assistant fictif";
+        b.className = "badge" + (api ? " on" : "");
       }
     }).catch(function (e) {
       attente.forEach(function (m) { m.remove(); });
@@ -2215,7 +2218,7 @@
     window.CHAT.testerApi().then(function (ok) {
       var b = $("#mode-badge");
       if (b) {
-        b.textContent = ok ? "mode api" : "mode local";
+        b.textContent = ok ? "mode api" : "assistant fictif";
         b.className = "badge" + (ok ? " on" : "");
       }
     });
