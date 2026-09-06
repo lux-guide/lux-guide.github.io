@@ -246,7 +246,7 @@
 
   // ---------- Navigation ----------
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "lignes", "cartes", "assistant", "admin"];
 
   var pagePrecedente = null;
 

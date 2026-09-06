@@ -29,6 +29,8 @@
       <button role="tab" id="tab-simulateur" data-panel="simulateur" aria-selected="false" aria-controls="panel-simulateur" tabindex="-1">Simulateur</button>
       <button role="tab" id="tab-comparateur" data-panel="comparateur" aria-selected="false" aria-controls="panel-comparateur" tabindex="-1">Comparateur</button>
       <button role="tab" id="tab-carte" data-panel="carte" aria-selected="false" aria-controls="panel-carte" tabindex="-1">Carte</button>
+      <button role="tab" id="tab-lignes" data-panel="lignes" aria-selected="false" aria-controls="panel-lignes" tabindex="-1">Lignes</button>
+      <button role="tab" id="tab-cartes" data-panel="cartes" aria-selected="false" aria-controls="panel-cartes" tabindex="-1">Communes</button>
       <button role="tab" id="tab-assistant" data-panel="assistant" aria-selected="false" aria-controls="panel-assistant" tabindex="-1" class="tab-assistant">
         <span class="tab-pt" aria-hidden="true"></span>Assistant
       </button>
@@ -428,6 +430,98 @@
     </div>
   </section>
 
+  <!-- Cartes : les communes comparees indicateur par indicateur -->
+  <section class="panel" role="tabpanel" aria-labelledby="tab-cartes" id="panel-cartes" hidden>
+    <h1>Les cent communes, chiffre par chiffre</h1>
+    <p class="lead">
+      Le Luxembourg tient dans une heure de route, et pourtant le prix du mètre carré
+      double d'une commune à l'autre, le salaire médian va du simple au double, et la
+      part de résidents étrangers passe de 20 à 70 %. Choisissez un indicateur : les
+      communes se colorent, du plus clair au plus foncé. Cliquez-en une pour voir
+      toutes ses valeurs et son rang.
+    </p>
+    <div class="card">
+      <div id="ct-choix"></div>
+    </div>
+    <div class="ct-vue">
+      <div id="cartes-map"></div>
+      <div id="ct-cote"></div>
+    </div>
+    <div id="ct-sortie"></div>
+    <div id="ct-fiche"></div>
+    <p class="hint" id="ct-source"></p>
+    <p class="hint">
+      Une carte de ce genre montre où se situe une commune, pas pourquoi. Un salaire
+      médian élevé décrit les gens qui habitent là, pas le coût de la vie sur place.
+      Un taux de chômage bas peut tenir à la structure d'âge. Et les prix affichés sont
+      ceux des annonces, donc au dessus des prix signés. Comme les onglets Carte et
+      Lignes, celui-ci demande un accès réseau pour le fond de carte.
+    </p>
+  </section>
+
+  <!-- Lignes : tout ce qui arrive a une adresse sans changement -->
+  <section class="panel" role="tabpanel" aria-labelledby="tab-lignes" id="panel-lignes" hidden>
+    <h1>Chercher un logement sur une ligne</h1>
+    <p class="lead">
+      Un logement se juge mal à vol d'oiseau. Deux kilomètres avec une correspondance et
+      dix minutes de marche coûtent plus cher qu'une demi-heure de bus direct. Indiquez le
+      lieu où vous devez vous rendre chaque jour : la carte affiche tous les arrêts d'où
+      l'on y arrive sans changer, colorés par temps de trajet. Cherchez ensuite autour des
+      arrêts verts, même s'ils paraissent loin.
+    </p>
+    <div class="card">
+      <div class="row">
+        <div style="flex:2">
+          <label for="lg-adresse">Le lieu où vous vous rendez, adresse ou nom d'arrêt</label>
+          <input type="text" id="lg-adresse" placeholder="Ex : Kirchberg, Cloche d'Or, Gare de Luxembourg..." autocomplete="off">
+        </div>
+        <div style="align-self:flex-end">
+          <button class="btn" id="lg-chercher">Afficher les lignes</button>
+        </div>
+      </div>
+      <div class="chips" id="lg-exemples">
+        <button class="chip">Kirchberg, Coque</button>
+        <button class="chip">Gasperich, Cloche d'Or</button>
+        <button class="chip">Luxembourg, Gare Centrale</button>
+        <button class="chip">Belval, Université</button>
+        <button class="chip">Findel, Aéroport</button>
+      </div>
+      <div class="lg-curseurs">
+        <div>
+          <label for="lg-rayon">Marche jusqu'à l'arrêt d'arrivée : <output id="lg-rayon-v">400 m</output></label>
+          <input type="range" id="lg-rayon" min="150" max="800" step="50" value="400">
+        </div>
+        <div>
+          <label for="lg-tmax">Temps de trajet maximum : <output id="lg-tmax-v">45 min</output></label>
+          <input type="range" id="lg-tmax" min="10" max="90" step="5" value="45">
+        </div>
+        <div>
+          <label for="lg-nmax">Arrêts avant l'arrivée, au plus : <output id="lg-nmax-v">12</output></label>
+          <input type="range" id="lg-nmax" min="2" max="40" step="1" value="12">
+        </div>
+        <div class="check" style="align-self:end">
+          <input type="checkbox" id="lg-hors"><label for="lg-hors">Montrer les arrêts hors du Luxembourg</label>
+        </div>
+      </div>
+      <p class="hint" style="margin:12px 0 0">
+        Cliquer une ligne du tableau l'isole sur la carte, décocher sa case la masque, cliquer
+        un arrêt y recentre la carte. L'adresse cherchée reste dans ce navigateur, elle n'est
+        envoyée à aucun serveur du guide.
+      </p>
+    </div>
+    <div id="lignes-map"></div>
+    <div id="lg-sortie"></div>
+    <p class="hint" id="lg-source"></p>
+    <p class="hint">
+      Ce que la carte ne dit pas : le temps d'attente, la correspondance, et le trafic réel.
+      Un arrêt à 40 minutes desservi quatre fois par heure vaut mieux qu'un arrêt à 25 minutes
+      desservi deux fois par jour, d'où la colonne des arrivées du matin. Pour l'horaire exact
+      d'un jour donné, mobiliteit.lu fait foi. Comme l'onglet Carte, celui-ci demande un accès
+      réseau : ouvert par double-clic sur le fichier, sans serveur, le navigateur bloque le
+      fond de carte et la recherche d'adresse.
+    </p>
+  </section>
+
   <!-- Carte : ecoles et transports autour d'une adresse -->
   <section class="panel" role="tabpanel" aria-labelledby="tab-carte" id="panel-carte" hidden>
     <h1>Comparer des logements</h1>
@@ -719,6 +813,8 @@
 <script src="comparateur/offres_kb.js?v=35"></script>
 <script src="app/chat.js?v=35"></script>
 <script src="app/ui.js?v=35"></script>
+<script src="app/lignes.js?v=1"></script>
+<script src="app/cartes.js?v=1"></script>
 <script src="app/communaute.js?v=35"></script>
 <script src="app/communaute.js"></script>
 </body>
