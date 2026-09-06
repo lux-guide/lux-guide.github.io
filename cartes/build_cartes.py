@@ -26,6 +26,14 @@ CACHE = os.path.join(HERE, "cache")
 GEOJSON = "https://download.data.public.lu/resources/limites-administratives-du-grand-duche-de-luxembourg/20260905-030016/limadmin.geojson"
 PRIX_APPT = "https://download.data.public.lu/resources/prix-annonces-des-logements-par-commune/20260625-080844/vente-appartement-2025-26.xls"
 PRIX_MAISON = "https://download.data.public.lu/resources/prix-annonces-des-logements-par-commune/20260625-080909/vente-maison-2025-2026.xls"
+LOYER_APPT = "https://download.data.public.lu/resources/loyers-annonces-des-logements-par-commune/20260625-081047/location-appartement-2025-26.xls"
+LOYER_MAISON = "https://download.data.public.lu/resources/loyers-annonces-des-logements-par-commune/20260625-081113/location-maison-2025-26.xls"
+# Niveau plus fin : les 24 quartiers de la Ville de Luxembourg.
+VDL_GEOJSON = "https://maps.vdl.lu/arcgis/rest/services/OPENDATA/GEOJSON/FeatureServer/24/query?where=1%3D1&outFields=*&outSR=4326&f=geojson"
+VDL_VENTE_APPT = "https://download.data.public.lu/resources/prix-annonces-des-logements-a-luxembourg-ville-par-quartier/20260625-081238/vdl-vente-appartements-2025-26.xlsx"
+VDL_VENTE_MAISON = "https://download.data.public.lu/resources/prix-annonces-des-logements-a-luxembourg-ville-par-quartier/20260625-081258/vdl-vente-maisons-2025-26.xlsx"
+VDL_LOYER_APPT = "https://download.data.public.lu/resources/loyers-annonces-des-logements-a-luxembourg-ville-par-quartier/20260625-081413/vdl-location-appartements-2025-26.xlsx"
+VDL_LOYER_MAISON = "https://download.data.public.lu/resources/loyers-annonces-des-logements-a-luxembourg-ville-par-quartier/20260625-081432/vdl-location-maisons-2025-26.xlsx"
 SDMX = "https://lustat.statec.lu/rest/data/%s/all?format=csvfilewithlabels"
 
 USE_CACHE = "--cache" in sys.argv
@@ -189,15 +197,17 @@ def lire_prix(path):
     x = pd.ExcelFile(path)
     d = pd.read_excel(path, sheet_name=x.sheet_names[0], header=None)
     # trouver la ligne d'en-tête : celle dont une cellule vaut "Commune"
-    hdr = None
+    hdr, ic = None, None
     for i in range(len(d)):
-        if any(str(v).strip() == "Commune" for v in d.iloc[i]):
-            hdr = i
+        for j, v in enumerate(d.iloc[i]):
+            if str(v).strip() in ("Commune", "Quartier"):
+                hdr, ic = i, j
+                break
+        if hdr is not None:
             break
     if hdr is None:
         return {}, {}, x.sheet_names[0]
     cols = [str(v).strip() for v in d.iloc[hdr]]
-    ic = cols.index("Commune")
     def col(mot):
         for j, c in enumerate(cols):
             if mot in c.lower():
@@ -207,7 +217,7 @@ def lire_prix(path):
     itot = None
     for j, c in enumerate(cols):
         cl = c.lower()
-        if "prix moyen" in cl and "au m" not in cl:
+        if ("prix moyen" in cl or "loyer moyen" in cl) and "au m" not in cl:
             itot = j
             break
     prix_m2, prix_tot = {}, {}
@@ -230,6 +240,86 @@ def lire_prix(path):
 
 
 # ---------- programme ----------
+
+def construire_quartiers():
+    """Les 24 quartiers de la Ville de Luxembourg : géométrie de la VDL, prix et
+    loyers annoncés de l'Observatoire de l'Habitat. Les deux sources ne découpent
+    pas la ville pareil : la VDL sépare Bonnevoie-Nord et Bonnevoie-Sud là où
+    l'Observatoire publie un seul Bonnevoie, et de même pour Belair. Un quartier
+    sans correspondance reste sans chiffre plutôt que d'hériter d'un voisin."""
+    g = json.load(io.open(telecharger(VDL_GEOJSON, "vdl_quartiers.geojson"), encoding="utf-8"))
+    feats = g.get("features") or []
+    if not feats:
+        print("   géométrie des quartiers indisponible, couche ignorée")
+        return None
+
+    va_m2, va_tot, f_va = lire_prix(telecharger(VDL_VENTE_APPT, "vdl_vente_appt.xlsx"))
+    vm_m2, vm_tot, f_vm = lire_prix(telecharger(VDL_VENTE_MAISON, "vdl_vente_maison.xlsx"))
+    la_m2, la_tot, f_la = lire_prix(telecharger(VDL_LOYER_APPT, "vdl_loyer_appt.xlsx"))
+    lm_m2, lm_tot, f_lm = lire_prix(telecharger(VDL_LOYER_MAISON, "vdl_loyer_maison.xlsx"))
+
+    # Les quartiers composés de la VDL retrouvent le libellé de l'Observatoire.
+    RACCORDS = {
+        "bonnevoie nord verlorenkost": "bonnevoie",
+        "bonnevoie sud": "bonnevoie",
+        "rollingergrund belair nord": "rollingergrund",
+        "neudorf weimershof": "neudorf",
+    }
+
+    TOL = 20 / 111000.0
+    zones = []
+    for f in feats:
+        nom = (f["properties"].get("FK_QUART_NAME") or "").strip()
+        if not nom:
+            continue
+        k = cle(nom)
+        k = RACCORDS.get(k, k)
+        rings = anneaux(f["geometry"], TOL)
+        if not rings:
+            continue
+        ind = {}
+        for champ, src, arr in (("prix_appt", va_tot, 0), ("prix_appt_m2", va_m2, 0),
+                                ("prix_maison", vm_tot, 0), ("prix_maison_m2", vm_m2, 0),
+                                ("loyer_appt", la_tot, 0), ("loyer_appt_m2", la_m2, 1),
+                                ("loyer_maison", lm_tot, 0)):
+            v = src.get(k)
+            if v is not None:
+                ind[champ] = round(v, arr)
+        zones.append({"nom": nom, "canton": "Luxembourg", "lau": "",
+                      "c": centroide(rings),
+                      "g": [encode_polyline(r) for r in rings],
+                      "i": ind})
+    zones.sort(key=lambda z: z["nom"])
+
+    AIDE_M2 = ("Les deux colonnes de la source sont moyennées séparément : le prix au m² "
+               "n'est pas le prix total divisé par une surface moyenne, et les petits "
+               "logements le tirent vers le haut.")
+    INDS = [
+        {"id": "loyer_appt", "nom": "Loyer d'un appartement", "unite": "€/mois", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_la,
+         "aide": "Loyers demandés dans les annonces, hors charges."},
+        {"id": "prix_appt_m2", "nom": "Prix d'un appartement au m²", "unite": "€/m²", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_va, "aide": AIDE_M2},
+        {"id": "prix_appt", "nom": "Prix d'un appartement, total", "unite": "€", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_va, "aide": ""},
+        {"id": "loyer_appt_m2", "nom": "Loyer d'un appartement au m²", "unite": "€/m² par mois",
+         "sens": -1, "fmt": "dec", "source": "Observatoire de l'Habitat, " + f_la, "aide": AIDE_M2},
+        {"id": "prix_maison_m2", "nom": "Prix d'une maison au m²", "unite": "€/m²", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_vm, "aide": AIDE_M2},
+        {"id": "prix_maison", "nom": "Prix d'une maison, total", "unite": "€", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_vm, "aide": ""},
+    ]
+    return {
+        "titre": "Luxembourg-Ville, par quartier",
+        "note": ("La Ville de Luxembourg pèse à elle seule 137 000 habitants, plus que les "
+                 "quinze communes suivantes réunies : la traiter comme une seule zone masque "
+                 "l'essentiel. Ce niveau ne couvre que le logement, aucune statistique de "
+                 "revenu ou de population n'est publiée par quartier."),
+        "source_geo": "Ville de Luxembourg, quartiers, data.public.lu, CC BY",
+        "indicateurs": INDS,
+        "zones": zones,
+    }
+
 
 def main():
     print("1. limites administratives")
@@ -264,11 +354,15 @@ def main():
             continue
         nat[cle(r["Geographic level"])][r["CITIZEN"]] = float(r["OBS_VALUE"])
 
-    print("3. prix des logements")
+    print("3. prix et loyers des logements")
     appt_m2, appt_tot, feuille_a = lire_prix(telecharger(PRIX_APPT, "appt.xls"))
     mais_m2, mais_tot, feuille_m = lire_prix(telecharger(PRIX_MAISON, "maison.xls"))
-    print("   appartements :", len(appt_m2), "communes chiffrées |", feuille_a)
-    print("   maisons      :", len(mais_m2), "communes chiffrées |", feuille_m)
+    loya_m2, loya_tot, feuille_la = lire_prix(telecharger(LOYER_APPT, "loyer_appt.xls"))
+    loym_m2, loym_tot, feuille_lm = lire_prix(telecharger(LOYER_MAISON, "loyer_maison.xls"))
+    print("   vente appartements :", len(appt_m2), "communes |", feuille_a)
+    print("   vente maisons      :", len(mais_m2), "communes |", feuille_m)
+    print("   loyer appartements :", len(loya_m2), "communes |", feuille_la)
+    print("   loyer maisons      :", len(loym_m2), "communes |", feuille_lm)
 
     print("4. assemblage")
     TOL = 60 / 111000.0  # 60 m
@@ -322,6 +416,8 @@ def main():
         pose("prix_appt", appt_tot.get(k), 0)
         pose("prix_maison_m2", mais_m2.get(k), 0)
         pose("prix_maison", mais_tot.get(k), 0)
+        pose("loyer_appt", loya_tot.get(k), 0)
+        pose("loyer_appt_m2", loya_m2.get(k), 1)
 
         communes.append({
             "nom": nom, "canton": p.get("CANTON", ""), "lau": p.get("LAU2", ""),
@@ -333,7 +429,17 @@ def main():
     if manquants:
         print("   valeurs absentes :", dict(manquants))
 
+    AIDE_M2 = ("Attention à ce chiffre : les deux colonnes de la source sont moyennées "
+               "séparément, si bien que le loyer au m² n'est pas le loyer total divisé par "
+               "une surface moyenne. Les petits logements, chers au m², le tirent vers le "
+               "haut. Pour comparer des communes, le loyer total est plus sûr.")
     INDICATEURS = [
+        {"id": "loyer_appt", "nom": "Loyer d'un appartement", "unite": "€/mois", "sens": -1,
+         "fmt": "eur", "source": "Observatoire de l'Habitat, loyers annoncés " + feuille_la,
+         "aide": "Loyers demandés dans les annonces, hors charges. C'est le chiffre qui compte "
+                 "d'abord quand on arrive : presque personne n'achète la première année."},
+        {"id": "loyer_appt_m2", "nom": "Loyer d'un appartement au m²", "unite": "€/m² par mois", "sens": -1,
+         "fmt": "dec", "source": "Observatoire de l'Habitat, " + feuille_la, "aide": AIDE_M2},
         {"id": "prix_appt_m2", "nom": "Prix d'un appartement au m²", "unite": "€/m²", "sens": -1,
          "fmt": "eur", "source": "Observatoire de l'Habitat, prix annoncés " + feuille_a,
          "aide": "Prix annoncés dans les offres de vente, pas des prix de transaction. Les communes sans chiffre ont trop peu d'offres pour publier une moyenne."},
@@ -384,6 +490,9 @@ def main():
          "fmt": "ent", "source": "STATEC DF_X026, %d" % an_emp, "aide": ""},
     ]
 
+    print("5. quartiers de la Ville de Luxembourg")
+    quartiers = construire_quartiers()
+
     out = {
         "meta": {
             "construit": datetime.date.today().isoformat(),
@@ -396,6 +505,7 @@ def main():
         },
         "indicateurs": INDICATEURS,
         "communes": communes,
+        "quartiers": quartiers,
     }
     dst = os.path.join(HERE, "communes_kb.js")
     with io.open(dst, "w", encoding="utf-8") as f:

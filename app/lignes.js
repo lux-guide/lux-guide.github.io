@@ -26,7 +26,7 @@
     var s = document.createElement("style");
     s.id = "style-lignes";
     s.textContent = [
-      "#lignes-map{height:min(62vh,520px);border-radius:var(--r-m,14px);overflow:hidden;",
+      "#lignes-map{position:relative;height:min(62vh,520px);border-radius:var(--r-m,14px);overflow:hidden;",
       "  border:1px solid var(--border,#dfe3ea);margin-top:20px;background:var(--surface,#fff)}",
       ".lg-badge{display:inline-block;min-width:36px;text-align:center;font-weight:700;",
       "  padding:2px 7px;border-radius:6px;color:#fff;font-size:12.5px;line-height:1.35}",
@@ -47,6 +47,10 @@
       ".lg-curseurs{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:14px}",
       ".lg-curseurs output{font-weight:600;color:var(--accent,#1d4ed8)}",
       ".lg-curseurs input[type=range]{width:100%}",
+      ".lg-aide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;",
+      "  background:rgba(11,15,22,.42);color:#fff;font-size:15px;font-weight:600;z-index:600;",
+      "  opacity:0;pointer-events:none;transition:opacity .18s;border-radius:var(--r-m,14px)}",
+      ".lg-aide.on{opacity:1}",
       "@media(max-width:760px){#lignes-map{height:min(52vh,380px)}}"
     ].join("");
     document.head.appendChild(s);
@@ -368,15 +372,29 @@
       preferCanvas: true, scrollWheelZoom: false,
       zoomSnap: 1, zoomDelta: 1, zoomAnimation: true, markerZoomAnimation: false
     }).setView([49.6116, 6.1319], 10);
-    // La molette de souris envoie des deltas très variables selon le matériel.
-    // Un cran vaut un niveau, au plus un niveau toutes les 350 ms.
+    // La molette fait défiler la page, elle ne zoome pas : une carte posée au
+    // milieu d'un texte ne doit pas piéger le défilement, et les souris envoient
+    // des deltas si variables qu'un seul geste valait plusieurs niveaux. Le zoom
+    // se fait au Ctrl (ou Cmd), comme sur les cartes intégrées ailleurs, aux
+    // boutons + et -, ou au double-clic. Un bandeau le rappelle au premier essai.
+    var aide = document.createElement("div");
+    aide.className = "lg-aide";
+    aide.textContent = "Ctrl + molette pour zoomer";
+    map.getContainer().appendChild(aide);
+    var minuteur = null;
+    function rappeler() {
+      aide.classList.add("on");
+      clearTimeout(minuteur);
+      minuteur = setTimeout(function () { aide.classList.remove("on"); }, 1100);
+    }
     var dernier = 0;
     map.getContainer().addEventListener("wheel", function (e) {
+      if (!e.ctrlKey && !e.metaKey) { rappeler(); return; }
       e.preventDefault();
       var now = Date.now();
-      if (now - dernier < 350) return;
+      if (now - dernier < 220) return;
       dernier = now;
-      var z = map.getZoom() + (e.deltaY > 0 ? -1 : 1);
+      var z = Math.round(map.getZoom()) + (e.deltaY > 0 ? -1 : 1);
       z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), z));
       map.setZoomAround(map.mouseEventToLatLng(e), z, { animate: true });
     }, { passive: false });

@@ -1803,10 +1803,14 @@
       });
       historique.push({ role: "assistant", content: r.texte });
       sauverConversation();
+      // Le badge ne nomme pas un mode technique : il signale seulement que la
+      // reponse vient de l'assistant connecte, et reste invisible autrement.
       var b = $("#mode-badge");
       if (b) {
-        b.textContent = "mode " + (r.via || "local");
-        b.className = "badge" + (String(r.via).indexOf("api") === 0 ? " on" : "");
+        var connecte = String(r.via).indexOf("api") === 0;
+        b.textContent = connecte ? "assistant connecté" : "";
+        b.className = "badge" + (connecte ? " on" : "");
+        b.hidden = !connecte;
       }
     }).catch(function (e) {
       attente.forEach(function (m) { m.remove(); });
@@ -1875,8 +1879,9 @@
     window.CHAT.testerApi().then(function (ok) {
       var b = $("#mode-badge");
       if (b) {
-        b.textContent = ok ? "mode api" : "mode local";
+        b.textContent = ok ? "assistant connecté" : "";
         b.className = "badge" + (ok ? " on" : "");
+        b.hidden = !ok;
       }
     });
 
