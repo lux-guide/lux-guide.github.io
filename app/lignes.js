@@ -12,12 +12,29 @@
   "use strict";
 
   var PANEL = "panel-lignes";
-  var KB = "lignes/lignes_kb.js?v=1";
+  var KB = "lignes/lignes_kb.js?v=2";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
   var demarre = false, map = null, cur = null, masquees = {};
-  var couchesLignes = {}, coucheArrets = null, coucheDest = null;
+  var couchesLignes = {}, coucheArrets = null, coucheDest = null, coucheLog = null;
+
+  // Les logements déjà saisis dans l'onglet « Comparer des logements » sont
+  // relus ici, tels quels, depuis le navigateur. Aucune saisie en double : la
+  // question « ce logement est-il sur une ligne directe » se pose sur les mêmes
+  // adresses que la comparaison écoles et commerces.
+  var CLE_LOGEMENTS = "luxguide.carte.v1";
+  var RAYON_LOGEMENT = 800;
+  var logements = [];
+
+  function lireLogements() {
+    try {
+      var d = JSON.parse(localStorage.getItem(CLE_LOGEMENTS) || "null");
+      logements = ((d && d.adresses) || []).filter(function (a) {
+        return typeof a.lat === "number" && typeof a.lon === "number";
+      });
+    } catch (e) { logements = []; }
+  }
 
   // ---------- style ----------
 
@@ -40,6 +57,14 @@
       ".lg-tbl td.n,.lg-tbl th.n{text-align:right;white-space:nowrap}",
       ".lg-tbl tbody tr{cursor:pointer}",
       ".lg-tbl tbody tr:hover{background:var(--accent-soft,#eef3fb)}",
+      ".lg-pin{color:#fff;border-radius:6px;width:24px;height:24px;line-height:24px;text-align:center;",
+      "  font-weight:700;font-size:13px;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4)}",
+      "#lignes-map.plein{position:fixed;inset:0;width:100vw;height:100vh;max-height:none;",
+      "  z-index:4000;border-radius:0;border:0;margin:0}",
+      ".lg-btn{position:absolute;top:10px;right:10px;z-index:700;border:1px solid var(--border,#dfe3ea);",
+      "  background:var(--surface,#fff);color:var(--text,#0b0f16);border-radius:9px;padding:7px 11px;",
+      "  font:600 13px/1 inherit;cursor:pointer;box-shadow:0 1px 4px rgba(11,15,22,.14)}",
+      ".lg-btn:hover{background:var(--accent-soft,#eef3fb)}",
       ".lg-filtre{width:100%;margin:10px 0 2px}",
       ".lg-scroll{max-height:380px;overflow:auto;margin-top:4px}",
       ".lg-resume{margin:18px 0 0;padding:14px 16px;border-radius:var(--r-m,14px);",
@@ -215,6 +240,62 @@
     return { dest: dest, atteints: atteints, lignes: lignes, rayon: rayon };
   }
 
+  // Pour un logement, l'arrêt le plus intéressant parmi ceux d'où l'on rejoint
+  // la destination sans changer : celui qui minimise marche plus trajet. La marche
+  // est comptée à 75 m par minute, une allure ordinaire avec les feux et les
+  // traversées, et à vol d'oiseau, donc plutôt optimiste.
+  function meilleurDirect(ll, X, rayon) {
+    var S = window.LIGNES.stops, best = null;
+    Object.keys(X.atteints).forEach(function (id) {
+      var s = S[id], d = hav(ll, [s[1], s[2]]);
+      if (d > rayon) return;
+      var r = X.atteints[id], marche = d / 75, tot = marche + r.best / 60;
+      if (!best || tot < best.tot) best = { tot: tot, marche: marche, d: d, s: s, r: r };
+    });
+    return best;
+  }
+
+  function ligneLaPlusRapide(r) {
+    var noms = Object.keys(r.lines);
+    noms.sort(function (a, b) { return r.lines[a].t - r.lines[b].t; });
+    return noms[0];
+  }
+
+  function dessinerLogements(X) {
+    coucheLog.clearLayers();
+    if (!$("#lg-log") || !$("#lg-log").checked) return [];
+    // Côté logement, la marche acceptable n'est pas la même que côté arrivée :
+    // on part de chez soi une fois par jour, 800 m soit une dizaine de minutes.
+    var rayon = RAYON_LOGEMENT;
+    var out = [];
+    logements.forEach(function (a, i) {
+      var b = meilleurDirect([a.lat, a.lon], X, rayon);
+      out.push({ a: a, b: b });
+      var couleurPin = b ? bande(Math.round(b.tot)) : "#6a7583";
+      var pop = "<b>" + esc(a.nom) + "</b><br>";
+      if (b) {
+        var l = ligneLaPlusRapide(b.r);
+        pop += badge(l) + " " + Math.round(b.r.best / 60) + " min de trajet sans changement<br>" +
+          "arrêt " + esc(b.s[0]) + ", " + Math.round(b.d) + " m à pied, soit " +
+          Math.round(b.marche) + " min<br><b>" + Math.round(b.tot) + " min en tout</b>, " +
+          "hors attente";
+      } else {
+        pop += "Aucun arrêt à moins de " + rayon + " m d'où l'on rejoint " + esc(cur.label) +
+          " sans changer. Il faudra une correspondance.";
+      }
+      L.marker([a.lat, a.lon], {
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="lg-pin" style="background:' + couleurPin + '">' + (i + 1) + "</div>",
+          iconSize: [24, 24], iconAnchor: [12, 12]
+        })
+      }).addTo(coucheLog)
+        .bindTooltip(esc(a.nom) + (b ? " · " + Math.round(b.tot) + " min porte à porte" : " · pas de ligne directe"))
+        .bindPopup(pop);
+    });
+    return out;
+  }
+
   // ---------- rendu ----------
 
   function dessiner() {
@@ -273,12 +354,14 @@
       }).addTo(coucheArrets).bindTooltip(esc(s[0]) + " · " + m + " min · " + r.nb + " arrêt" + (r.nb > 1 ? "s" : ""))
         .bindPopup(pop);
     });
+    var vusLog = dessinerLogements(X);
+    vusLog.forEach(function (v) { cadre.push([v.a.lat, v.a.lon]); });
     if (cadre.length > 1) map.fitBounds(L.latLngBounds(cadre).pad(.08));
 
-    ecrire(X, listeLignes, arrets);
+    ecrire(X, listeLignes, arrets, vusLog);
   }
 
-  function ecrire(X, listeLignes, arrets) {
+  function ecrire(X, listeLignes, arrets, vusLog) {
     var S = window.LIGNES.stops;
     var n15 = arrets.filter(function (r) { return r.best <= 900; }).length;
     var n30 = arrets.filter(function (r) { return r.best <= 1800; }).length;
@@ -289,6 +372,33 @@
       listeLignes.length + " ligne" + (listeLignes.length > 1 ? "s" : "") + ", " + arrets.length +
       " arrêts d'où l'on arrive sans changer, dont " + n15 + " en 15 minutes ou moins et " +
       n30 + " en 30 minutes ou moins.</div>";
+
+    if (vusLog && vusLog.length) {
+      h += "<h2>Vos logements</h2><table class=\"lg-tbl\"><thead><tr><th></th><th>Logement</th>" +
+        '<th>Arrêt le plus utile</th><th class="n">À pied</th><th class="n">Bus</th>' +
+        '<th class="n">Porte à porte</th></tr></thead><tbody>';
+      vusLog.slice().sort(function (x, y) {
+        return (x.b ? x.b.tot : 1e9) - (y.b ? y.b.tot : 1e9);
+      }).forEach(function (v) {
+        var i = vusLog.indexOf(v) + 1;
+        h += '<tr data-log="' + (i - 1) + '"><td><span class="lg-pin" style="display:inline-block;background:' +
+          (v.b ? bande(Math.round(v.b.tot)) : "#6a7583") + '">' + i + "</span></td><td>" + esc(v.a.nom) + "</td>";
+        if (v.b) {
+          h += "<td>" + badge(ligneLaPlusRapide(v.b.r)) + " " + esc(v.b.s[0]) + '</td><td class="n">' +
+            Math.round(v.b.d) + ' m</td><td class="n">' + Math.round(v.b.r.best / 60) +
+            ' min</td><td class="n"><b>' + Math.round(v.b.tot) + " min</b></td>";
+        } else {
+          h += '<td class="muted" colspan="4">aucune ligne directe à moins de ' + RAYON_LOGEMENT + " m</td>";
+        }
+        h += "</tr>";
+      });
+      h += "</tbody></table>";
+      h += "<p class=\"hint\">Ces adresses viennent de l'onglet « Comparer des logements » de ce guide, " +
+        "relues dans ce navigateur. Le porte à porte additionne la marche, comptée à 75 mètres par " +
+        "minute et à vol d'oiseau, dans un rayon de " + RAYON_LOGEMENT + " m autour du logement, et le " +
+        "trajet médian. Il ne compte pas l'attente : un arrêt un peu " +
+        "plus loin mais desservi quatre fois par heure vaut souvent mieux.</p>";
+    }
 
     h += '<div class="lg-legende"><span><i style="background:#0e7a5f"></i>15 min ou moins</span>' +
       '<span><i style="background:#c2740b"></i>16 à 30</span>' +
@@ -321,6 +431,7 @@
 
     var k = document.getElementById("lg-sortie");
     k.innerHTML = h;
+    brancherLogements();
 
     k.querySelectorAll("input[data-chk]").forEach(function (c) {
       c.addEventListener("change", function () { masquees[c.dataset.chk] = !c.checked; dessiner(); });
@@ -356,6 +467,22 @@
 
   // ---------- démarrage ----------
 
+  function brancherLogements() {
+    var k = document.getElementById("lg-sortie");
+    if (!k) return;
+    k.querySelectorAll("tr[data-log]").forEach(function (tr) {
+      tr.addEventListener("click", function () {
+        var a = logements[+tr.dataset.log];
+        if (!a) return;
+        map.setView([a.lat, a.lon], Math.max(map.getZoom(), 14));
+        coucheLog.eachLayer(function (m) {
+          var ll = m.getLatLng();
+          if (Math.abs(ll.lat - a.lat) < 1e-9 && Math.abs(ll.lng - a.lon) < 1e-9) m.openPopup();
+        });
+      });
+    });
+  }
+
   function chercher() {
     var q = $("#lg-adresse").value.trim();
     if (!q) return;
@@ -372,32 +499,39 @@
       preferCanvas: true, scrollWheelZoom: false,
       zoomSnap: 1, zoomDelta: 1, zoomAnimation: true, markerZoomAnimation: false
     }).setView([49.6116, 6.1319], 10);
-    // La molette fait défiler la page, elle ne zoome pas : une carte posée au
-    // milieu d'un texte ne doit pas piéger le défilement, et les souris envoient
-    // des deltas si variables qu'un seul geste valait plusieurs niveaux. Le zoom
-    // se fait au Ctrl (ou Cmd), comme sur les cartes intégrées ailleurs, aux
-    // boutons + et -, ou au double-clic. Un bandeau le rappelle au premier essai.
-    var aide = document.createElement("div");
-    aide.className = "lg-aide";
-    aide.textContent = "Ctrl + molette pour zoomer";
-    map.getContainer().appendChild(aide);
-    var minuteur = null;
-    function rappeler() {
-      aide.classList.add("on");
-      clearTimeout(minuteur);
-      minuteur = setTimeout(function () { aide.classList.remove("on"); }, 1100);
-    }
+    // Un geste de molette vaut exactement un niveau de zoom. Le gestionnaire de
+    // Leaflet additionne les deltas de la souris puis en tire jusqu'à quatre
+    // niveaux d'un coup, ce qui fait perdre la carte au moindre mouvement. La
+    // cadence de 260 ms absorbe la rafale d'événements d'un seul cran.
     var dernier = 0;
     map.getContainer().addEventListener("wheel", function (e) {
-      if (!e.ctrlKey && !e.metaKey) { rappeler(); return; }
       e.preventDefault();
       var now = Date.now();
-      if (now - dernier < 220) return;
+      if (now - dernier < 260) return;
       dernier = now;
       var z = Math.round(map.getZoom()) + (e.deltaY > 0 ? -1 : 1);
       z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), z));
       map.setZoomAround(map.mouseEventToLatLng(e), z, { animate: true });
     }, { passive: false });
+
+    // Plein écran : une classe qui pose la carte en position fixe, pas l'API
+    // Fullscreen du navigateur, refusée en iframe et imprévisible à la sortie.
+    var boite = document.getElementById("lignes-map");
+    var bp = document.createElement("button");
+    bp.className = "lg-btn";
+    bp.type = "button";
+    bp.textContent = "Plein écran";
+    function basculer(on) {
+      boite.classList.toggle("plein", on);
+      bp.textContent = on ? "Quitter le plein écran" : "Plein écran";
+      document.body.style.overflow = on ? "hidden" : "";
+      setTimeout(function () { map.invalidateSize(); }, 60);
+    }
+    bp.addEventListener("click", function () { basculer(!boite.classList.contains("plein")); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && boite.classList.contains("plein")) basculer(false);
+    });
+    boite.appendChild(bp);
 
     L.tileLayer("https://wmts{s}.geoportail.lu/opendata/wmts/topomap/GLOBAL_WEBMERCATOR/{z}/{x}/{y}.png", {
       subdomains: "1234", maxZoom: 19, updateWhenZooming: false, updateWhenIdle: true, keepBuffer: 3,
@@ -405,12 +539,34 @@
     }).addTo(map);
     coucheArrets = L.layerGroup().addTo(map);
     coucheDest = L.layerGroup().addTo(map);
+    coucheLog = L.layerGroup().addTo(map);
     map.on("click", function (e) {
       $("#lg-adresse").value = e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
       cur = { ll: [e.latlng.lat, e.latlng.lng], label: "Point choisi sur la carte" };
       masquees = {};
       dessiner();
     });
+  }
+
+  // La case n'apparaît que si l'onglet « Comparer des logements » contient déjà
+  // des adresses : proposer d'afficher une liste vide n'a pas de sens.
+  function caseLogements() {
+    lireLogements();
+    var boite = document.querySelector("#panel-lignes .lg-curseurs");
+    if (!boite) return;
+    var d = document.getElementById("lg-log-case");
+    if (!logements.length) { if (d) d.remove(); return; }
+    if (!d) {
+      d = document.createElement("div");
+      d.id = "lg-log-case";
+      d.className = "check";
+      d.style.alignSelf = "end";
+      d.innerHTML = '<input type="checkbox" id="lg-log" checked><label for="lg-log"></label>';
+      boite.appendChild(d);
+      d.querySelector("input").addEventListener("change", function () { if (cur) dessiner(); });
+    }
+    d.querySelector("label").textContent = "Placer mes " + logements.length + " logement" +
+      (logements.length > 1 ? "s" : "") + " sur la carte";
   }
 
   function init() {
@@ -437,6 +593,7 @@
         i.addEventListener("change", function () { if (cur) dessiner(); });
       });
       $("#lg-hors").addEventListener("change", function () { if (cur) dessiner(); });
+      caseLogements();
       document.querySelectorAll("#lg-exemples .chip").forEach(function (c) {
         c.addEventListener("click", function () { $("#lg-adresse").value = c.textContent; chercher(); });
       });
@@ -456,7 +613,13 @@
     var obs = new MutationObserver(function () {
       if (p.hidden) return;
       init();
-      if (map) setTimeout(function () { map.invalidateSize(); }, 60);
+      // Des logements ont pu être ajoutés dans l'onglet voisin entre temps.
+      if (map) {
+        var avant = logements.length;
+        caseLogements();
+        if (cur && logements.length !== avant) dessiner();
+        setTimeout(function () { map.invalidateSize(); }, 60);
+      }
     });
     obs.observe(p, { attributes: true, attributeFilter: ["hidden"] });
     if (!p.hidden) init();

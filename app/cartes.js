@@ -24,7 +24,7 @@
   "use strict";
 
   var PANEL = "panel-cartes";
-  var KB = "cartes/communes_kb.js?v=1";
+  var KB = "cartes/communes_kb.js?v=4";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
@@ -36,6 +36,7 @@
 
   var demarre = false, map = null, kb = null, courant = null, couche_nom = "communes";
   var couche = null, formes = {}, classes = null, selection = null, cadreTotal = null;
+  var nation = null, natMode = "pct", indNation = null;
 
   // ---------- style ----------
 
@@ -86,6 +87,35 @@
       ".ct-fiche dd small{font-weight:400;color:var(--muted,#6a7583);margin-left:6px}",
       ".ct-tip{font-weight:600}",
       ".ct-tip small{display:block;font-weight:400;opacity:.75}",
+      // Plein écran : la carte sort du gabarit à deux colonnes et couvre la fenêtre.
+      // Pas l'API Fullscreen du navigateur, qui est refusée dans une iframe et rend
+      // la sortie imprévisible ; un simple position:fixed se comporte partout pareil.
+      "#cartes-map.plein{position:fixed;inset:0;width:100vw;height:100vh;max-height:none;",
+      "  z-index:4000;border-radius:0;border:0}",
+      ".ct-btn{position:absolute;top:10px;right:10px;z-index:700;border:1px solid var(--border,#e6eaef);",
+      "  background:var(--surface,#fff);color:var(--text,#0b0f16);border-radius:9px;padding:7px 11px;",
+      "  font:600 13px/1 inherit;cursor:pointer;box-shadow:0 1px 4px rgba(11,15,22,.14)}",
+      ".ct-btn:hover{background:var(--accent-soft,#eaf1fb)}",
+      ".ct-mini{position:absolute;left:10px;bottom:22px;z-index:700;display:none;max-width:min(92vw,520px);",
+      "  background:rgba(255,255,255,.94);border:1px solid var(--border,#e6eaef);border-radius:11px;",
+      "  padding:11px 13px;box-shadow:0 2px 10px rgba(11,15,22,.16)}",
+      "#cartes-map.plein .ct-mini{display:block}",
+      ".ct-mini b.t{display:block;font-size:13px;margin-bottom:8px}",
+      ".ct-mini .ct-legende{margin:0}",
+      // Sélecteur de nationalité : 189 séries, une liste déroulante et non des puces.
+      ".ct-nat{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
+      ".ct-nat select{flex:1 1 190px;min-width:0;padding:7px 9px;border-radius:9px;font:inherit;font-size:13.5px;",
+      "  border:1px solid var(--border,#e6eaef);background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      ".ct-natlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:5px}",
+      ".ct-natlist li{display:grid;grid-template-columns:1.5em 1fr auto auto;gap:9px;align-items:baseline;",
+      "  font-size:13.5px;font-variant-numeric:tabular-nums}",
+      ".ct-natlist li span.d{font-size:15px;text-align:center;color:var(--muted,#6a7583)}",
+      ".ct-natlist li img.fl,#ct-sortie h2 img.fl{display:inline-block;border-radius:2px;",
+      "  box-shadow:0 0 0 1px rgba(11,15,22,.12);vertical-align:middle}",
+      "#ct-sortie h2 img.fl{margin-right:9px;width:30px;height:22px}",
+      ".ct-natlist li b{font-weight:600;text-align:right}",
+      ".ct-natlist li i{font-style:normal;color:var(--muted,#6a7583);text-align:right;min-width:3.4em}",
+      ".ct-natlist li.on{background:var(--accent-soft,#eaf1fb);border-radius:7px}",
       ".ct-aide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;",
       "  background:rgba(11,15,22,.42);color:#fff;font-size:15px;font-weight:600;z-index:600;",
       "  opacity:0;pointer-events:none;transition:opacity .18s;border-radius:var(--r-m,14px)}",
@@ -172,7 +202,85 @@
     return couche_nom === "quartiers" ? kb.quartiers.indicateurs : kb.indicateurs;
   }
   function indic() {
+    if (courant === "nation" && indNation) return indNation;
     return listeIndic().filter(function (i) { return i.id === courant; })[0];
+  }
+
+  // ---------- nationalités ----------
+  //
+  // 189 nationalités par commune : ce sont des séries, pas des indicateurs de la
+  // liste. Les afficher toutes en boutons serait illisible et les ranger dans la
+  // fiche de commune la rendrait interminable. La nationalité choisie est donc
+  // recopiée dans i.nation, et tout le reste du rendu, classement et légende
+  // compris, continue de lire un seul champ sans rien savoir de ce mécanisme.
+
+  function nations() { return (kb && kb.nations) || []; }
+
+  // Windows ne dessine pas les emoji de drapeau : il affiche les deux lettres du
+  // pays dans un cadre. Là où le HTML le permet on met donc une image, et l'emoji
+  // reste en texte de remplacement. Dans une liste déroulante, où seule du texte
+  // est possible, on garde l'emoji.
+  function drapeau(n) {
+    if (!n || !n.a2) return '<span class="d">·</span>';
+    return '<img class="fl" src="https://flagcdn.com/w20/' + n.a2 +
+      '.png" width="20" height="15" loading="lazy" alt="' + (n.f || n.a2) + '">';
+  }
+
+  function infoNation(code) {
+    var l = nations();
+    for (var i = 0; i < l.length; i++) if (l[i].c === code) return l[i];
+    return null;
+  }
+
+  function majNation() {
+    var n = infoNation(nation);
+    if (!n) { indNation = null; return; }
+    kb.communes.forEach(function (c) {
+      var t = c.i.nat_tot;
+      delete c.i.nation;
+      if (!t) return;
+      // Le registre n'écrit pas les lignes à zéro : une commune où personne de
+      // cette nationalité n'habite vaut zéro, pas « pas de donnée ». La peindre
+      // en gris ferait croire à une absence de mesure.
+      var v = (c.n || {})[nation] || 0;
+      c.i.nation = natMode === "pct" ? Math.round(1000 * v / t) / 10 : v;
+    });
+    indNation = {
+      id: "nation",
+      nom: "Nationalité " + n.n.toLowerCase(),
+      a2: n.a2,
+      unite: natMode === "pct" ? "% des inscrits" : "personnes",
+      fmt: natMode === "pct" ? "pct" : "ent",
+      sens: 0,
+      source: kb.nat_source,
+      aide: kb.nat_aide + " Au total " + n.t.toLocaleString("fr-FR") +
+        " personnes de cette nationalité dans le pays."
+    };
+  }
+
+  function listeNations(c) {
+    // Les nationalités d'une commune, la plus nombreuse d'abord.
+    var t = c.i.nat_tot;
+    if (!t || !c.n) return "";
+    var l = Object.keys(c.n).map(function (k) {
+      var n = infoNation(k) || { c: k, n: k, f: "", a2: "" };
+      return { c: k, nom: n.n, f: n.f, a2: n.a2, v: c.n[k] };
+    }).sort(function (a, b) { return b.v - a.v; });
+    var h = '<h3 style="margin:20px 0 0">Nationalités, ' + l.length + " en tout</h3>" +
+      '<ul class="ct-natlist">';
+    l.slice(0, 15).forEach(function (x) {
+      h += '<li data-nat="' + x.c + '"' + (x.c === nation ? ' class="on"' : "") + ">" +
+        drapeau(x) + "<span>" + esc(x.nom) + "</span><b>" +
+        x.v.toLocaleString("fr-FR") + "</b><i>" + (100 * x.v / t).toFixed(1).replace(".", ",") +
+        " %</i></li>";
+    });
+    if (l.length > 15) {
+      var reste = l.slice(15).reduce(function (a, x) { return a + x.v; }, 0);
+      h += '<li><span class="d">·</span><span class="muted">' + (l.length - 15) +
+        " autres nationalités</span><b>" + reste.toLocaleString("fr-FR") + "</b><i>" +
+        (100 * reste / t).toFixed(1).replace(".", ",") + " %</i></li>";
+    }
+    return h + "</ul>";
   }
   function motZone(pluriel) {
     var q = couche_nom === "quartiers";
@@ -243,13 +351,32 @@
     var c = zones().filter(function (x) { return x.nom === selection; })[0];
     var h = '<div class="card ct-fiche"><h3 style="margin:0">' + esc(c.nom) +
       ' <span class="muted" style="font-weight:400;font-size:14px">canton de ' + esc(c.canton) + "</span></h3><dl>";
-    listeIndic().forEach(function (i) {
+    var liste = listeIndic().slice();
+    if (courant === "nation" && indNation) liste.unshift(indNation);
+    liste.forEach(function (i) {
       var v = c.i[i.id], r = v === undefined ? null : rang(i.id, c.nom);
       h += "<dt>" + esc(i.nom) + "</dt><dd>" + nf(v, i.fmt) +
         (r ? '<small>&middot; ' + r[0] + "e sur " + r[1] + "</small>" : "") + "</dd>";
     });
-    h += "</dl></div>";
+    h += "</dl>";
+    if (couche_nom === "communes") h += listeNations(c);
+    h += "</div>";
     k.innerHTML = h;
+    // Cliquer une nationalité de la fiche la porte sur la carte.
+    k.querySelectorAll("li[data-nat]").forEach(function (li) {
+      li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
+      li.style.cursor = "pointer";
+    });
+  }
+
+  function choisirNation(code) {
+    nation = code || null;
+    majNation();
+    if (nation) courant = "nation";
+    else if (courant === "nation") courant = listeIndic()[0].id;
+    boutons();
+    dessiner();
+    fiche();
   }
 
   function ecrire(vals, br, ind) {
@@ -257,7 +384,7 @@
     var mini = Math.min.apply(null, vals), maxi = Math.max.apply(null, vals);
     var manquantes = zones().length - vals.length;
 
-    var h = "<h2 style=\"margin-top:22px\">" + esc(ind.nom) +
+    var h = "<h2 style=\"margin-top:22px\">" + (ind.a2 ? drapeau(ind) + " " : "") + esc(ind.nom) +
       (ind.unite ? ' <span class="muted" style="font-weight:400;font-size:15px">en ' + esc(ind.unite) + "</span>" : "") +
       "</h2>";
     h += '<div class="ct-legende">';
@@ -278,6 +405,15 @@
       " " + motZone(true) + ".</p>";
 
     k.innerHTML = h;
+
+    // En plein écran, la légende de la colonne de droite n'est plus visible :
+    // le même contenu est recopié dans un encart posé sur la carte.
+    var encart = document.getElementById("ct-mini");
+    if (encart) {
+      encart.innerHTML = '<b class="t">' + esc(ind.nom) +
+        (ind.unite ? ' <span class="muted" style="font-weight:400">en ' + esc(ind.unite) + "</span>" : "") +
+        "</b>" + h.slice(h.indexOf('<div class="ct-legende">'), h.indexOf('<p class="hint"'));
+    }
 
     var tri = zones().slice().sort(function (a, b) {
       var x = a.i[courant], y = b.i[courant];
@@ -344,11 +480,42 @@
       });
       h += "</div></div>";
     });
+    if (!quart && nations().length) {
+      h += '<div class="ct-groupe"><span>Une nationalité en particulier</span><div class="ct-nat">' +
+        '<select id="ct-nation"><option value="">Choisir parmi ' + nations().length + " nationalités…</option>";
+      nations().forEach(function (n) {
+        h += '<option value="' + n.c + '"' + (n.c === nation ? " selected" : "") + ">" +
+          (n.f ? n.f + " " : "") + esc(n.n) + " (" + n.t.toLocaleString("fr-FR") + ")</option>";
+      });
+      h += "</select>" +
+        '<button class="chip' + (natMode === "pct" ? " actif" : "") + '" data-mode="pct">en %</button>' +
+        '<button class="chip' + (natMode === "nb" ? " actif" : "") + '" data-mode="nb">en nombre</button>' +
+        "</div></div>";
+    }
     if (quart) h += '<p class="hint" style="margin-top:14px">' + esc(kb.quartiers.note) + "</p>";
     k.innerHTML = h;
+    var sel = document.getElementById("ct-nation");
+    if (sel) sel.addEventListener("change", function () { choisirNation(sel.value); });
+    k.querySelectorAll("button[data-mode]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        natMode = b.dataset.mode;
+        k.querySelectorAll("button[data-mode]").forEach(function (x) {
+          x.classList.toggle("actif", x.dataset.mode === natMode);
+        });
+        if (!nation) return;
+        majNation();
+        courant = "nation";
+        dessiner();
+        fiche();
+      });
+    });
     k.querySelectorAll("button[data-ind]").forEach(function (b) {
       b.addEventListener("click", function () {
         courant = b.dataset.ind;
+        nation = null;
+        indNation = null;
+        var s2 = document.getElementById("ct-nation");
+        if (s2) s2.value = "";
         k.querySelectorAll("button[data-ind]").forEach(function (x) {
           x.classList.toggle("actif", x.dataset.ind === courant);
         });
@@ -369,6 +536,8 @@
     // prendre le premier proposé : passer de « salaire médian » aux quartiers,
     // qui n'ont pas de salaires, ne doit pas vider la carte.
     var dispo = listeIndic();
+    // Les nationalités ne sont publiées qu'à la commune.
+    if (nom === "quartiers") { nation = null; indNation = null; }
     if (!dispo.some(function (i) { return i.id === courant; })) courant = dispo[0].id;
     Object.keys(formes).forEach(function (n) {
       formes[n].forEach(function (p) { couche.removeLayer(p); });
@@ -391,37 +560,55 @@
     fiche();
   }
 
+  // Plein écran. L'API Fullscreen du navigateur est refusée dans une iframe et
+  // sort de manière imprévisible ; une classe qui pose la carte en position fixe
+  // se comporte de la même façon partout, et Échap la retire.
+  function plein(m, idCarte, classeBouton, encart) {
+    var boite = document.getElementById(idCarte);
+    if (encart) boite.appendChild(encart());
+    var b = document.createElement("button");
+    b.className = classeBouton;
+    b.type = "button";
+    b.textContent = "Plein écran";
+    function basculer(on) {
+      boite.classList.toggle("plein", on);
+      b.textContent = on ? "Quitter le plein écran" : "Plein écran";
+      document.body.style.overflow = on ? "hidden" : "";
+      setTimeout(function () { m.invalidateSize(); }, 60);
+    }
+    b.addEventListener("click", function () { basculer(!boite.classList.contains("plein")); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && boite.classList.contains("plein")) basculer(false);
+    });
+    boite.appendChild(b);
+  }
+
   function creerCarte() {
     map = L.map("cartes-map", {
       preferCanvas: true, scrollWheelZoom: false,
       zoomSnap: 0, zoomDelta: 1, zoomAnimation: true, markerZoomAnimation: false
     }).setView([49.78, 6.09], 9);
-    // La molette fait défiler la page, elle ne zoome pas : une carte posée au
-    // milieu d'un texte ne doit pas piéger le défilement, et les souris envoient
-    // des deltas si variables qu'un seul geste valait plusieurs niveaux. Le zoom
-    // se fait au Ctrl (ou Cmd), comme sur les cartes intégrées ailleurs, aux
-    // boutons + et -, ou au double-clic. Un bandeau le rappelle au premier essai.
-    var aide = document.createElement("div");
-    aide.className = "ct-aide";
-    aide.textContent = "Ctrl + molette pour zoomer";
-    map.getContainer().appendChild(aide);
-    var minuteur = null;
-    function rappeler() {
-      aide.classList.add("on");
-      clearTimeout(minuteur);
-      minuteur = setTimeout(function () { aide.classList.remove("on"); }, 1100);
-    }
+    // Un geste de molette vaut exactement un niveau de zoom. Le gestionnaire de
+    // Leaflet additionne les deltas de la souris puis en tire jusqu'à quatre
+    // niveaux d'un coup, ce qui fait perdre la carte à chaque petit mouvement.
+    // La cadence de 260 ms absorbe la rafale d'événements d'un seul cran.
     var dernier = 0;
     map.getContainer().addEventListener("wheel", function (e) {
-      if (!e.ctrlKey && !e.metaKey) { rappeler(); return; }
       e.preventDefault();
       var now = Date.now();
-      if (now - dernier < 220) return;
+      if (now - dernier < 260) return;
       dernier = now;
       var z = Math.round(map.getZoom()) + (e.deltaY > 0 ? -1 : 1);
       z = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), z));
       map.setZoomAround(map.mouseEventToLatLng(e), z, { animate: true });
     }, { passive: false });
+
+    plein(map, "cartes-map", "ct-btn", function () {
+      var d = document.createElement("div");
+      d.className = "ct-mini";
+      d.id = "ct-mini";
+      return d;
+    });
 
     L.tileLayer("https://wmts{s}.geoportail.lu/opendata/wmts/topomap_gray/GLOBAL_WEBMERCATOR/{z}/{x}/{y}.png", {
       subdomains: "1234", maxZoom: 19, opacity: .35,
