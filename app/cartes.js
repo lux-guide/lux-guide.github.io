@@ -24,7 +24,7 @@
   "use strict";
 
   var PANEL = "panel-cartes";
-  var KB = "cartes/communes_kb.js?v=4";
+  var KB = "cartes/communes_kb.js?v=5";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
@@ -110,9 +110,10 @@
       ".ct-natlist li{display:grid;grid-template-columns:1.5em 1fr auto auto;gap:9px;align-items:baseline;",
       "  font-size:13.5px;font-variant-numeric:tabular-nums}",
       ".ct-natlist li span.d{font-size:15px;text-align:center;color:var(--muted,#6a7583)}",
-      ".ct-natlist li img.fl,#ct-sortie h2 img.fl{display:inline-block;border-radius:2px;",
-      "  box-shadow:0 0 0 1px rgba(11,15,22,.12);vertical-align:middle}",
+      ".ct-natlist li img.fl,#ct-sortie h2 img.fl,.ct-mini img.fl{display:inline-block;",
+      "  border-radius:2px;box-shadow:0 0 0 1px rgba(11,15,22,.12);vertical-align:middle}",
       "#ct-sortie h2 img.fl{margin-right:9px;width:30px;height:22px}",
+      ".ct-mini img.fl{margin-right:5px;width:18px;height:13px}",
       ".ct-natlist li b{font-weight:600;text-align:right}",
       ".ct-natlist li i{font-style:normal;color:var(--muted,#6a7583);text-align:right;min-width:3.4em}",
       ".ct-natlist li.on{background:var(--accent-soft,#eaf1fb);border-radius:7px}",
@@ -410,7 +411,7 @@
     // le même contenu est recopié dans un encart posé sur la carte.
     var encart = document.getElementById("ct-mini");
     if (encart) {
-      encart.innerHTML = '<b class="t">' + esc(ind.nom) +
+      encart.innerHTML = '<b class="t">' + (ind.a2 ? drapeau(ind) + " " : "") + esc(ind.nom) +
         (ind.unite ? ' <span class="muted" style="font-weight:400">en ' + esc(ind.unite) + "</span>" : "") +
         "</b>" + h.slice(h.indexOf('<div class="ct-legende">'), h.indexOf('<p class="hint"'));
     }
