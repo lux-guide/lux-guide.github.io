@@ -88,6 +88,33 @@
       ".ct-fiche dt{color:var(--muted,#6a7583);font-size:13.5px}",
       ".ct-fiche dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}",
       ".ct-fiche dd small{font-weight:400;color:var(--muted,#6a7583);margin-left:6px}",
+      // Tableau de bord d'une commune : quatre chiffres en tête, puis chaque
+      // groupe d'indicateurs avec la valeur, le rang, la place dans le pays et
+      // la courbe quand la série existe.
+      ".ct-tuiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 6px}",
+      "@media(max-width:760px){.ct-tuiles{grid-template-columns:1fr 1fr}}",
+      ".ct-tuile{border:1px solid var(--border,#e6eaef);border-radius:12px;padding:11px 13px}",
+      ".ct-tuile .t{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;",
+      "  color:var(--muted,#6a7583);font-weight:600}",
+      ".ct-tuile .v{font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}",
+      ".ct-tuile .r{font-size:12px;color:var(--muted,#6a7583);margin-top:2px}",
+      ".ct-bloc{margin-top:16px}",
+      ".ct-bloc > h4{margin:0 0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
+      "  color:var(--muted,#6a7583)}",
+      ".ct-lignes{display:grid;gap:3px}",
+      ".ct-ligne{display:grid;grid-template-columns:1fr auto 116px 62px;gap:12px;align-items:center;",
+      "  padding:5px 7px;border-radius:8px;font-size:13.5px}",
+      ".ct-ligne:hover{background:var(--surface-2,#f4f6f9)}",
+      ".ct-ligne .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      ".ct-ligne .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
+      ".ct-ligne .p{position:relative;height:6px;border-radius:3px;background:var(--border,#e6eaef)}",
+      ".ct-ligne .p i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;",
+      "  background:var(--accent,#2563eb)}",
+      ".ct-ligne .g{font-size:11.5px;color:var(--muted,#6a7583);text-align:right;white-space:nowrap}",
+      ".ct-ligne svg{display:block}",
+      ".ct-ligne.cliquable{cursor:pointer}",
+      "@media(max-width:760px){.ct-ligne{grid-template-columns:1fr auto}",
+      "  .ct-ligne .p,.ct-ligne .g{display:none}}",
       ".ct-tip{font-weight:600}",
       ".ct-tip small{display:block;font-weight:400;opacity:.75}",
       // Plein écran : la carte sort du gabarit à deux colonnes et couvre la fenêtre.
@@ -453,24 +480,119 @@
     return null;
   }
 
+  // Où se place une valeur dans le pays, de 0 à 1. Sert la barre de position :
+  // un rang sur cent ne dit pas si la commune est au milieu du peloton ou
+  // seule en tête, la position sur l'étendue le dit.
+  function position(id, v) {
+    var l = zones().map(function (c) { return c.i[id]; })
+      .filter(function (x) { return x !== undefined && x !== null; });
+    if (l.length < 3 || v === undefined || v === null) return null;
+    var mini = Math.min.apply(null, l), maxi = Math.max.apply(null, l);
+    return maxi === mini ? .5 : (v - mini) / (maxi - mini);
+  }
+
+  // Courbe d'une série, dessinée à la main en SVG : une bibliothèque de
+  // graphiques pèserait cent fois cette fonction, pour une ligne de 116 pixels.
+  function courbe(c, id) {
+    var s = serieDe(id), v = (c.s || {})[id];
+    if (!s || !v) return "";
+    var pts = [], mini = Infinity, maxi = -Infinity, i;
+    for (i = 0; i < v.length; i++) {
+      if (v[i] === null || v[i] === undefined) continue;
+      if (v[i] < mini) mini = v[i];
+      if (v[i] > maxi) maxi = v[i];
+    }
+    if (mini === Infinity) return "";
+    var L_ = 116, H = 22, ec = maxi - mini || 1;
+    for (i = 0; i < v.length; i++) {
+      if (v[i] === null || v[i] === undefined) continue;
+      pts.push((i * L_ / (v.length - 1)).toFixed(1) + "," +
+               (H - 2 - (v[i] - mini) / ec * (H - 4)).toFixed(1));
+    }
+    var last = pts[pts.length - 1].split(",");
+    return '<svg width="' + L_ + '" height="' + H + '" viewBox="0 0 ' + L_ + " " + H +
+      '" aria-hidden="true"><polyline fill="none" stroke="var(--accent,#2563eb)" ' +
+      'stroke-width="1.4" stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>' +
+      '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.1" fill="var(--accent,#2563eb)"></circle></svg>';
+  }
+
+  function ligneFiche(c, ind) {
+    var v = c.i[ind.id];
+    if (v === undefined) return "";
+    var r = rang(ind.id, c.nom), p = position(ind.id, v), s = serieDe(ind.id);
+    return '<div class="ct-ligne' + (s ? " cliquable" : "") + '" data-ind="' + ind.id + '">' +
+      '<span class="n">' + esc(ind.nom) + "</span>" +
+      '<span class="v">' + nf(v, ind.fmt) + "</span>" +
+      (s ? courbe(c, ind.id)
+         : '<span class="p">' + (p === null ? "" :
+             '<i style="left:calc(' + Math.round(p * 100) + "% - 1.5px)\"></i>") + "</span>") +
+      '<span class="g">' + (r ? r[0] + "e / " + r[1] : "") + "</span></div>";
+  }
+
   function fiche() {
     var k = document.getElementById("ct-fiche");
     if (!k) return;
     if (!selection) { k.innerHTML = ""; return; }
     var c = zones().filter(function (x) { return x.nom === selection; })[0];
+    var dispo = listeIndic();
+    function ind_(id) {
+      return dispo.filter(function (x) { return x.id === id; })[0];
+    }
     var h = '<div class="card ct-fiche"><h3 style="margin:0">' + esc(c.nom) +
-      ' <span class="muted" style="font-weight:400;font-size:14px">canton de ' + esc(c.canton) + "</span></h3><dl>";
-    var liste = listeIndic().slice();
-    if (courant === "nation" && indNation) liste.unshift(indNation);
-    liste.forEach(function (i) {
-      var v = c.i[i.id], r = v === undefined ? null : rang(i.id, c.nom);
-      h += "<dt>" + esc(i.nom) + "</dt><dd>" + nf(v, i.fmt) +
-        (r ? '<small>&middot; ' + r[0] + "e sur " + r[1] + "</small>" : "") + "</dd>";
+      ' <span class="muted" style="font-weight:400;font-size:14px">canton de ' +
+      esc(c.canton) + "</span></h3>";
+
+    // Quatre chiffres d'abord : ce que tout le monde regarde avant le reste.
+    var tetes = ["pop", "loyer_appt", "sal_med", "chomage"];
+    var tuiles = "";
+    tetes.forEach(function (id) {
+      var i = ind_(id);
+      if (!i || c.i[id] === undefined) return;
+      var r = rang(id, c.nom);
+      tuiles += '<div class="ct-tuile"><div class="t">' + esc(i.nom) + "</div>" +
+        '<div class="v">' + nf(c.i[id], i.fmt) + "</div>" +
+        '<div class="r">' + (r ? r[0] + "e sur " + r[1] + " " + motZone(true) : "") + "</div></div>";
     });
-    h += "</dl>";
+    if (tuiles) h += '<div class="ct-tuiles">' + tuiles + "</div>";
+
+    if (courant === "nation" && indNation) {
+      h += '<div class="ct-bloc"><h4>Nationalité affichée</h4><div class="ct-lignes">' +
+        ligneFiche(c, indNation) + "</div></div>";
+    }
+
+    // Puis tous les indicateurs, dans les mêmes familles que les boutons.
+    (couche_nom === "quartiers" ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
+      var lignes = "";
+      g[1].forEach(function (id) {
+        var i = ind_(id);
+        if (i) lignes += ligneFiche(c, i);
+      });
+      if (lignes) {
+        h += '<div class="ct-bloc"><h4>' + esc(g[0]) + '</h4><div class="ct-lignes">' +
+          lignes + "</div></div>";
+      }
+    });
+
     if (couche_nom === "communes") h += listeNations(c);
     h += "</div>";
     k.innerHTML = h;
+    // Une courbe se lit mieux en grand : cliquer la ligne porte l'indicateur
+    // sur la carte, avec sa barre d'années.
+    k.querySelectorAll(".ct-ligne.cliquable").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.dataset.ind;
+        courant = id;
+        nation = null;
+        indNation = null;
+        annee = null;
+        arreterLecture();
+        boutons();
+        calerEchelle();
+        barreTemps();
+        dessiner();
+        fiche();
+      });
+    });
     // Cliquer une nationalité de la fiche la porte sur la carte.
     k.querySelectorAll("li[data-nat]").forEach(function (li) {
       li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
