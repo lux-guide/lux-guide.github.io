@@ -18,3 +18,7 @@ une carte. »
    nationalité dominante parmi celles choisies, et la fiche donne le détail.
 
 Chaque forme doit dire ce qu'elle ne montre pas, comme le reste de l'onglet.
+
+## Fermé
+
+Fait le 2026-09-09. Deux cartes côte à côte, même cadrage et même survol, chacune son indicateur. Jusqu'à six nationalités sur une même carte : couleur pour la plus présente, densité pour leur poids cumulé. La carte bivariée en grille de neuf couleurs n'a pas été retenue, les deux cartes disent la même chose et se lisent sans apprendre une légende.

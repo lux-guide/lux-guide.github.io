@@ -26,3 +26,7 @@ l'Observatoire de l'Habitat, puis n'en garde qu'une partie :
 Reprendre chaque flux, lister ce qu'il contient réellement, et publier tout ce
 qui a un sens pour quelqu'un qui s'installe. Le contrôle de couverture en fin
 de script doit rester la garantie qu'aucun indicateur vide n'est publié.
+
+## Fermé
+
+Fait le 2026-09-09. Le script publie maintenant tous les flux qu'il télécharge : 48 indicateurs contre 20, les loyers de maisons écartés faute de couverture (4 communes), et le niveau géographique lu sur le code et non sur le nom.

@@ -15,3 +15,7 @@ défiler les années. Prévoir une échelle fixe sur toute la période, sinon le
 couleurs changent de sens d'une année à l'autre et l'animation ment.
 
 Poids du fichier à surveiller : `communes_kb.js` fait déjà 1,7 Mo.
+
+## Fermé
+
+Fait le 2026-09-09. Douze séries annuelles dans la base, curseur et lecture automatique sous la carte, échelle de couleurs calculée une fois sur toute la période.

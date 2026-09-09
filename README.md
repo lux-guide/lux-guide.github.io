@@ -38,16 +38,28 @@ Le serveur lit `API_KEY`, `BASE_URL` et `MODEL_CHAT` dans le `.env` à la racine
 
 ## Ce que contient l'application
 
-| Onglet | Contenu |
-|---|---|
-| Accueil | Entrée par catégorie et questions les plus posées |
-| Fiches | Fiches thématiques illustrées, recherche plein texte, filtrage selon le profil |
-| Parcours | Frise chronologique personnalisée, étapes cochables (avancement conservé dans le navigateur) |
-| Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, capacité d'emprunt, arbre de décision de la classe, et onze simulateurs officiels |
-| Comparateur | Quatre contrats habitation du marché luxembourgeois, sinistre par sinistre, clause citée |
-| Carte | Comparaison de plusieurs logements : distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
-| Assistant | Le seul chatbot de l'application : il construit un profil puis cible ses réponses, en pleine page, en panneau latéral ou en bulle. Son onglet porte un point qui respire : ce n'est pas une page de plus, c'est quelqu'un qui attend |
-| Paramètres | Cinq onglets : apparence, profil, mes données, contenu, calcul |
+Les sections sont dix, et dix noms alignés dans une barre ne se lisent plus : on les
+parcourt tous avant d'en choisir un. Elles sont donc rangées en **trois familles**, chacune
+derrière un menu qui dit en une ligne ce que contient chaque section. L'accueil et
+l'assistant restent des entrées directes, ce sont les deux que l'on prend sans réfléchir.
+
+| Famille | Section | Contenu |
+|---|---|---|
+| | Accueil | Entrée par catégorie et questions les plus posées |
+| Le guide | Fiches | Fiches thématiques illustrées, recherche plein texte, filtrage selon le profil |
+| Le guide | Parcours | Frise chronologique personnalisée, étapes cochables (avancement conservé dans le navigateur) |
+| Le guide | Questions et réponses | Toutes les questions recensées, chaque réponse adossée à une fiche |
+| Budget | Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, capacité d'emprunt, arbre de décision de la classe, et onze simulateurs officiels |
+| Budget | Comparateur | Habitation sur documents réels, auto, mobile et électricité en démonstration |
+| Où habiter | Comparer des logements | Distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
+| Où habiter | Chercher sur une ligne | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet |
+| Où habiter | Les cent communes | Quarante-huit indicateurs par commune, douze séries annuelles, cent quatre-vingt-neuf nationalités |
+| | Assistant | Le seul chatbot de l'application : il construit un profil puis cible ses réponses, en pleine page, en panneau latéral ou en bulle. Son onglet porte un point qui respire : ce n'est pas une page de plus, c'est quelqu'un qui attend |
+| Outil | Paramètres | Cinq onglets : apparence, profil, mes données, contenu, calcul |
+
+Les ancres directes ne changent pas : `index.html#simulateur`, `#cartes`, `#lignes`,
+`#assistant`, `#fiche/banque`. Une section ouverte par son ancre marque sa famille dans la
+barre, sinon le menu ne dirait plus où l'on est.
 
 Chaque fiche distingue deux registres : le corps, strictement officiel et sourcé, et un bloc « Astuces de la communauté » (retours d'expérience présentés comme tels, sans valeur officielle), porté par `app/communaute.js` qui est autonome et se modifie directement.
 
@@ -101,14 +113,34 @@ Il passait sur deux, parfois trois lignes entre 700 et 1200 px, avec le sélecte
 
 1. Sous **1100 px**, les sections se resserrent : moins de rembourrage, police à 13,5 px.
 2. Sous **1040 px**, la marque et le nom se réduisent légèrement.
-3. Sous **840 px**, l'en-tête se resserre une dernière fois, ce qui garde les huit sections entièrement visibles jusque vers 765 px.
-4. Sous **765 px**, la bande de sections défile, avec un fondu du côté où il reste des entrées (`data-defile`, posé par `majDefilementOnglets`, préfixé pour Safari). L'onglet sélectionné est ramené dans le champ de vision à chaque changement de page, et la molette verticale fait défiler la bande à la souris, où le geste horizontal n'existe pas.
+3. Sous **840 px**, l'en-tête se resserre une dernière fois.
+4. Sous **560 px** environ, la bande défile, avec un fondu du côté où il reste des entrées (`data-defile`, posé par `majDefilementOnglets`, préfixé pour Safari). L'entrée courante est ramenée dans le champ de vision à chaque changement de page, et la molette verticale fait défiler la bande à la souris, où le geste horizontal n'existe pas.
+
+Le regroupement en familles a fait passer la barre de dix entrées à cinq : elle tient
+maintenant entièrement jusqu'à 560 px au lieu de 765. Les menus sont posés en
+`position: fixed` et non `absolute` : la bande défile horizontalement sur téléphone, et un
+menu placé dedans y serait coupé par le débordement.
 
 Trois décisions de fond derrière ce classement. D'abord, **l'administration n'est plus un onglet** : ce n'est pas une section du guide mais un outil, elle est devenue le bouton Paramètres à droite. Ensuite, **la marque est dessinée pour tenir seule** : une maison avec sa porte, en SVG, lisible à 30 px, là où un carré dégradé vide n'était qu'un remplissage. Enfin, **le nom tient sur deux lignes** au lieu d'une : 149 px au lieu de 223, et il ne disparaît à aucune largeur. Le logo ne se réduit donc jamais à la seule marque.
 
 La hauteur de l'en-tête ne varie qu'entre paliers (68, 62, 60 px), jamais à l'intérieur : un en-tête collé qui change de hauteur fait sauter le contenu au redimensionnement. Les marges suivent l'encoche des iPhone en paysage (`env(safe-area-inset-*)`). Le logo ramène à l'accueil.
 
 Mesuré à une trentaine de largeurs de 320 à 2560 px : une seule ligne partout, les huit sections entièrement visibles jusqu'à 820 px, nom jamais tronqué, marque jamais sous 30 px, aucun débordement.
+
+### La largeur du texte
+
+Un paragraphe qui tient toute la largeur du contenu fait 180 caractères par ligne, et
+l'oeil perd la ligne suivante en revenant à la marge. Le texte courant s'arrête donc à une
+mesure de lecture, forcément plus courte que la carte ou le tableau qu'il commente.
+
+Cette différence de largeur doit se lire comme un choix. Un paragraphe qui s'arrête au
+tiers d'une carte, sans rien pour le tenir, se lit comme un accident de mise en page : la
+question s'est posée plusieurs fois devant l'onglet Communes. Les notes qui posent seules
+sur la page portent donc un filet à gauche, qui les désigne comme des notes.
+
+Toute largeur de texte passe par la variable `--mesure` de `app/styles.css`, déclarée et
+commentée à un seul endroit. La seule exception est le hero, où le titre et sa phrase sont
+composés court par-dessus une photographie : c'est une composition, pas un paragraphe.
 
 ### Sobriété
 
@@ -274,6 +306,55 @@ Côté technique : géocodage par Nominatim (limité au Luxembourg, avec récup�
 C'est le seul onglet qui exige le réseau, et il faut le servir en HTTP : ouvert par double-clic en `file://`, le navigateur bloque les appels aux deux services (origine nulle) et les colonnes restent vides. La page le signale.
 
 ---
+
+## Les cent communes
+
+L'onglet le plus dense du guide, construit par `cartes/build_cartes.py` dans
+`cartes/communes_kb.js`. La règle du script est simple : **une source téléchargée est une
+source publiée**. Tout ce qu'un flux porte et qui a un sens pour quelqu'un qui s'installe
+est repris, plutôt qu'un exemple choisi.
+
+Ce que la base contient aujourd'hui :
+
+1. **Quarante-huit indicateurs** par commune, rangés en dix familles : louer, acheter,
+   salaires, écarts de salaire, population, qui arrive qui part, nationalités, emploi,
+   écoles, ménages et logements. Les familles sont décrites par le script et non par
+   l'interface : ajouter un indicateur au script suffit pour qu'il apparaisse.
+2. **Douze séries annuelles**, jusqu'à 1821 pour la population et la densité, 1987 pour
+   les naissances et les décès, 1990 pour les arrivées et les départs. Un curseur déroule
+   les années sous la carte, et un bouton les fait défiler. L'échelle de couleurs est
+   calculée **une fois sur toute la période** : recalculée à chaque pas, elle ferait
+   changer les couleurs de sens pendant la lecture, et une commune deviendrait foncée en
+   perdant des habitants parce que les autres en perdent davantage.
+3. **Cent quatre-vingt-neuf nationalités** par commune, registre national, dernier
+   trimestre publié. Une nationalité seule se lit en part ou en nombre. Jusqu'à six
+   nationalités se comparent sur une seule carte : la couleur nomme la plus présente dans
+   la commune, la densité de la couleur dit ce qu'elles pèsent ensemble.
+4. **Deux cartes côte à côte**, même cadrage et même survol, chacune son indicateur. Ce
+   qui change d'une carte à l'autre vient donc de l'indicateur et non du dessin.
+5. **Une fiche de commune en tableau de bord** : quatre chiffres en tête, puis chaque
+   indicateur avec sa valeur, son rang sur cent, sa place sur l'étendue du pays, et la
+   courbe complète quand la série existe.
+
+Trois garde-fous dans le script, parce qu'une base de données muette se trompe en silence :
+
+1. **Le niveau géographique ne se lit jamais sur le nom.** Le canton de Luxembourg et la
+   commune de Luxembourg portent la même étiquette dans les flux du STATEC ; le niveau se
+   lit sur la longueur du code, sinon une commune reçoit les chiffres de son canton.
+2. **Un indicateur chiffré dans moins de vingt communes n'est pas publié**, et le script
+   le dit à l'exécution. Six classes de couleur sur quatre valeurs ne veulent rien dire.
+   C'est le cas des loyers de maisons, publiés pour quatre communes seulement.
+3. **Chaque identifiant de famille doit exister dans la liste des indicateurs**, vérifié
+   par assertion, et les indicateurs sans famille sont signalés : invisibles dans
+   l'onglet, ils seraient du travail perdu.
+
+Sur les inégalités, la limite est dite plutôt que contournée. Le STATEC ne publie pas de
+coefficient de Gini par commune, et il ne se déduit pas de quatre points de la
+distribution des salaires : un Gini demande la distribution entière, l'enquête SILC la
+donne pour le pays et pas en dessous. La carte garde donc le rapport interdécile des
+salaires, qui existe vraiment à la commune, et la courbe du Gini national de 2003 à 2025
+est posée à côté, avec ce qui les sépare : revenu disponible après impôts et transferts
+d'un côté, salaires avant impôt de l'autre.
 
 ## L'assistant
 

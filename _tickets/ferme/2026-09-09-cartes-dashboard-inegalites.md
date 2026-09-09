@@ -18,3 +18,7 @@ Ouvert le 2026-09-09.
    chercher un flux STATEC qui porte la distribution, ou publier une mesure
    approchée en disant explicitement laquelle et sur quoi elle est calculée.
    Ne pas présenter un Gini estimé comme un Gini mesuré.
+
+## Fermé
+
+Fait le 2026-09-09. Fiche de commune en tableau de bord (quatre chiffres, rang, place sur l'étendue, courbe des séries). Sur le Gini : il n'existe pas par commune, la courbe nationale SILC 2003-2025 est publiée à côté de l'écart interdécile communal, avec ce qui sépare les deux mesures. Rien n'a été estimé.
