@@ -41,6 +41,10 @@
   // sur toute la période, et minuteur de la lecture automatique.
   var annee = null, echelleFixe = null, minuteur = null;
   // Comparaison : deux cartes autonomes, leurs indicateurs, leurs formes.
+  // Plusieurs nationalités comparées sur une carte : une couleur par
+  // nationalité choisie, six au plus, au-delà l'oeil ne les distingue plus.
+  var natSel = [];
+  var CAT = ["#2563eb", "#d1620a", "#0f8b57", "#8b3fd1", "#c2185b", "#00757f"];
   var comparer = false, cartesCmp = [null, null], formesCmp = [{}, {}];
   var indCmp = ["loyer_appt", "sal_med"], syncCmp = false;
 
@@ -139,6 +143,15 @@
       ".ct-nat{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
       ".ct-nat select{flex:1 1 190px;min-width:0;padding:7px 9px;border-radius:9px;font:inherit;font-size:13.5px;",
       "  border:1px solid var(--border,#e6eaef);background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      ".ct-natpuces{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}",
+      ".ct-natpuce{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;",
+      "  border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);font-size:13px;",
+      "  cursor:pointer}",
+      ".ct-natpuce i{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}",
+      ".ct-natpuce b{font-weight:600}",
+      ".ct-natpuce span.x{color:var(--muted,#6a7583);font-weight:600}",
+      ".ct-legende .cat{display:flex;align-items:center;gap:7px;margin-right:16px;font-size:12.5px}",
+      ".ct-legende .cat i{width:14px;height:14px;border-radius:3px;display:inline-block}",
       ".ct-natlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:5px}",
       ".ct-natlist li{display:grid;grid-template-columns:1.5em 1fr auto auto;gap:9px;align-items:baseline;",
       "  font-size:13.5px;font-variant-numeric:tabular-nums}",
@@ -264,7 +277,7 @@
     return couche_nom === "quartiers" ? kb.quartiers.indicateurs : kb.indicateurs;
   }
   function indic() {
-    if (courant === "nation" && indNation) return indNation;
+    if ((courant === "nation" || courant === "natcmp") && indNation) return indNation;
     return listeIndic().filter(function (i) { return i.id === courant; })[0];
   }
 
@@ -292,6 +305,84 @@
     var l = nations();
     for (var i = 0; i < l.length; i++) if (l[i].c === code) return l[i];
     return null;
+  }
+
+  // Le mode comparaison écrit deux champs : la part cumulée des nationalités
+  // choisies, qui sert le classement et la fiche comme n'importe quel
+  // indicateur, et le rang de la plus présente, qui ne sert qu'à la couleur.
+  function multiple() { return natSel.length >= 2 && courant === "natcmp"; }
+
+  function majNatCmp() {
+    if (natSel.length < 2) { indNation = null; return; }
+    kb.communes.forEach(function (c) {
+      var t = c.i.nat_tot;
+      delete c.i.natcmp;
+      delete c.i.natcmp_dom;
+      if (!t) return;
+      var somme = 0, meilleur = -1, max = -1;
+      natSel.forEach(function (code, j) {
+        var v = (c.n || {})[code] || 0;
+        somme += v;
+        if (v > max) { max = v; meilleur = j; }
+      });
+      c.i.natcmp = Math.round(1000 * somme / t) / 10;
+      c.i.natcmp_dom = max > 0 ? meilleur : -1;
+    });
+    var noms = natSel.map(function (code) {
+      var n = infoNation(code);
+      return n ? n.n : code;
+    });
+    indNation = {
+      id: "natcmp",
+      nom: "Nationalités comparées : " + noms.join(", ").toLowerCase(),
+      unite: "% des inscrits, cumulé",
+      fmt: "pct",
+      sens: 0,
+      source: kb.nat_source,
+      aide: kb.nat_aide + " La couleur dit laquelle des nationalités choisies est la plus " +
+        "nombreuse dans la commune, et la densité de la couleur dit ce qu'elles pèsent " +
+        "ensemble. Une commune pâle peut donc être dominée par une nationalité qui n'y " +
+        "compte que quelques dizaines de personnes."
+    };
+  }
+
+  // Le panier de comparaison. Ajouter une nationalité ne change pas la carte :
+  // tant qu'il n'y en a qu'une, il n'y a rien à comparer. C'est le bouton qui
+  // bascule, et l'utilisateur sait donc toujours ce qu'il regarde.
+  function panier(code) {
+    if (!code) return;
+    var j = natSel.indexOf(code);
+    if (j >= 0) natSel.splice(j, 1);
+    else if (natSel.length < CAT.length) natSel.push(code);
+    if (natSel.length < 2 && courant === "natcmp") {
+      if (natSel.length === 1) { choisirNation(natSel[0]); return; }
+      indNation = null;
+      nation = null;
+      courant = listeIndic()[0].id;
+      boutons();
+      calerEchelle();
+      barreTemps();
+      dessiner();
+      fiche();
+      return;
+    }
+    if (courant === "natcmp") majNatCmp();
+    boutons();
+    if (courant === "natcmp") { dessiner(); fiche(); }
+  }
+
+  function lancerComparaison() {
+    if (natSel.length < 2) return;
+    nation = null;
+    arreterLecture();
+    annee = null;
+    courant = "natcmp";
+    majNatCmp();
+    boutons();
+    calerEchelle();
+    barreTemps();
+    dessiner();
+    fiche();
   }
 
   function majNation() {
@@ -441,7 +532,70 @@
     document.getElementById("ct-lire").addEventListener("click", lecture);
   }
 
+  // Carte par catégories : la couleur ne mesure plus, elle nomme. L'échelle de
+  // classes n'a donc pas de sens ici, c'est la densité qui porte la quantité.
+  function dessinerCat() {
+    var ind = indic();
+    var vals = zones().filter(function (c) { return c.i.natcmp !== undefined; })
+      .map(function (c) { return c.i.natcmp; });
+    var maxi = vals.length ? Math.max.apply(null, vals) : 1;
+    classes = null;
+    zones().forEach(function (c) {
+      var d = c.i.natcmp_dom, v = c.i.natcmp, f = formes[c.nom] || [];
+      var ok = d !== undefined && d >= 0;
+      f.forEach(function (poly) {
+        poly.setStyle({
+          fillColor: ok ? CAT[d] : SANS,
+          fillOpacity: ok ? Math.max(.22, Math.min(.9, .22 + .68 * (v / maxi))) : .4,
+          color: "#ffffff", weight: 1
+        });
+        poly.unbindTooltip();
+        var det = natSel.map(function (code) {
+          var n = infoNation(code);
+          return (n ? n.n : code) + " " + ((c.n || {})[code] || 0);
+        }).join(" · ");
+        poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) + "<small>" +
+          det + "<br>ensemble " + nf(v, "pct") + " des inscrits</small></span>", { sticky: true });
+      });
+    });
+    if (selection) surligner(selection, true);
+    ecrireCat(vals, ind);
+  }
+
+  function ecrireCat(vals, ind) {
+    var k = document.getElementById("ct-sortie");
+    var compte = {};
+    zones().forEach(function (c) {
+      if (c.i.natcmp_dom >= 0) compte[c.i.natcmp_dom] = (compte[c.i.natcmp_dom] || 0) + 1;
+    });
+    var h = '<h2 style="margin-top:22px">Nationalités comparées' +
+      ' <span class="muted" style="font-weight:400;font-size:15px">' +
+      natSel.length + " nationalités, " + motZone(true) + " colorées par la plus présente</span></h2>";
+    h += '<div class="ct-legende">';
+    natSel.forEach(function (code, j) {
+      var n = infoNation(code);
+      h += '<div class="cat"><i style="background:' + CAT[j] + '"></i>' +
+        drapeau(n) + " " + esc(n ? n.n : code) +
+        ' <span class="muted">' + (compte[j] || 0) + " " + motZone((compte[j] || 0) > 1) + "</span></div>";
+    });
+    h += "</div>";
+    h += '<p class="hint ct-note">' + esc(ind.aide) + " <strong>Source :</strong> " +
+      esc(ind.source) + ".</p>";
+    k.innerHTML = h;
+
+    var tri = zones().slice().sort(function (a, b) {
+      var x = a.i.natcmp, y = b.i.natcmp;
+      if (x === undefined) return 1;
+      if (y === undefined) return -1;
+      return y - x;
+    });
+    tableauRangs(tri, ind, "natcmp", function (v, c) {
+      return c.i.natcmp_dom >= 0 ? CAT[c.i.natcmp_dom] : SANS;
+    });
+  }
+
   function dessiner() {
+    if (multiple()) { dessinerCat(); return; }
     var ind = indic();
     var vals = zones().filter(function (c) { return c.i[courant] !== undefined; })
       .map(function (c) { return c.i[courant]; });
@@ -573,7 +727,7 @@
     });
     if (tuiles) h += '<div class="ct-tuiles">' + tuiles + "</div>";
 
-    if (courant === "nation" && indNation) {
+    if ((courant === "nation" || courant === "natcmp") && indNation) {
       h += '<div class="ct-bloc"><h4>Nationalité affichée</h4><div class="ct-lignes">' +
         ligneFiche(c, indNation) + "</div></div>";
     }
@@ -622,6 +776,7 @@
     nation = code || null;
     arreterLecture();
     annee = null;
+    if (courant === "natcmp") courant = "nation";
     majNation();
     if (nation) courant = "nation";
     else if (courant === "nation") courant = listeIndic()[0].id;
@@ -681,15 +836,25 @@
       if (y === undefined) return -1;
       return y - x;
     });
+    tableauRangs(tri, ind, courant, function (v) { return RAMPE[classe(v, br)]; });
+  }
+
+  // Le classement de la colonne de droite. Il sert les deux rendus, celui qui
+  // mesure et celui qui nomme : seule la couleur de la jauge les distingue.
+  function tableauRangs(tri, ind, champ, couleurDe) {
+    var vals = tri.map(function (c) { return c.i[champ]; })
+      .filter(function (v) { return v !== undefined; });
+    var mini = vals.length ? Math.min.apply(null, vals) : 0;
+    var maxi = vals.length ? Math.max.apply(null, vals) : 1;
     var t = "<h3>Classement des " + zones().length + " " + motZone(true) + "</h3>" +
       '<div class="ct-scroll"><table class="ct-tbl"><tbody id="ct-rangs">';
     tri.forEach(function (c, idx) {
-      var v = c.i[courant];
+      var v = c.i[champ];
       var part = v === undefined ? 0 : Math.max(2, 100 * (v - mini) / (maxi - mini || 1));
       t += '<tr data-nom="' + esc(c.nom) + '"><td class="n muted" style="width:26px">' +
         (v === undefined ? "" : idx + 1) + "</td><td>" + esc(c.nom) +
         '</td><td class="n">' + nf(v, ind.fmt) + '</td><td style="width:64px"><div class="ct-jauge"><i style="width:' +
-        part.toFixed(1) + "%;background:" + (v === undefined ? SANS : RAMPE[classe(v, br)]) +
+        part.toFixed(1) + "%;background:" + (v === undefined ? SANS : couleurDe(v, c)) +
         '"></i></div></td></tr>';
     });
     t += "</tbody></table></div>";
@@ -904,12 +1069,51 @@
       h += "</select>" +
         '<button class="chip' + (natMode === "pct" ? " actif" : "") + '" data-mode="pct">en %</button>' +
         '<button class="chip' + (natMode === "nb" ? " actif" : "") + '" data-mode="nb">en nombre</button>' +
-        "</div></div>";
+        "</div>";
+      // Comparer plusieurs nationalités sur la même carte : les choisies
+      // s'affichent en puces, un clic sur une puce la retire.
+      h += '<div class="ct-natpuces">';
+      natSel.forEach(function (code, j) {
+        var n = infoNation(code);
+        h += '<button class="ct-natpuce" data-natoff="' + code + '" title="Retirer de la comparaison">' +
+          '<i style="background:' + CAT[j] + '"></i><b>' + esc(n ? n.n : code) +
+          '</b><span class="x">✕</span></button>';
+      });
+      if (natSel.length < CAT.length) {
+        h += '<button class="ct-natpuce" data-nataddsel="1"><b>+ ajouter celle-ci à la comparaison</b></button>';
+      }
+      if (natSel.length >= 2) {
+        h += '<button class="chip' + (courant === "natcmp" ? " actif" : "") +
+          '" data-natcmp="1">Comparer ces ' + natSel.length + " nationalités</button>";
+      }
+      h += "</div>";
+      if (natSel.length === 1) {
+        h += '<p class="hint" style="margin-top:8px">Ajoutez-en une deuxième : chaque commune ' +
+          "prendra la couleur de la nationalité la plus présente parmi celles choisies, " +
+          "d'autant plus dense qu'elles y pèsent lourd ensemble.</p>";
+      }
+      h += "</div>";
     }
     if (quart) h += '<p class="hint" style="margin-top:14px">' + esc(kb.quartiers.note) + "</p>";
     k.innerHTML = h;
     var sel = document.getElementById("ct-nation");
+    // Choisir une nationalité dans la liste sort de la comparaison : c'est une
+    // question différente, et deux lectures superposées n'en feraient aucune.
     if (sel) sel.addEventListener("change", function () { choisirNation(sel.value); });
+    k.querySelectorAll("button[data-natoff]").forEach(function (b) {
+      b.addEventListener("click", function () { panier(b.dataset.natoff); });
+    });
+    var add = k.querySelector("button[data-nataddsel]");
+    if (add) {
+      add.addEventListener("click", function () {
+        var s2 = document.getElementById("ct-nation");
+        var code = (s2 && s2.value) || nation;
+        if (!code) { if (s2) s2.focus(); return; }
+        panier(code);
+      });
+    }
+    var cmp = k.querySelector("button[data-natcmp]");
+    if (cmp) cmp.addEventListener("click", lancerComparaison);
     k.querySelectorAll("button[data-mode]").forEach(function (b) {
       b.addEventListener("click", function () {
         natMode = b.dataset.mode;
