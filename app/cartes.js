@@ -185,6 +185,17 @@
       ".ct-cmp .ct-legende{margin:12px 0 0}",
       ".ct-cmp .val{font-variant-numeric:tabular-nums;font-weight:600;margin-top:9px;font-size:14px}",
       ".ct-cmp .val span{color:var(--muted,#6a7583);font-weight:400}",
+      // Inégalités : une courbe du pays sous la carte des communes, pour dire
+      // ce que la carte ne mesure pas.
+      ".ct-ineg{margin-top:18px}",
+      ".ct-ineg .deux{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start}",
+      "@media(max-width:820px){.ct-ineg .deux{grid-template-columns:1fr}}",
+      ".ct-ineg h4{margin:0 0 4px;font-size:14.5px}",
+      ".ct-ineg .chiffres{display:grid;gap:10px;margin-top:4px}",
+      ".ct-ineg .c{display:flex;justify-content:space-between;align-items:baseline;gap:14px;",
+      "  border-bottom:1px solid var(--border,#e6eaef);padding-bottom:7px}",
+      ".ct-ineg .c b{font-size:19px;font-variant-numeric:tabular-nums}",
+      ".ct-ineg .c span{font-size:12.5px;color:var(--muted,#6a7583);text-align:right;max-width:22ch}",
       ".ct-temps{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 16px;",
       "  border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);background:var(--surface,#fff)}",
       ".ct-temps input[type=range]{flex:1;min-width:0;margin:0}",
@@ -535,6 +546,7 @@
   // Carte par catégories : la couleur ne mesure plus, elle nomme. L'échelle de
   // classes n'a donc pas de sens ici, c'est la densité qui porte la quantité.
   function dessinerCat() {
+    panneauInegalites();
     var ind = indic();
     var vals = zones().filter(function (c) { return c.i.natcmp !== undefined; })
       .map(function (c) { return c.i.natcmp; });
@@ -618,6 +630,7 @@
     });
     if (selection) surligner(selection, true);
     ecrire(vals, br, ind);
+    panneauInegalites();
   }
 
   function surligner(nom, on) {
@@ -864,6 +877,85 @@
       tr.addEventListener("click", function () { choisir(tr.dataset.nom); });
       if (selection) tr.classList.toggle("on", tr.dataset.nom === selection);
     });
+  }
+
+  // ---------- inégalités ----------
+  //
+  // Le STATEC ne publie pas de coefficient de Gini par commune, et il ne se
+  // déduit pas de quatre points de la distribution des salaires : un Gini
+  // demande la distribution entière, l'enquête SILC la donne pour le pays et
+  // pas en dessous. La carte garde donc le rapport interdécile des salaires,
+  // qui existe vraiment à la commune, et la courbe du pays est posée à côté
+  // avec ce qui les sépare, plutôt qu'un chiffre inventé par commune.
+
+  var INEGALITES = ["sal_ratio", "sal_p50_p10", "sal_p90_p50"];
+
+  function graphe(annees, valeurs, fmt) {
+    var L_ = 460, H = 170, mg = 34, i;
+    var vals = valeurs.filter(function (v) { return v !== null && v !== undefined; });
+    if (vals.length < 2) return "";
+    var mini = Math.min.apply(null, vals), maxi = Math.max.apply(null, vals);
+    var bas = mini - (maxi - mini) * .25, haut = maxi + (maxi - mini) * .2;
+    var x = function (j) { return mg + j * (L_ - mg - 8) / (annees.length - 1); };
+    var y = function (v) { return 12 + (haut - v) / (haut - bas || 1) * (H - 34); };
+    var pts = [];
+    for (i = 0; i < valeurs.length; i++) {
+      if (valeurs[i] === null || valeurs[i] === undefined) continue;
+      pts.push(x(i).toFixed(1) + "," + y(valeurs[i]).toFixed(1));
+    }
+    var dern = valeurs.length - 1;
+    while (dern > 0 && (valeurs[dern] === null || valeurs[dern] === undefined)) dern--;
+    var g = '<svg viewBox="0 0 ' + L_ + " " + H + '" width="100%" height="' + H +
+      '" role="img" aria-label="Courbe de ' + annees[0] + " à " + annees[annees.length - 1] + '">';
+    // Deux repères horizontaux seulement : une grille dense ferait un tableau.
+    [maxi, mini].forEach(function (v) {
+      g += '<line x1="' + mg + '" x2="' + (L_ - 8) + '" y1="' + y(v).toFixed(1) + '" y2="' +
+        y(v).toFixed(1) + '" stroke="var(--border,#e6eaef)" stroke-width="1"></line>' +
+        '<text x="0" y="' + (y(v) + 4).toFixed(1) + '" font-size="11" fill="var(--muted,#6a7583)">' +
+        nf(v, fmt) + "</text>";
+    });
+    g += '<polyline fill="none" stroke="var(--accent,#2563eb)" stroke-width="2" ' +
+      'stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>';
+    g += '<circle cx="' + x(dern).toFixed(1) + '" cy="' + y(valeurs[dern]).toFixed(1) +
+      '" r="3.4" fill="var(--accent,#2563eb)"></circle>';
+    g += '<text x="' + mg + '" y="' + (H - 4) + '" font-size="11" fill="var(--muted,#6a7583)">' +
+      annees[0] + "</text>";
+    g += '<text x="' + (L_ - 8) + '" y="' + (H - 4) + '" font-size="11" text-anchor="end" ' +
+      'fill="var(--muted,#6a7583)">' + annees[annees.length - 1] + "</text>";
+    return g + "</svg>";
+  }
+
+  function panneauInegalites() {
+    var k = document.getElementById("ct-ineg");
+    if (!k) return;
+    var n = kb && kb.national;
+    if (!n || INEGALITES.indexOf(courant) === -1) { k.innerHTML = ""; return; }
+    var d = n.annees.length - 1;
+    var vals = zones().map(function (c) { return c.i[courant]; })
+      .filter(function (v) { return v !== undefined; });
+    var moy = vals.length ? vals.reduce(function (a, b) { return a + b; }, 0) / vals.length : null;
+    k.innerHTML = '<div class="card ct-ineg"><div class="deux"><div>' +
+      "<h4>Les inégalités de revenu du pays, 2003 à " + n.annees[d] + "</h4>" +
+      '<p class="hint" style="max-width:none;margin-top:2px;border:0;padding:0">' +
+      "Coefficient de Gini des revenus disponibles, enquête SILC. Zéro voudrait dire que " +
+      "tout le monde a le même revenu, un que tout revient à une seule personne." +
+      "</p>" + graphe(n.annees, n.gini, "dec") + "</div><div>" +
+      '<div class="chiffres">' +
+      '<div class="c"><b>' + nf(n.gini[d], "dec") + "</b><span>Gini du pays en " +
+      n.annees[d] + "</span></div>" +
+      '<div class="c"><b>' + nf(n.s80_s20[d], "dec") + "</b><span>Les 20 % les plus aisés " +
+      "touchent ce multiple des 20 % les plus modestes</span></div>" +
+      (moy === null ? "" : '<div class="c"><b>' + nf(moy, "dec") + "</b><span>Écart de salaire " +
+        "moyen des communes, sur l'indicateur affiché</span></div>") +
+      "</div></div></div>" +
+      '<p class="hint ct-note">Ces deux mesures ne disent pas la même chose et ne se ' +
+      "remplacent pas. Le Gini porte sur le revenu disponible des ménages, après impôts et " +
+      "transferts, et il n'existe que pour le pays entier : l'enquête qui le produit " +
+      "n'interroge pas assez de monde pour descendre à la commune. La carte, elle, porte sur " +
+      "les salaires des résidents, avant impôt, et par commune. Un écart de salaire élevé " +
+      "dans une commune peut donc coexister avec un revenu après redistribution beaucoup " +
+      "plus resserré. Il n'y a pas de Gini par commune au Luxembourg, et ce guide n'en " +
+      "fabrique pas.</p></div>";
   }
 
   // ---------- comparer deux cartes ----------
