@@ -283,6 +283,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 /* ---------- Structure ---------- */
 
 main { max-width: var(--max); margin: 0 auto; padding: 0 24px 90px; }
+/* Chaque section commence a la meme distance de l'en-tete fixe, qu'elle
+   s'ouvre sur un titre ou sur un bloc. */
+.panel { padding-top: 30px; }
 .panel[hidden] { display: none; }
 
 h1 {

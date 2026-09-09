@@ -105,7 +105,7 @@
   var STOCKAGE = [
     ["luxguide.chat.v1", "Votre profil et la conversation avec l'assistant"],
     ["luxguide.parcours.v1", "Les étapes du parcours que vous avez cochées"],
-    ["luxguide.carte.v1", "Les adresses saisies dans l'onglet Carte"],
+    ["luxguide.carte.v1", "Les adresses saisies dans l'onglet Comparer des logements"],
     ["luxguide.surmesure.v1", "Les lignes de votre tableau de comparaison"],
     ["luxguide.kb.v1", "Les fiches modifiées depuis les paramètres"],
     ["luxguide.params.v1", "Les paramètres de calcul modifiés"],
@@ -659,9 +659,15 @@
       ["comparateur", "Comparateur", "Finances",
        "Quatre contrats habitation du marché lus intégralement, sinistre par sinistre, clause citée. Et trois démonstrations sur l'auto, le mobile et l'électricité.",
        "4 postes"],
-      ["carte", "Carte", "Sante",
+      ["carte", "Comparer des logements", "Famille",
        "Plusieurs adresses côte à côte : distance au travail, écoles, crèches, transports, commerces et santé autour de chacune.",
-       "jusqu'à 4 adresses"]
+       "jusqu'à 4 adresses"],
+      ["lignes", "Bus, tram et train", "Mobilite",
+       "Indiquez le lieu où vous vous rendez chaque jour : tous les arrêts d'où l'on y arrive sans changement, colorés par temps de trajet.",
+       "tout le réseau"],
+      ["cartes", "Les cent communes", "Sante",
+       "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte.",
+       "48 indicateurs · 189 nationalités"]
     ].forEach(function (s) {
       g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }, null));
     });

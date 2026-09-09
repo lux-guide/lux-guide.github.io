@@ -332,9 +332,13 @@ Ce que la base contient aujourd'hui :
    la commune, la densité de la couleur dit ce qu'elles pèsent ensemble.
 4. **Deux cartes côte à côte**, même cadrage et même survol, chacune son indicateur. Ce
    qui change d'une carte à l'autre vient donc de l'indicateur et non du dessin.
-5. **Une fiche de commune en tableau de bord** : quatre chiffres en tête, puis chaque
-   indicateur avec sa valeur, son rang sur cent, sa place sur l'étendue du pays, et la
-   courbe complète quand la série existe.
+5. **Un comparateur de communes**, jusqu'à cinq côte à côte, sur le modèle du
+   comparateur de territoires de l'INSEE : une colonne par commune, les indicateurs en
+   lignes par famille, la valeur, le rang sur cent, la courbe quand la série existe, et
+   la meilleure valeur de chaque ligne marquée. Cliquer une commune sur la carte l'ajoute.
+6. **Le choix d'un indicateur passe par sa famille** : une rangée de dix familles, puis
+   les indicateurs de la famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient
+   plus.
 
 Trois garde-fous dans le script, parce qu'une base de données muette se trompe en silence :
 
