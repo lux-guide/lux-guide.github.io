@@ -399,7 +399,7 @@
       motZone(manquantes > 1) + " sans donnée</div>";
     h += "</div>";
 
-    h += '<p class="hint" style="margin-top:12px">' + esc(ind.aide || "") +
+    h += '<p class="hint ct-note">' + esc(ind.aide || "") +
       (ind.aide ? " " : "") + "<strong>Source :</strong> " + esc(ind.source) +
       ". Six classes de même effectif, ce qui évite qu'une valeur extrême n'écrase " +
       "l'échelle : chaque couleur regroupe environ " + Math.round(vals.length / RAMPE.length) +
