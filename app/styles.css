@@ -93,18 +93,19 @@ header.top {
   -webkit-backdrop-filter: saturate(190%) blur(18px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-/* L'en-tete tient sur une seule ligne a toutes les largeurs, en trois paliers.
-   Rien ne passe jamais a la ligne : une barre sur deux ou trois lignes deplace
-   le contenu de la page a chaque redimensionnement.
+/* L'en-tete tient sur une seule ligne a toutes les largeurs. Rien n'y passe
+   jamais a la ligne : une barre sur deux ou trois lignes deplace le contenu de
+   la page a chaque redimensionnement.
 
-   1. A partir de 1100 px : le logo complet, marque et nom, les huit sections,
-      les deux outils.
-   2. De 760 a 1099 px : la marque seule. Elle est dessinee pour tenir seule,
-      c'est le principe d'une marque reduite ; le nom du site est de toute
-      facon repete par le titre de la page juste en dessous. Les huit sections
-      restent toutes visibles, ce qui compte davantage que le nom.
-   3. En dessous de 765 px : la bande de sections defile, avec un fondu du cote
-      ou il en reste. C'est le geste attendu au doigt.
+   Les sections sont dix, et dix noms alignes ne se lisent plus : on les
+   parcourt tous avant d'en choisir un. Elles sont donc rangees en trois
+   familles derriere un menu, ce qui laisse cinq entrees dans la barre. Le menu
+   a la place d'ecrire ce que contient chaque section, ce que l'onglet nu ne
+   pouvait pas faire.
+
+   Le nom du guide tient sur deux lignes dans son cartouche et ne disparait a
+   aucune largeur. En dessous de 560 px environ, la bande de sections defile,
+   avec un fondu du cote ou il en reste : c'est le geste attendu au doigt.
 
    La hauteur de l'en-tete ne varie qu'entre paliers, jamais a l'interieur :
    un en-tete colle qui change de hauteur fait sauter le contenu. */
@@ -204,7 +205,46 @@ nav.tabs button {
   transition: color .18s, background .18s;
 }
 nav.tabs button:hover { color: var(--text); background: var(--surface-2); }
-nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+nav.tabs button[aria-current="page"],
+nav.tabs button.grp-btn.actif {
+  color: var(--accent); font-weight: 600; background: var(--accent-soft);
+}
+
+/* Familles de sections. Le chevron dit qu'il y a un menu dessous, et il
+   pivote quand il est ouvert : sans ce signe, un bouton qui n'ouvre pas la
+   page qu'on attend se lit comme une panne. */
+.grp { position: relative; flex: none; display: flex; align-items: center; }
+nav.tabs button.grp-btn { display: inline-flex; align-items: center; gap: 7px; }
+.chev {
+  width: 7px; height: 7px; flex: none; opacity: .6;
+  border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); transition: transform .18s;
+}
+nav.tabs button.grp-btn[aria-expanded="true"] .chev { transform: translateY(1px) rotate(225deg); }
+
+/* Le menu est en position fixe et non absolue : la bande de sections defile
+   horizontalement sur telephone, un menu pose dedans y serait coupe. Sa place
+   exacte est calculee a l'ouverture, sous le bouton de sa famille. */
+.menu {
+  position: fixed; z-index: 70; min-width: 264px; max-width: min(92vw, 380px);
+  background: var(--surface); border: 1px solid var(--border-fort);
+  border-radius: 15px; box-shadow: 0 14px 38px rgba(11, 15, 22, .17);
+  padding: 6px; display: grid; gap: 2px;
+}
+.menu[hidden] { display: none; }
+nav.tabs .menu button {
+  display: block; width: 100%; text-align: left; white-space: normal;
+  padding: 9px 11px; border-radius: 11px; color: var(--text-2);
+  scroll-snap-align: none;
+}
+nav.tabs .menu button b { display: block; font-size: 14.5px; font-weight: 600; color: var(--text); }
+nav.tabs .menu button i {
+  display: block; font-style: normal; font-size: 12.5px; line-height: 1.4;
+  color: var(--muted); margin-top: 2px;
+}
+nav.tabs .menu button:hover { background: var(--surface-2); }
+nav.tabs .menu button[aria-current="page"] { background: var(--accent-soft); }
+nav.tabs .menu button[aria-current="page"] b { color: var(--accent); }
 
 /* L'assistant n'est pas une page de plus, c'est quelqu'un qui attend. Un point
    qui respire le signale, discretement : pas de couleur criarde, pas de

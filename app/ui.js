@@ -269,17 +269,112 @@
       ? "auto" : "smooth";
   }
 
+  // L'entree a montrer pour une section : son bouton, ou celui de sa famille
+  // quand la section vit dans un menu.
+  function entreeOnglet(nom) {
+    var b = $$("#tabs [data-panel]").filter(function (x) { return x.dataset.panel === nom; })[0];
+    if (!b) return null;
+    var g = b.closest ? b.closest(".grp") : null;
+    return g ? $(".grp-btn", g) : b;
+  }
+
   function amenerOngletEnVue(nom) {
     var nav = $("#tabs");
     if (!nav || nav.scrollWidth <= nav.clientWidth + 2) return;
-    var b = $$("#tabs button").filter(function (x) { return x.dataset.panel === nom; })[0];
+    var b = entreeOnglet(nom);
     if (b && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest", behavior: doux() });
   }
 
+  // ----- Menus de familles -----
+
+  function menuDe(b) { return document.getElementById(b.getAttribute("aria-controls")); }
+
+  function fermerMenus(sauf) {
+    $$("#tabs .grp-btn").forEach(function (b) {
+      if (b === sauf) return;
+      b.setAttribute("aria-expanded", "false");
+      var m = menuDe(b);
+      if (m) m.hidden = true;
+    });
+  }
+
+  // Place fixe : la bande de sections defile horizontalement sur telephone, et
+  // un menu pose dedans y serait coupe. On le colle sous son bouton, sans le
+  // laisser sortir de l'ecran par la droite.
+  function placerMenu(b, m) {
+    var r = b.getBoundingClientRect();
+    m.style.top = Math.round(r.bottom + 7) + "px";
+    m.style.left = "0px";
+    var g = Math.min(r.left, window.innerWidth - m.offsetWidth - 10);
+    m.style.left = Math.round(Math.max(8, g)) + "px";
+  }
+
+  function ouvrirMenu(b) {
+    var m = menuDe(b);
+    if (!m) return;
+    fermerMenus(b);
+    m.hidden = false;
+    b.setAttribute("aria-expanded", "true");
+    placerMenu(b, m);
+  }
+
+  function basculerMenu(b) {
+    if (b.getAttribute("aria-expanded") === "true") fermerMenus();
+    else ouvrirMenu(b);
+  }
+
   function initOnglets() {
-    $$("#tabs button").forEach(function (b) {
+    // Entrees directes et entrees de menu portent toutes data-panel.
+    $$("#tabs [data-panel]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.panel); });
     });
+
+    $$("#tabs .grp-btn").forEach(function (b) {
+      b.addEventListener("click", function () { basculerMenu(b); });
+      // Fleche bas : le menu s'ouvre et le premier choix prend le focus, comme
+      // partout ailleurs. C'est la seule touche que ce bouton doit connaitre.
+      b.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowDown") return;
+        e.preventDefault();
+        ouvrirMenu(b);
+        var premier = $("[data-panel]", menuDe(b));
+        if (premier) premier.focus();
+      });
+    });
+
+    // Dans un menu ouvert, les fleches circulent et Echap revient au bouton.
+    $$("#tabs .menu").forEach(function (m) {
+      m.addEventListener("keydown", function (e) {
+        var b = $(".grp-btn", m.parentNode);
+        if (e.key === "Escape" || e.key === "Tab") {
+          fermerMenus();
+          if (e.key === "Escape" && b) { b.focus(); e.preventDefault(); }
+          return;
+        }
+        var items = $$("[data-panel]", m);
+        var i = items.indexOf(document.activeElement);
+        if (i === -1) return;
+        var j = null;
+        if (e.key === "ArrowDown") j = (i + 1) % items.length;
+        else if (e.key === "ArrowUp") j = (i - 1 + items.length) % items.length;
+        else if (e.key === "Home") j = 0;
+        else if (e.key === "End") j = items.length - 1;
+        if (j === null) return;
+        e.preventDefault();
+        items[j].focus();
+      });
+    });
+
+    // Un clic ailleurs, Echap, un defilement ou un redimensionnement referment
+    // le menu : il est place a la main, il ne suivrait pas la page.
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest("#tabs .grp")) return;
+      fermerMenus();
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerMenus(); });
+    window.addEventListener("resize", function () { fermerMenus(); });
+    window.addEventListener("scroll", function () { fermerMenus(); }, { passive: true });
     // Boutons d'appel a l'action de la page d'accueil
     $$("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.go); });
@@ -295,24 +390,6 @@
     if (!nav) return;
     nav.addEventListener("scroll", majDefilementOnglets, { passive: true });
     window.addEventListener("resize", majDefilementOnglets);
-
-    // role="tablist" est une promesse : les fleches doivent circuler entre les
-    // onglets, et un seul onglet doit etre un arret de tabulation. Le role etait
-    // declare sans que rien de cela fonctionne, ce qui trompe le lecteur d'ecran.
-    nav.addEventListener("keydown", function (e) {
-      var t = $$("#tabs button");
-      var i = t.indexOf(document.activeElement);
-      if (i === -1) return;
-      var j = null;
-      if (e.key === "ArrowRight") j = (i + 1) % t.length;
-      else if (e.key === "ArrowLeft") j = (i - 1 + t.length) % t.length;
-      else if (e.key === "Home") j = 0;
-      else if (e.key === "End") j = t.length - 1;
-      if (j === null) return;
-      e.preventDefault();
-      ouvrir(t[j].dataset.panel);
-      t[j].focus();
-    });
 
     // La molette verticale fait defiler la bande a la souris, ou le geste
     // horizontal n'existe pas.
@@ -339,19 +416,20 @@
       // La carte a pu etre creee dans un panneau cache : recaler sa taille
       if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 60);
     }
-    // Tabulation itinerante : la bande entiere est un seul arret de tabulation,
-    // on y circule ensuite aux fleches. C'est ce qu'attend role="tablist".
-    $$("#tabs button").forEach(function (b) {
-      var actif = b.dataset.panel === nom;
-      b.setAttribute("aria-selected", String(actif));
-      b.tabIndex = actif ? 0 : -1;
+    // La section ouverte se marque, et la famille qui la contient avec elle :
+    // sinon la barre n'indique plus rien des que la section est dans un menu.
+    fermerMenus();
+    $$("#tabs [data-panel]").forEach(function (b) {
+      if (b.dataset.panel === nom) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
     });
-    // Si aucune section n'est active (administration), le premier onglet reste
-    // atteignable au clavier.
-    if ($$("#tabs button").filter(function (b) { return b.tabIndex === 0; }).length === 0) {
-      var p0 = $$("#tabs button")[0];
-      if (p0) p0.tabIndex = 0;
-    }
+    $$("#tabs .grp").forEach(function (g) {
+      var b = $(".grp-btn", g);
+      var dedans = $$("[data-panel]", g).filter(function (x) {
+        return x.dataset.panel === nom;
+      }).length > 0;
+      if (b) b.classList.toggle("actif", dedans);
+    });
     var adm = $("#admin-btn");
     if (adm) adm.setAttribute("aria-pressed", String(nom === "admin"));
     setTimeout(majBulle, 0);

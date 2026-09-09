@@ -21,17 +21,56 @@
         <span class="brand-desc">au Luxembourg</span>
       </span>
     </button>
-    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections du guide">
-      <button role="tab" id="tab-accueil" data-panel="accueil" aria-selected="true" aria-controls="panel-accueil" tabindex="0">Accueil</button>
-      <button role="tab" id="tab-fiches" data-panel="fiches" aria-selected="false" aria-controls="panel-fiches" tabindex="-1">Fiches</button>
-      <button role="tab" id="tab-parcours" data-panel="parcours" aria-selected="false" aria-controls="panel-parcours" tabindex="-1">Parcours</button>
-      <button role="tab" id="tab-faq" data-panel="faq" aria-selected="false" aria-controls="panel-faq" tabindex="-1">FAQ</button>
-      <button role="tab" id="tab-simulateur" data-panel="simulateur" aria-selected="false" aria-controls="panel-simulateur" tabindex="-1">Simulateur</button>
-      <button role="tab" id="tab-comparateur" data-panel="comparateur" aria-selected="false" aria-controls="panel-comparateur" tabindex="-1">Comparateur</button>
-      <button role="tab" id="tab-carte" data-panel="carte" aria-selected="false" aria-controls="panel-carte" tabindex="-1">Carte</button>
-      <button role="tab" id="tab-lignes" data-panel="lignes" aria-selected="false" aria-controls="panel-lignes" tabindex="-1">Lignes</button>
-      <button role="tab" id="tab-cartes" data-panel="cartes" aria-selected="false" aria-controls="panel-cartes" tabindex="-1">Communes</button>
-      <button role="tab" id="tab-assistant" data-panel="assistant" aria-selected="false" aria-controls="panel-assistant" tabindex="-1" class="tab-assistant">
+    <!-- Dix sections alignees, c'etait une liste a lire en entier avant de
+         choisir. Elles sont rangees en trois familles : ce qu'il faut savoir,
+         ce que ca coute, ou habiter. L'accueil et l'assistant restent directs,
+         ce sont les deux entrees qu'on prend sans reflechir. -->
+    <nav class="tabs" id="tabs" aria-label="Sections du guide">
+      <button id="tab-accueil" data-panel="accueil" aria-controls="panel-accueil">Accueil</button>
+
+      <div class="grp">
+        <button class="grp-btn" id="grp-guide" aria-haspopup="true" aria-expanded="false" aria-controls="menu-guide">Le guide<span class="chev" aria-hidden="true"></span></button>
+        <div class="menu" id="menu-guide" role="menu" aria-labelledby="grp-guide" hidden>
+          <button role="menuitem" id="tab-fiches" data-panel="fiches" aria-controls="panel-fiches">
+            <b id="nom-fiches">Fiches pratiques</b><i>Chaque fiche est autonome, avec ses sources officielles</i>
+          </button>
+          <button role="menuitem" id="tab-parcours" data-panel="parcours" aria-controls="panel-parcours">
+            <b id="nom-parcours">Parcours d'installation</b><i>Les démarches dans l'ordre, celles qui conditionnent les autres d'abord</i>
+          </button>
+          <button role="menuitem" id="tab-faq" data-panel="faq" aria-controls="panel-faq">
+            <b id="nom-faq">Questions et réponses</b><i>Toutes les questions recensées, chaque réponse adossée à une fiche</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <button class="grp-btn" id="grp-budget" aria-haspopup="true" aria-expanded="false" aria-controls="menu-budget">Budget<span class="chev" aria-hidden="true"></span></button>
+        <div class="menu" id="menu-budget" role="menu" aria-labelledby="grp-budget" hidden>
+          <button role="menuitem" id="tab-simulateur" data-panel="simulateur" aria-controls="panel-simulateur">
+            <b id="nom-simulateur">Simulateur</b><i>Salaire net, capacité d'emprunt, classe d'impôt</i>
+          </button>
+          <button role="menuitem" id="tab-comparateur" data-panel="comparateur" aria-controls="panel-comparateur">
+            <b id="nom-comparateur">Comparateur</b><i>Habitation, auto, mobile et électricité, critère par critère</i>
+          </button>
+        </div>
+      </div>
+
+      <div class="grp">
+        <button class="grp-btn" id="grp-lieu" aria-haspopup="true" aria-expanded="false" aria-controls="menu-lieu">Où habiter<span class="chev" aria-hidden="true"></span></button>
+        <div class="menu" id="menu-lieu" role="menu" aria-labelledby="grp-lieu" hidden>
+          <button role="menuitem" id="tab-carte" data-panel="carte" aria-controls="panel-carte">
+            <b id="nom-carte">Comparer des logements</b><i>Écoles, crèches et transports autour de chaque adresse</i>
+          </button>
+          <button role="menuitem" id="tab-lignes" data-panel="lignes" aria-controls="panel-lignes">
+            <b id="nom-lignes">Chercher sur une ligne</b><i>Les arrêts d'où l'on arrive au travail sans changement</i>
+          </button>
+          <button role="menuitem" id="tab-cartes" data-panel="cartes" aria-controls="panel-cartes">
+            <b id="nom-cartes">Les cent communes</b><i>Loyers, salaires, nationalités, chiffre par chiffre</i>
+          </button>
+        </div>
+      </div>
+
+      <button id="tab-assistant" data-panel="assistant" aria-controls="panel-assistant" class="tab-assistant">
         <span class="tab-pt" aria-hidden="true"></span>Assistant
       </button>
     </nav>
@@ -49,7 +88,7 @@
 <main>
 
   <!-- Accueil -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-accueil" id="panel-accueil">
+  <section class="panel" role="region" aria-labelledby="tab-accueil" id="panel-accueil">
 
     <div class="ask">
       <h2 class="ask-titre">Une question sur votre installation&nbsp;?</h2>
@@ -105,7 +144,7 @@
   </section>
 
   <!-- Fiches -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-fiches" id="panel-fiches" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-fiches" id="panel-fiches" hidden>
     <div id="fiches-liste">
       <h1>Fiches pratiques</h1>
       <p class="lead">Chaque fiche est autonome, avec ses points clés et ses sources officielles.</p>
@@ -120,7 +159,7 @@
   </section>
 
   <!-- Parcours -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-parcours" id="panel-parcours" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-parcours" id="panel-parcours" hidden>
     <h1>Parcours d'installation</h1>
     <p class="lead">L'ordre compte : certaines démarches en conditionnent d'autres.</p>
     <div class="notice">
@@ -132,7 +171,7 @@
   </section>
 
   <!-- FAQ -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-faq" id="panel-faq" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-faq" id="panel-faq" hidden>
     <h1>Questions et réponses</h1>
     <p class="lead">
       Toutes les questions recensées par le guide, avec des réponses vérifiées : chaque réponse
@@ -151,7 +190,7 @@
   </section>
 
   <!-- Simulateur -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-simulateur" id="panel-simulateur" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-simulateur" id="panel-simulateur" hidden>
     <h1>Simulateur de salaire net</h1>
     <p class="lead">
       Barème officiel de l'Administration des contributions directes et paramètres sociaux en vigueur.
@@ -294,7 +333,7 @@
   </section>
 
   <!-- Comparateur -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-comparateur" id="panel-comparateur" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-comparateur" id="panel-comparateur" hidden>
     <h1>Comparateur</h1>
     <p class="lead">
       En arrivant au Luxembourg, quatre contrats se signent presque en même temps : l'assurance
@@ -431,7 +470,7 @@
   </section>
 
   <!-- Cartes : les communes comparees indicateur par indicateur -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-cartes" id="panel-cartes" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-cartes" id="panel-cartes" hidden>
     <h1>Les cent communes, chiffre par chiffre</h1>
     <p class="lead">
       Le Luxembourg tient dans une heure de route, et pourtant le loyer double d'une
@@ -461,7 +500,7 @@
   </section>
 
   <!-- Lignes : tout ce qui arrive a une adresse sans changement -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-lignes" id="panel-lignes" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-lignes" id="panel-lignes" hidden>
     <h1>Chercher un logement sur une ligne</h1>
     <p class="lead">
       Un logement se juge mal à vol d'oiseau. Deux kilomètres avec une correspondance et
@@ -526,7 +565,7 @@
   </section>
 
   <!-- Carte : ecoles et transports autour d'une adresse -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-carte" id="panel-carte" hidden>
+  <section class="panel" role="region" aria-labelledby="nom-carte" id="panel-carte" hidden>
     <h1>Comparer des logements</h1>
     <p class="lead">
       Quand on hésite entre deux ou trois logements, la question n'est pas « qu'y a-t-il autour »
@@ -601,7 +640,7 @@
   </section>
 
   <!-- Assistant -->
-  <section class="panel" role="tabpanel" aria-labelledby="tab-assistant" id="panel-assistant" hidden>
+  <section class="panel" role="region" aria-labelledby="tab-assistant" id="panel-assistant" hidden>
     <div class="titre-action">
       <h1>Assistant</h1>
       <button class="btn ghost" id="assistant-ancrer">Ouvrir en panneau latéral</button>
