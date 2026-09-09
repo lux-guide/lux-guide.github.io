@@ -40,6 +40,9 @@
   // Déroulé du temps : année affichée, échelle de couleurs calculée une fois
   // sur toute la période, et minuteur de la lecture automatique.
   var annee = null, echelleFixe = null, minuteur = null;
+  // Comparaison : deux cartes autonomes, leurs indicateurs, leurs formes.
+  var comparer = false, cartesCmp = [null, null], formesCmp = [{}, {}];
+  var indCmp = ["loyer_appt", "sal_med"], syncCmp = false;
 
   // ---------- style ----------
 
@@ -154,6 +157,21 @@
       // Le temps : un curseur, une année lisible, un bouton de lecture. La barre
       // se pose sous la carte, à la largeur de la carte, parce que c'est la
       // carte qu'elle commande.
+      // Deux cartes côte à côte. Elles partagent le cadrage et le survol : sans
+      // cela l'oeil doit refaire à chaque fois le trajet entre deux dessins qui
+      // ne se superposent pas, et la comparaison ne se fait plus.
+      ".ct-cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}",
+      "@media(max-width:900px){.ct-cmp{grid-template-columns:1fr}}",
+      ".ct-cmp .vue{border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);",
+      "  overflow:hidden;background:var(--surface,#fff)}",
+      ".ct-cmp .vue > .carte{height:min(52vh,420px)}",
+      ".ct-cmp .vue > .bas{padding:11px 13px 13px;border-top:1px solid var(--border,#e6eaef)}",
+      ".ct-cmp select{width:100%;padding:8px 10px;border-radius:10px;font:inherit;font-size:13.5px;",
+      "  border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);",
+      "  color:var(--text,#0b0f16)}",
+      ".ct-cmp .ct-legende{margin:12px 0 0}",
+      ".ct-cmp .val{font-variant-numeric:tabular-nums;font-weight:600;margin-top:9px;font-size:14px}",
+      ".ct-cmp .val span{color:var(--muted,#6a7583);font-weight:400}",
       ".ct-temps{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 16px;",
       "  border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);background:var(--surface,#fff)}",
       ".ct-temps input[type=range]{flex:1;min-width:0;margin:0}",
@@ -683,6 +701,154 @@
     });
   }
 
+  // ---------- comparer deux cartes ----------
+  //
+  // Deux cartes autonomes, chacune son indicateur, mais un seul cadrage et un
+  // seul survol : c'est ce partage qui rend la comparaison possible. Elles ne
+  // passent pas par le rendu principal, qui ne connaît qu'une carte, et elles
+  // ne se construisent qu'à la première ouverture.
+
+  function basculerComparaison() {
+    comparer = !comparer;
+    var k = document.getElementById("ct-comparer");
+    k.hidden = !comparer;
+    var b = document.getElementById("ct-cmp-btn");
+    if (b) b.classList.toggle("actif", comparer);
+    if (!comparer) return;
+    if (!cartesCmp[0]) construireComparaison();
+    [0, 1].forEach(function (i) {
+      setTimeout(function () {
+        cartesCmp[i].invalidateSize();
+        if (cadreTotal) cartesCmp[i].fitBounds(cadreTotal, { padding: [6, 6] });
+      }, 60);
+      dessinerCmp(i);
+    });
+    // Un défilement animé n'est pas un ornement pour tout le monde.
+    var calme = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    k.scrollIntoView({ behavior: calme ? "auto" : "smooth", block: "start" });
+  }
+
+  function optionsIndic(choisi) {
+    var h = "";
+    groupes().forEach(function (g) {
+      var dedans = g[1].filter(function (id) {
+        return listeIndic().some(function (i) { return i.id === id; });
+      });
+      if (!dedans.length) return;
+      h += '<optgroup label="' + esc(g[0]) + '">';
+      dedans.forEach(function (id) {
+        var ind = listeIndic().filter(function (i) { return i.id === id; })[0];
+        h += '<option value="' + id + '"' + (id === choisi ? " selected" : "") + ">" +
+          esc(ind.nom) + "</option>";
+      });
+      h += "</optgroup>";
+    });
+    return h;
+  }
+
+  function construireComparaison() {
+    var k = document.getElementById("ct-comparer");
+    k.innerHTML = '<div class="ct-cmp">' + [0, 1].map(function (i) {
+      return '<div class="vue"><div class="carte" id="ct-carte-' + i + '"></div>' +
+        '<div class="bas"><select id="ct-sel-' + i + '" aria-label="Indicateur de la carte ' +
+        (i + 1) + '">' + optionsIndic(indCmp[i]) + "</select>" +
+        '<div class="ct-legende" id="ct-lg-' + i + '"></div>' +
+        '<div class="val" id="ct-val-' + i + '"></div></div></div>';
+    }).join("") + "</div>" +
+      '<p class="hint ct-note">Les deux cartes montrent les mêmes communes, au même ' +
+      'cadrage : ce qui change d\'une carte à l\'autre vient de l\'indicateur, pas du ' +
+      'dessin. Survolez une commune, elle s\'éclaire des deux côtés. Deux cartes qui se ' +
+      'ressemblent disent que les deux mesures vont ensemble dans le pays, pas que l\'une ' +
+      'cause l\'autre.</p>';
+
+    [0, 1].forEach(function (i) {
+      var m = L.map("ct-carte-" + i, {
+        preferCanvas: true, scrollWheelZoom: false, zoomControl: i === 0,
+        zoomSnap: 0, attributionControl: false
+      }).setView([49.78, 6.09], 8);
+      L.tileLayer("https://wmts{s}.geoportail.lu/opendata/wmts/topomap_gray/GLOBAL_WEBMERCATOR/{z}/{x}/{y}.png",
+        { subdomains: "1234", maxZoom: 19, opacity: .28 }).addTo(m);
+      var couche_i = L.layerGroup().addTo(m);
+      formesCmp[i] = {};
+      kb.communes.forEach(function (c) {
+        formesCmp[i][c.nom] = c.g.map(function (enc) {
+          var poly = L.polygon(decoder(enc), { color: "#fff", weight: .8, fillOpacity: .82 })
+            .addTo(couche_i);
+          poly.on("mouseover", function () { survolCmp(c.nom, true); });
+          poly.on("mouseout", function () { survolCmp(c.nom, false); });
+          poly.on("click", function () { choisir(c.nom); montrerValeurs(c.nom); });
+          return poly;
+        });
+      });
+      cartesCmp[i] = m;
+      // Synchronisation des vues, avec un verrou : sans lui les deux cartes se
+      // renvoient l'événement et le déplacement ne s'arrête plus.
+      m.on("move zoom", function () {
+        if (syncCmp) return;
+        syncCmp = true;
+        var autre = cartesCmp[1 - i];
+        if (autre) autre.setView(m.getCenter(), m.getZoom(), { animate: false });
+        syncCmp = false;
+      });
+      document.getElementById("ct-sel-" + i).addEventListener("change", function () {
+        indCmp[i] = this.value;
+        dessinerCmp(i);
+        if (selection) montrerValeurs(selection);
+      });
+    });
+  }
+
+  function survolCmp(nom, on) {
+    [0, 1].forEach(function (i) {
+      (formesCmp[i][nom] || []).forEach(function (p) {
+        p.setStyle({ color: on ? "#0b0f16" : "#ffffff", weight: on ? 2.2 : .8 });
+        if (on) p.bringToFront();
+      });
+    });
+    if (on) montrerValeurs(nom);
+  }
+
+  function montrerValeurs(nom) {
+    var c = kb.communes.filter(function (x) { return x.nom === nom; })[0];
+    if (!c) return;
+    [0, 1].forEach(function (i) {
+      var k = document.getElementById("ct-val-" + i);
+      if (!k) return;
+      var ind = kb.indicateurs.filter(function (x) { return x.id === indCmp[i]; })[0];
+      if (!ind) return;
+      k.innerHTML = esc(nom) + " : " + nf(c.i[ind.id], ind.fmt) +
+        ' <span>' + esc(ind.unite || "") + "</span>";
+    });
+  }
+
+  function dessinerCmp(i) {
+    var id = indCmp[i];
+    var ind = kb.indicateurs.filter(function (x) { return x.id === id; })[0];
+    if (!ind) return;
+    var vals = kb.communes.filter(function (c) { return c.i[id] !== undefined; })
+      .map(function (c) { return c.i[id]; });
+    var br = bornes(vals, RAMPE.length);
+    kb.communes.forEach(function (c) {
+      var v = c.i[id], ok = v !== undefined;
+      (formesCmp[i][c.nom] || []).forEach(function (poly) {
+        poly.setStyle({ fillColor: ok ? RAMPE[classe(v, br)] : SANS, fillOpacity: ok ? .82 : .45 });
+        poly.unbindTooltip();
+        poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) + "<small>" +
+          esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
+      });
+    });
+    var lg = document.getElementById("ct-lg-" + i);
+    if (lg) {
+      var h = "", j;
+      for (j = 0; j < RAMPE.length; j++) {
+        var bas = j === 0 ? Math.min.apply(null, vals) : br[j - 1];
+        h += '<div class="lg"><b style="background:' + RAMPE[j] + '"></b><span>' +
+          nf(bas, ind.fmt) + (j === RAMPE.length - 1 ? " et +" : "") + "</span></div>";
+      }
+      lg.innerHTML = h;
+    }
+  }
+
   // ---------- démarrage ----------
 
   // Les groupes de boutons sont décrits par la base, pas ici : un indicateur
@@ -711,7 +877,9 @@
       h += '<div class="ct-couches">' +
         '<button class="chip' + (quart ? "" : " actif") + '" data-couche="communes">Les cent communes</button>' +
         '<button class="chip' + (quart ? " actif" : "") + '" data-couche="quartiers">' +
-        esc(kb.quartiers.titre) + "</button></div>";
+        esc(kb.quartiers.titre) + "</button>" +
+        (quart ? "" : '<button class="chip' + (comparer ? " actif" : "") +
+          '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
     }
     (quart ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
       var dedans = g[1].filter(function (id) {
@@ -777,6 +945,8 @@
     k.querySelectorAll("button[data-couche]").forEach(function (b) {
       b.addEventListener("click", function () { changerCouche(b.dataset.couche); });
     });
+    var bc = document.getElementById("ct-cmp-btn");
+    if (bc) bc.addEventListener("click", basculerComparaison);
   }
 
   function changerCouche(nom) {
