@@ -52,7 +52,7 @@ l'assistant restent des entrées directes, ce sont les deux que l'on prend sans 
 | Budget | Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, capacité d'emprunt, arbre de décision de la classe, et onze simulateurs officiels |
 | Budget | Comparateur | Habitation sur documents réels, auto, mobile et électricité en démonstration |
 | Où habiter | Comparer des logements | Distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
-| Où habiter | Chercher sur une ligne | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet |
+| Où habiter | Bus, tram et train | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet. « Une ligne » tout court ne disait pas de quoi il s'agissait |
 | Où habiter | Les cent communes | Quarante-huit indicateurs par commune, douze séries annuelles, cent quatre-vingt-neuf nationalités |
 | | Assistant | Le seul chatbot de l'application : il construit un profil puis cible ses réponses, en pleine page, en panneau latéral ou en bulle. Son onglet porte un point qui respire : ce n'est pas une page de plus, c'est quelqu'un qui attend |
 | Outil | Paramètres | Cinq onglets : apparence, profil, mes données, contenu, calcul |

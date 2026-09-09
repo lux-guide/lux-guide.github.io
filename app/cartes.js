@@ -44,6 +44,9 @@
   // Plusieurs nationalités comparées sur une carte : une couleur par
   // nationalité choisie, six au plus, au-delà l'oeil ne les distingue plus.
   var natSel = [];
+  // Famille d'indicateurs ouverte dans le sélecteur, et communes retenues
+  // pour la comparaison (cinq au plus : au-delà le tableau ne se lit plus).
+  var famille = null, panierCommunes = [];
   var CAT = ["#2563eb", "#d1620a", "#0f8b57", "#8b3fd1", "#c2185b", "#00757f"];
   var comparer = false, cartesCmp = [null, null], formesCmp = [{}, {}];
   var indCmp = ["loyer_appt", "sal_med"], syncCmp = false;
@@ -95,33 +98,41 @@
       ".ct-fiche dt{color:var(--muted,#6a7583);font-size:13.5px}",
       ".ct-fiche dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}",
       ".ct-fiche dd small{font-weight:400;color:var(--muted,#6a7583);margin-left:6px}",
-      // Tableau de bord d'une commune : quatre chiffres en tête, puis chaque
-      // groupe d'indicateurs avec la valeur, le rang, la place dans le pays et
-      // la courbe quand la série existe.
-      ".ct-tuiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 6px}",
-      "@media(max-width:760px){.ct-tuiles{grid-template-columns:1fr 1fr}}",
-      ".ct-tuile{border:1px solid var(--border,#e6eaef);border-radius:12px;padding:11px 13px}",
-      ".ct-tuile .t{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;",
-      "  color:var(--muted,#6a7583);font-weight:600}",
-      ".ct-tuile .v{font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}",
-      ".ct-tuile .r{font-size:12px;color:var(--muted,#6a7583);margin-top:2px}",
-      ".ct-bloc{margin-top:16px}",
-      ".ct-bloc > h4{margin:0 0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
-      "  color:var(--muted,#6a7583)}",
-      ".ct-lignes{display:grid;gap:3px}",
-      ".ct-ligne{display:grid;grid-template-columns:1fr auto 116px 62px;gap:12px;align-items:center;",
-      "  padding:5px 7px;border-radius:8px;font-size:13.5px}",
-      ".ct-ligne:hover{background:var(--surface-2,#f4f6f9)}",
-      ".ct-ligne .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
-      ".ct-ligne .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}",
-      ".ct-ligne .p{position:relative;height:6px;border-radius:3px;background:var(--border,#e6eaef)}",
-      ".ct-ligne .p i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;",
-      "  background:var(--accent,#2563eb)}",
-      ".ct-ligne .g{font-size:11.5px;color:var(--muted,#6a7583);text-align:right;white-space:nowrap}",
-      ".ct-ligne svg{display:block}",
-      ".ct-ligne.cliquable{cursor:pointer}",
-      "@media(max-width:760px){.ct-ligne{grid-template-columns:1fr auto}",
-      "  .ct-ligne .p,.ct-ligne .g{display:none}}",
+      // Sélecteur en deux rangées : les familles, puis les indicateurs de la
+      // famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient plus.
+      ".ct-familles{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}",
+      ".ct-familles button{border:0;background:none;color:var(--muted,#6a7583);font:inherit;",
+      "  font-size:13.5px;font-weight:500;padding:7px 11px;border-radius:9px;cursor:pointer}",
+      ".ct-familles button:hover{color:var(--text,#0b0f16);background:var(--surface-2,#f4f6f9)}",
+      ".ct-familles button.actif{color:var(--accent,#2563eb);font-weight:600;",
+      "  background:var(--accent-soft,#eaf1fb)}",
+      ".ct-indics{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;padding-top:12px;",
+      "  border-top:1px solid var(--border,#e6eaef)}",
+      // Comparateur de communes : un tableau, une colonne par commune, les
+      // indicateurs en lignes par famille. Il sert pour une commune comme
+      // pour cinq, avec la même forme.
+      ".ct-cmpc{margin-top:18px}",
+      ".ct-cmpc .tete{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}",
+      ".ct-cmpc .tete select{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
+      "  font:inherit;font-size:13.5px;border:1px solid var(--border-fort,#d4dae2);",
+      "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      ".ct-cmpc table{width:100%;border-collapse:collapse;font-size:13.5px;",
+      "  font-variant-numeric:tabular-nums}",
+      ".ct-cmpc th,.ct-cmpc td{padding:7px 10px;border-top:1px solid var(--border,#e6eaef);",
+      "  text-align:right;vertical-align:middle}",
+      ".ct-cmpc th:first-child,.ct-cmpc td:first-child{text-align:left}",
+      ".ct-cmpc thead th{border-top:0;font-weight:600;font-size:14px;vertical-align:bottom}",
+      ".ct-cmpc thead th small{display:block;font-weight:400;color:var(--muted,#6a7583);",
+      "  font-size:12px}",
+      ".ct-cmpc tr.fam td{padding-top:16px;padding-bottom:4px;border-top:0;font-size:11.5px;",
+      "  text-transform:uppercase;letter-spacing:.06em;color:var(--muted,#6a7583);font-weight:600}",
+      ".ct-cmpc td b{font-weight:600}",
+      ".ct-cmpc td small{color:var(--muted,#6a7583);font-size:11.5px;margin-left:5px;white-space:nowrap}",
+      ".ct-cmpc td svg{vertical-align:middle;margin-left:8px}",
+      ".ct-cmpc td.meilleur b{color:var(--accent,#2563eb)}",
+      ".ct-cmpc .defil{overflow-x:auto}",
+      ".ct-cmpc tr.ind:hover td{background:var(--surface-2,#f4f6f9)}",
+      ".ct-cmpc tr.ind td:first-child{cursor:pointer}",
       ".ct-tip{font-weight:600}",
       ".ct-tip small{display:block;font-weight:400;opacity:.75}",
       // Plein écran : la carte sort du gabarit à deux colonnes et couvre la fenêtre.
@@ -173,7 +184,7 @@
       // Deux cartes côte à côte. Elles partagent le cadrage et le survol : sans
       // cela l'oeil doit refaire à chaque fois le trajet entre deux dessins qui
       // ne se superposent pas, et la comparaison ne se fait plus.
-      ".ct-cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}",
+      ".ct-cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}",
       "@media(max-width:900px){.ct-cmp{grid-template-columns:1fr}}",
       ".ct-cmp .vue{border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);",
       "  overflow:hidden;background:var(--surface,#fff)}",
@@ -195,7 +206,7 @@
       ".ct-ineg .c{display:flex;justify-content:space-between;align-items:baseline;gap:14px;",
       "  border-bottom:1px solid var(--border,#e6eaef);padding-bottom:7px}",
       ".ct-ineg .c b{font-size:19px;font-variant-numeric:tabular-nums}",
-      ".ct-ineg .c span{font-size:12.5px;color:var(--muted,#6a7583);text-align:right;max-width:22ch}",
+      ".ct-ineg .c span{font-size:12.5px;color:var(--muted,#6a7583);text-align:right}",
       ".ct-temps{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 16px;",
       "  border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);background:var(--surface,#fff)}",
       ".ct-temps input[type=range]{flex:1;min-width:0;margin:0}",
@@ -642,6 +653,7 @@
 
   function choisir(nom) {
     if (selection && selection !== nom) surligner(selection, false);
+    ajouterCommune(nom);
     selection = nom;
     surligner(nom, true);
     var c = zones().filter(function (x) { return x.nom === nom; })[0];
@@ -688,7 +700,7 @@
       if (v[i] > maxi) maxi = v[i];
     }
     if (mini === Infinity) return "";
-    var L_ = 116, H = 22, ec = maxi - mini || 1;
+    var L_ = 64, H = 18, ec = maxi - mini || 1;
     for (i = 0; i < v.length; i++) {
       if (v[i] === null || v[i] === undefined) continue;
       pts.push((i * L_ / (v.length - 1)).toFixed(1) + "," +
@@ -701,76 +713,131 @@
       '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.1" fill="var(--accent,#2563eb)"></circle></svg>';
   }
 
-  function ligneFiche(c, ind) {
-    var v = c.i[ind.id];
-    if (v === undefined) return "";
-    var r = rang(ind.id, c.nom), p = position(ind.id, v), s = serieDe(ind.id);
-    return '<div class="ct-ligne' + (s ? " cliquable" : "") + '" data-ind="' + ind.id + '">' +
-      '<span class="n">' + esc(ind.nom) + "</span>" +
-      '<span class="v">' + nf(v, ind.fmt) + "</span>" +
-      (s ? courbe(c, ind.id)
-         : '<span class="p">' + (p === null ? "" :
-             '<i style="left:calc(' + Math.round(p * 100) + "% - 1.5px)\"></i>") + "</span>") +
-      '<span class="g">' + (r ? r[0] + "e / " + r[1] : "") + "</span></div>";
+  function communeDe(nom) {
+    return zones().filter(function (x) { return x.nom === nom; })[0];
+  }
+
+  // Les communes affichées dans le comparateur : celles du panier, sinon la
+  // commune cliquée. Cliquer une commune l'ajoute au panier tant qu'il reste
+  // de la place, c'est le geste le plus court pour comparer.
+  function communesComparees() {
+    var l = panierCommunes.slice();
+    if (!l.length && selection) l.push(selection);
+    return l.map(communeDe).filter(Boolean);
+  }
+
+  function ajouterCommune(nom) {
+    if (!nom || panierCommunes.indexOf(nom) >= 0) return;
+    if (panierCommunes.length >= 5) return;
+    if (!panierCommunes.length && selection && selection !== nom) panierCommunes.push(selection);
+    panierCommunes.push(nom);
   }
 
   function fiche() {
     var k = document.getElementById("ct-fiche");
     if (!k) return;
-    if (!selection) { k.innerHTML = ""; return; }
-    var c = zones().filter(function (x) { return x.nom === selection; })[0];
+    var liste = communesComparees();
+    if (!liste.length) { k.innerHTML = ""; return; }
     var dispo = listeIndic();
-    function ind_(id) {
-      return dispo.filter(function (x) { return x.id === id; })[0];
-    }
-    var h = '<div class="card ct-fiche"><h3 style="margin:0">' + esc(c.nom) +
-      ' <span class="muted" style="font-weight:400;font-size:14px">canton de ' +
-      esc(c.canton) + "</span></h3>";
-
-    // Quatre chiffres d'abord : ce que tout le monde regarde avant le reste.
-    var tetes = ["pop", "loyer_appt", "sal_med", "chomage"];
-    var tuiles = "";
-    tetes.forEach(function (id) {
-      var i = ind_(id);
-      if (!i || c.i[id] === undefined) return;
-      var r = rang(id, c.nom);
-      tuiles += '<div class="ct-tuile"><div class="t">' + esc(i.nom) + "</div>" +
-        '<div class="v">' + nf(c.i[id], i.fmt) + "</div>" +
-        '<div class="r">' + (r ? r[0] + "e sur " + r[1] + " " + motZone(true) : "") + "</div></div>";
+    var h = '<div class="card ct-cmpc"><div class="tete">' +
+      '<h3 style="margin:0 8px 0 0">' + (liste.length > 1 ? "Comparer " + liste.length + " " +
+      motZone(true) : esc(liste[0].nom)) + "</h3>";
+    liste.forEach(function (c) {
+      h += '<button class="ct-natpuce" data-retirer="' + esc(c.nom) + '" title="Retirer">' +
+        "<b>" + esc(c.nom) + '</b><span class="x">✕</span></button>';
     });
-    if (tuiles) h += '<div class="ct-tuiles">' + tuiles + "</div>";
+    if (liste.length < 5) {
+      h += '<select id="ct-ajout" aria-label="Ajouter une commune à la comparaison">' +
+        '<option value="">+ ajouter ' + (liste.length > 1 ? "une autre " : "une ") + motZone(false) +
+        " à comparer…</option>";
+      zones().slice().sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); })
+        .forEach(function (c) {
+          if (liste.indexOf(c) === -1) h += '<option value="' + esc(c.nom) + '">' + esc(c.nom) + "</option>";
+        });
+      h += "</select>";
+    }
+    h += '</div><div class="defil"><table><thead><tr><th></th>';
+    liste.forEach(function (c) {
+      h += "<th>" + esc(c.nom) + "<small>canton de " + esc(c.canton) + "</small></th>";
+    });
+    h += "</tr></thead><tbody>";
+
+    function ligne(ind) {
+      var vals = liste.map(function (c) { return c.i[ind.id]; });
+      if (vals.every(function (v) { return v === undefined; })) return "";
+      // La meilleure valeur se marque, quand l'indicateur a un sens.
+      var best = null;
+      if (liste.length > 1 && ind.sens) {
+        vals.forEach(function (v, i) {
+          if (v === undefined) return;
+          if (best === null || (ind.sens > 0 ? v > vals[best] : v < vals[best])) best = i;
+        });
+      }
+      var r = '<tr class="ind" data-ind="' + ind.id + '"><td>' + esc(ind.nom) + "</td>";
+      liste.forEach(function (c, i) {
+        var v = vals[i], rg = v === undefined ? null : rang(ind.id, c.nom);
+        r += '<td class="' + (i === best ? "meilleur" : "") + '"><b>' + nf(v, ind.fmt) + "</b>" +
+          (rg ? "<small>" + rg[0] + "e/" + rg[1] + "</small>" : "") +
+          (serieDe(ind.id) ? courbe(c, ind.id) : "") + "</td>";
+      });
+      return r + "</tr>";
+    }
 
     if ((courant === "nation" || courant === "natcmp") && indNation) {
-      h += '<div class="ct-bloc"><h4>Nationalité affichée</h4><div class="ct-lignes">' +
-        ligneFiche(c, indNation) + "</div></div>";
+      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">Nationalité affichée</td></tr>' +
+        ligne(indNation);
     }
-
-    // Puis tous les indicateurs, dans les mêmes familles que les boutons.
     (couche_nom === "quartiers" ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
       var lignes = "";
       g[1].forEach(function (id) {
-        var i = ind_(id);
-        if (i) lignes += ligneFiche(c, i);
+        var ind = dispo.filter(function (x) { return x.id === id; })[0];
+        if (ind) lignes += ligne(ind);
       });
       if (lignes) {
-        h += '<div class="ct-bloc"><h4>' + esc(g[0]) + '</h4><div class="ct-lignes">' +
-          lignes + "</div></div>";
+        h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">' + esc(g[0]) + "</td></tr>" + lignes;
       }
     });
 
-    if (couche_nom === "communes") h += listeNations(c);
-    h += "</div>";
+    // Nationalités : les dix plus nombreuses de la première commune, en part.
+    if (couche_nom === "communes" && liste[0].n && liste[0].i.nat_tot) {
+      var c0 = liste[0];
+      var top = Object.keys(c0.n).sort(function (a, b) { return c0.n[b] - c0.n[a]; }).slice(0, 10);
+      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">Nationalités, part des inscrits</td></tr>';
+      top.forEach(function (code) {
+        var n = infoNation(code) || { n: code };
+        h += '<tr class="ind" data-nat="' + code + '"><td>' + drapeau(n) + " " + esc(n.n) + "</td>";
+        liste.forEach(function (c) {
+          var t = c.i.nat_tot, v = t ? 100 * ((c.n || {})[code] || 0) / t : undefined;
+          h += "<td><b>" + nf(v, "pct") + "</b></td>";
+        });
+        h += "</tr>";
+      });
+    }
+    h += "</tbody></table></div></div>";
     k.innerHTML = h;
-    // Une courbe se lit mieux en grand : cliquer la ligne porte l'indicateur
-    // sur la carte, avec sa barre d'années.
-    k.querySelectorAll(".ct-ligne.cliquable").forEach(function (el) {
-      el.addEventListener("click", function () {
-        var id = el.dataset.ind;
+
+    k.querySelectorAll("button[data-retirer]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var nom = b.dataset.retirer;
+        var j = panierCommunes.indexOf(nom);
+        if (j >= 0) panierCommunes.splice(j, 1);
+        if (selection === nom) { surligner(nom, false); selection = panierCommunes[0] || null; }
+        fiche();
+      });
+    });
+    var aj = document.getElementById("ct-ajout");
+    if (aj) aj.addEventListener("change", function () { if (aj.value) choisir(aj.value); });
+    // Cliquer le nom d'un indicateur le porte sur la carte, une nationalité aussi.
+    k.querySelectorAll("tr.ind[data-ind] td:first-child").forEach(function (td) {
+      td.addEventListener("click", function () {
+        var id = td.parentNode.dataset.ind;
+        if (id === "nation" || id === "natcmp") return;
         courant = id;
         nation = null;
         indNation = null;
         annee = null;
         arreterLecture();
+        famille = null;
         boutons();
         calerEchelle();
         barreTemps();
@@ -778,10 +845,9 @@
         fiche();
       });
     });
-    // Cliquer une nationalité de la fiche la porte sur la carte.
-    k.querySelectorAll("li[data-nat]").forEach(function (li) {
-      li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
-      li.style.cursor = "pointer";
+    k.querySelectorAll("tr.ind[data-nat] td:first-child").forEach(function (td) {
+      td.style.cursor = "pointer";
+      td.addEventListener("click", function () { choisirNation(td.parentNode.dataset.nat); });
     });
   }
 
@@ -936,7 +1002,7 @@
     var moy = vals.length ? vals.reduce(function (a, b) { return a + b; }, 0) / vals.length : null;
     k.innerHTML = '<div class="card ct-ineg"><div class="deux"><div>' +
       "<h4>Les inégalités de revenu du pays, 2003 à " + n.annees[d] + "</h4>" +
-      '<p class="hint" style="max-width:none;margin-top:2px;border:0;padding:0">' +
+      '<p class="hint" style="margin-top:2px">' +
       "Coefficient de Gini des revenus disponibles, enquête SILC. Zéro voudrait dire que " +
       "tout le monde a le même revenu, un que tout revient à une seule personne." +
       "</p>" + graphe(n.annees, n.gini, "dec") + "</div><div>" +
@@ -965,14 +1031,37 @@
   // passent pas par le rendu principal, qui ne connaît qu'une carte, et elles
   // ne se construisent qu'à la première ouverture.
 
+  // La comparaison remplace la carte unique, elle ne s'ajoute pas dessous :
+  // c'est une autre façon de regarder les mêmes communes, pas un bloc de plus.
+  // La carte unique, sa barre du temps, sa légende et le panneau des
+  // inégalités se retirent ; les boutons d'indicateurs restent et pilotent la
+  // carte de gauche.
   function basculerComparaison() {
     comparer = !comparer;
     var k = document.getElementById("ct-comparer");
     k.hidden = !comparer;
+    ["ct-temps", "ct-sortie", "ct-ineg"].forEach(function (id) {
+      var e = document.getElementById(id);
+      if (e) e.hidden = comparer;
+    });
+    var vue = document.querySelector("#panel-cartes .ct-vue");
+    if (vue) vue.hidden = comparer;
     var b = document.getElementById("ct-cmp-btn");
     if (b) b.classList.toggle("actif", comparer);
-    if (!comparer) return;
+    if (!comparer) {
+      // La carte unique a été cachée : Leaflet doit reprendre sa taille.
+      setTimeout(function () {
+        if (map) map.invalidateSize();
+        if (map && cadreTotal) map.fitBounds(cadreTotal, { padding: [8, 8] });
+      }, 60);
+      return;
+    }
     if (!cartesCmp[0]) construireComparaison();
+    if (courant !== "nation" && courant !== "natcmp") {
+      indCmp[0] = courant;
+      var sel0 = document.getElementById("ct-sel-0");
+      if (sel0) sel0.value = courant;
+    }
     [0, 1].forEach(function (i) {
       setTimeout(function () {
         cartesCmp[i].invalidateSize();
@@ -980,9 +1069,6 @@
       }, 60);
       dessinerCmp(i);
     });
-    // Un défilement animé n'est pas un ornement pour tout le monde.
-    var calme = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    k.scrollIntoView({ behavior: calme ? "auto" : "smooth", block: "start" });
   }
 
   function optionsIndic(choisi) {
@@ -1138,21 +1224,47 @@
         (quart ? "" : '<button class="chip' + (comparer ? " actif" : "") +
           '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
     }
-    (quart ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
-      var dedans = g[1].filter(function (id) {
+    // Les familles d'abord, sur une rangée ; puis les indicateurs de la
+    // famille ouverte. La famille de l'indicateur affiché s'ouvre d'elle-même.
+    var fams = (quart ? GROUPES_QUARTIERS : groupes()).map(function (g) {
+      return [g[0], g[1].filter(function (id) {
         return dispo.some(function (i) { return i.id === id; });
-      });
-      if (!dedans.length) return;
-      h += '<div class="ct-groupe"><span>' + esc(g[0]) + '</span><div class="ct-choix">';
-      dedans.forEach(function (id) {
+      })];
+    }).filter(function (g) { return g[1].length; });
+    // Les nationalités du recensement et celles du registre forment une seule
+    // famille : deux entrées « Nationalités » côte à côte n'auraient pas de sens.
+    var natFam = !quart && nations().length;
+    var iNat = -1;
+    if (natFam) {
+      fams.forEach(function (g, j) { if (g[0] === "Nationalités") iNat = j; });
+      if (iNat < 0) { fams.push(["Nationalités", []]); iNat = fams.length - 1; }
+    }
+    var ouverte = -1;
+    fams.forEach(function (g, j) { if (g[1].indexOf(courant) >= 0) ouverte = j; });
+    if (courant === "nation" || courant === "natcmp") ouverte = iNat;
+    if (famille !== null && famille < fams.length) ouverte = famille;
+    if (ouverte < 0) ouverte = 0;
+    famille = ouverte;
+
+    h += '<div class="ct-familles">';
+    fams.forEach(function (g, j) {
+      h += '<button data-fam="' + j + '"' + (j === ouverte ? ' class="actif"' : "") + ">" +
+        esc(g[0]) + "</button>";
+    });
+    h += "</div>";
+
+    var fam = fams[ouverte];
+    if (fam[1].length) {
+      h += '<div class="ct-indics">';
+      fam[1].forEach(function (id) {
         var ind = dispo.filter(function (i) { return i.id === id; })[0];
         h += '<button class="chip' + (id === courant ? " actif" : "") + '" data-ind="' + id + '">' +
           esc(ind.nom) + "</button>";
       });
-      h += "</div></div>";
-    });
-    if (!quart && nations().length) {
-      h += '<div class="ct-groupe"><span>Une nationalité en particulier</span><div class="ct-nat">' +
+      h += "</div>";
+    }
+    if (natFam && ouverte === iNat) {
+      h += '<div class="ct-indics"><div class="ct-nat" style="flex:1 1 100%">' +
         '<select id="ct-nation"><option value="">Choisir parmi ' + nations().length + " nationalités…</option>";
       nations().forEach(function (n) {
         h += '<option value="' + n.c + '"' + (n.c === nation ? " selected" : "") + ">" +
@@ -1164,7 +1276,7 @@
         "</div>";
       // Comparer plusieurs nationalités sur la même carte : les choisies
       // s'affichent en puces, un clic sur une puce la retire.
-      h += '<div class="ct-natpuces">';
+      h += '<div class="ct-natpuces" style="flex:1 1 100%;margin-top:0">';
       natSel.forEach(function (code, j) {
         var n = infoNation(code);
         h += '<button class="ct-natpuce" data-natoff="' + code + '" title="Retirer de la comparaison">' +
@@ -1178,19 +1290,41 @@
         h += '<button class="chip' + (courant === "natcmp" ? " actif" : "") +
           '" data-natcmp="1">Comparer ces ' + natSel.length + " nationalités</button>";
       }
-      h += "</div>";
-      if (natSel.length === 1) {
-        h += '<p class="hint" style="margin-top:8px">Ajoutez-en une deuxième : chaque commune ' +
-          "prendra la couleur de la nationalité la plus présente parmi celles choisies, " +
-          "d'autant plus dense qu'elles y pèsent lourd ensemble.</p>";
-      }
-      h += "</div>";
+      h += "</div></div>";
     }
     if (quart) h += '<p class="hint" style="margin-top:14px">' + esc(kb.quartiers.note) + "</p>";
     k.innerHTML = h;
+    k.querySelectorAll("button[data-fam]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        famille = +b.dataset.fam;
+        var fam = fams[famille];
+        // Ouvrir une famille montre tout de suite son premier indicateur :
+        // un clic pour voir quelque chose, pas deux.
+        if (fam[1].length && fam[1].indexOf(courant) === -1) {
+          courant = fam[1][0];
+          nation = null;
+          indNation = null;
+          arreterLecture();
+          annee = null;
+          if (comparer) {
+            indCmp[0] = courant;
+            var sel0 = document.getElementById("ct-sel-0");
+            if (sel0) sel0.value = courant;
+            boutons();
+            dessinerCmp(0);
+            return;
+          }
+          boutons();
+          calerEchelle();
+          barreTemps();
+          dessiner();
+          fiche();
+          return;
+        }
+        boutons();
+      });
+    });
     var sel = document.getElementById("ct-nation");
-    // Choisir une nationalité dans la liste sort de la comparaison : c'est une
-    // question différente, et deux lectures superposées n'en feraient aucune.
     if (sel) sel.addEventListener("change", function () { choisirNation(sel.value); });
     k.querySelectorAll("button[data-natoff]").forEach(function (b) {
       b.addEventListener("click", function () { panier(b.dataset.natoff); });
@@ -1226,6 +1360,18 @@
         indNation = null;
         arreterLecture();
         annee = null;
+        famille = null;
+        if (comparer) {
+          indCmp[0] = courant;
+          var sel0 = document.getElementById("ct-sel-0");
+          if (sel0) sel0.value = courant;
+          k.querySelectorAll("button[data-ind]").forEach(function (x) {
+            x.classList.toggle("actif", x.dataset.ind === courant);
+          });
+          dessinerCmp(0);
+          if (selection) montrerValeurs(selection);
+          return;
+        }
         var s2 = document.getElementById("ct-nation");
         if (s2) s2.value = "";
         k.querySelectorAll("button[data-ind]").forEach(function (x) {
@@ -1249,6 +1395,8 @@
     if (nom === couche_nom) return;
     couche_nom = nom;
     selection = null;
+    panierCommunes = [];
+    famille = null;
     // Garder l'indicateur courant s'il existe aussi dans l'autre niveau, sinon
     // prendre le premier proposé : passer de « salaire médian » aux quartiers,
     // qui n'ont pas de salaires, ne doit pas vider la carte.

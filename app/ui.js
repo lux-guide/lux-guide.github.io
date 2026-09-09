@@ -374,7 +374,6 @@
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerMenus(); });
     window.addEventListener("resize", function () { fermerMenus(); });
-    window.addEventListener("scroll", function () { fermerMenus(); }, { passive: true });
     // Boutons d'appel a l'action de la page d'accueil
     $$("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.go); });
@@ -390,6 +389,10 @@
     if (!nav) return;
     nav.addEventListener("scroll", majDefilementOnglets, { passive: true });
     window.addEventListener("resize", majDefilementOnglets);
+    // Le defilement de la page ne ferme pas les menus : l'en-tete est fixe, le
+    // menu reste sous son bouton. Seul le defilement horizontal de la bande
+    // les deplace, et donc les ferme.
+    nav.addEventListener("scroll", function () { fermerMenus(); }, { passive: true });
 
     // La molette verticale fait defiler la bande a la souris, ou le geste
     // horizontal n'existe pas.

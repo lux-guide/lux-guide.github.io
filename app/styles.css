@@ -69,7 +69,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--h-top) + 12px); }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.68 var(--sans);
@@ -86,8 +86,14 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Navigation ---------- */
 
+/* En-tete fixe, et non colle. Un en-tete colle depend de ses ancetres : le
+   garde-fou `html, body { overflow-x: hidden }` en fait des conteneurs de
+   defilement, et `position: sticky` cesse alors de tenir, ce qui laissait la
+   barre partir vers le haut sur la plupart des onglets. En position fixe elle
+   ne depend plus de rien. Le corps recoit en echange une marge haute de la
+   hauteur de la barre, sinon le contenu commencerait dessous. */
 header.top {
-  position: sticky; top: 0; z-index: 60;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   backdrop-filter: saturate(190%) blur(18px);
   -webkit-backdrop-filter: saturate(190%) blur(18px);
@@ -111,6 +117,7 @@ header.top {
    un en-tete colle qui change de hauteur fait sauter le contenu. */
 
 :root { --h-top: 68px; }
+body { padding-top: var(--h-top); }
 
 .top-in {
   max-width: var(--max); margin: 0 auto;
@@ -292,22 +299,16 @@ h3 { font-size: 16.5px; margin: 22px 0 8px; font-weight: 600; letter-spacing: -.
 p { color: var(--text-2); }
 /* LARGEUR DU TEXTE, regle unique de la feuille.
 
-   Un paragraphe qui tient toute la largeur du contenu fait 180 caracteres par
-   ligne : l'oeil perd la ligne suivante en revenant a la marge. Le texte
-   courant s'arrete donc a une mesure de lecture, forcement plus courte que la
-   carte ou le tableau qu'il commente.
+   Un paragraphe prend la largeur du bloc qu'il accompagne. Pas de mesure de
+   lecture, pas de max-width sur du texte courant : une colonne de texte qui
+   s'arrete au tiers d'une carte pleine largeur se lit comme un defaut de mise
+   en page, et la question s'est posee a chaque relecture. L'alignement des
+   bords vaut mieux ici que la longueur de ligne ideale.
 
-   Cette difference de largeur doit se lire comme un choix. Un paragraphe qui
-   s'arrete au tiers d'une carte, sans rien pour le tenir, se lit comme un
-   accident de mise en page. Les notes qui posent seules sur la page portent
-   donc un filet a gauche, qui les designe comme des notes.
-
-   Toute largeur de texte passe par --mesure. La seule exception est le hero,
-   ou le titre et sa phrase sont composes court par-dessus une photographie :
-   c'est une composition, pas un paragraphe. Il ne faut pas en ajouter
-   d'autre. */
-:root { --mesure: 66ch; }
-.lead { color: var(--muted); font-size: 17.5px; margin: 0 0 30px; max-width: var(--mesure); }
+   Aucune largeur de texte ne se declare ailleurs dans la feuille. La seule
+   exception est le hero, ou le titre et sa phrase sont composes court
+   par-dessus une photographie : c'est une composition, pas un paragraphe. */
+.lead { color: var(--muted); font-size: 17.5px; margin: 0 0 30px; }
 
 /* Apparition au defilement */
 .reveal { opacity: 0; transform: translateY(16px); }
@@ -704,15 +705,8 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 
 .muted { color: var(--muted); }
 .small { font-size: 13.5px; }
-.hint { font-size: 13px; color: var(--muted); margin-top: 9px; max-width: var(--mesure); }
-/* Une note posee directement sur la page, sous une carte ou un tableau qui
-   font toute la largeur : le filet dit que sa largeur est voulue. Dans une
-   carte ou un encadre, la note est deja tenue par son cadre, elle n'en veut
-   pas. */
-.panel > .hint, .ct-note {
-  border-left: 2px solid var(--border-fort);
-  padding-left: 13px; margin-top: 16px;
-}
+.hint { font-size: 13px; color: var(--muted); margin-top: 9px; }
+.panel > .hint, .ct-note { margin-top: 16px; }
 .credits { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
 
 @media (max-width: 720px) {
@@ -1269,6 +1263,9 @@ td.sous-ligne { color: var(--muted); font-size: 12.5px; }
      colle au bord de la fenetre. */
   body.rail-ouvert { margin-right: var(--rail-w, 400px); }
   body.rail-ouvert #widget-btn { display: none; }
+  /* L'en-tete est fixe : il ignore la marge du corps, son bord droit doit donc
+     s'arreter lui-meme au panneau, sinon il passe dessous. */
+  body.rail-ouvert header.top { right: var(--rail-w, 400px); }
 
   #widget .w-head { padding: 15px 18px; }
   #widget .w-head button { font-size: 24px; }

@@ -84,6 +84,7 @@
     ],
     impots_classes: [
       "Réclamez la fiche de retenue dès la première semaine et vérifiez que l'employeur l'a bien reçue. Sans elle, la retenue se fait au taux maximal, et la régularisation attend la déclaration suivante.",
+      "Une classe d'impôt mal attribuée sur la fiche de retenue se corrige simplement : un courriel au bureau d'imposition RTS dont vous dépendez, avec la situation à rectifier, suffit dans la plupart des cas. Pas besoin de se déplacer ni d'attendre la déclaration annuelle.",
       "Ne calez jamais un budget durable sur le net des premiers mois : il peut évoluer une fois la classe correctement appliquée."
     ],
     deductions: [
