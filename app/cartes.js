@@ -37,6 +37,9 @@
   var demarre = false, map = null, kb = null, courant = null, couche_nom = "communes";
   var couche = null, formes = {}, classes = null, selection = null, cadreTotal = null;
   var nation = null, natMode = "pct", indNation = null;
+  // Déroulé du temps : année affichée, échelle de couleurs calculée une fois
+  // sur toute la période, et minuteur de la lecture automatique.
+  var annee = null, echelleFixe = null, minuteur = null;
 
   // ---------- style ----------
 
@@ -121,6 +124,19 @@
       "  background:rgba(11,15,22,.42);color:#fff;font-size:15px;font-weight:600;z-index:600;",
       "  opacity:0;pointer-events:none;transition:opacity .18s;border-radius:var(--r-m,14px)}",
       ".ct-aide.on{opacity:1}",
+      // Le temps : un curseur, une année lisible, un bouton de lecture. La barre
+      // se pose sous la carte, à la largeur de la carte, parce que c'est la
+      // carte qu'elle commande.
+      ".ct-temps{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 16px;",
+      "  border:1px solid var(--border,#e6eaef);border-radius:var(--r-m,14px);background:var(--surface,#fff)}",
+      ".ct-temps input[type=range]{flex:1;min-width:0;margin:0}",
+      ".ct-temps .an{font-variant-numeric:tabular-nums;font-weight:600;font-size:17px;min-width:4.2em}",
+      ".ct-temps .lire{border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);",
+      "  color:var(--text,#0b0f16);border-radius:10px;width:38px;height:38px;flex:none;cursor:pointer;",
+      "  font:600 15px/1 inherit;display:grid;place-items:center}",
+      ".ct-temps .lire:hover{border-color:var(--accent,#2563eb);color:var(--accent,#2563eb)}",
+      ".ct-temps .bornes{font-size:12px;color:var(--muted,#6a7583);white-space:nowrap}",
+      "@media(max-width:700px){.ct-temps{flex-wrap:wrap}.ct-temps .bornes{display:none}}",
       "@media(max-width:1000px){.ct-vue{grid-template-columns:1fr}#ct-cote .ct-scroll{max-height:340px}}",
       "@media(max-width:760px){#cartes-map{height:min(54vh,400px)}}"
     ].join("");
@@ -288,11 +304,103 @@
     return pluriel ? (q ? "quartiers" : "communes") : (q ? "quartier" : "commune");
   }
 
+  // ---------- le temps ----------
+  //
+  // Douze indicateurs portent leur série annuelle complète, jusqu'à 1821 pour
+  // la population. L'année choisie est recopiée dans i[id], comme pour les
+  // nationalités : tout le reste du rendu continue de lire un seul champ.
+  //
+  // L'échelle de couleurs, elle, est calculée une fois sur toutes les années.
+  // Une échelle recalculée à chaque pas ferait changer les couleurs de sens
+  // pendant la lecture : une commune deviendrait foncée en perdant des
+  // habitants, simplement parce que les autres en perdent davantage.
+
+  function serieDe(id) { return (kb && kb.series && kb.series[id]) || null; }
+
+  function serieCourante() {
+    return couche_nom === "quartiers" ? null : serieDe(courant);
+  }
+
+  function calerEchelle() {
+    var s = serieCourante();
+    if (!s) { echelleFixe = null; return; }
+    var toutes = [];
+    zones().forEach(function (c) {
+      var v = (c.s || {})[courant];
+      if (!v) return;
+      for (var i = 0; i < v.length; i++) if (v[i] !== null && v[i] !== undefined) toutes.push(v[i]);
+    });
+    echelleFixe = toutes.length ? bornes(toutes, RAMPE.length) : null;
+  }
+
+  function appliquerAnnee() {
+    var s = serieCourante();
+    if (!s || annee === null) return;
+    var j = s.annees.indexOf(annee);
+    zones().forEach(function (c) {
+      var v = (c.s || {})[courant];
+      var x = (v && j >= 0) ? v[j] : null;
+      if (x === null || x === undefined) delete c.i[courant];
+      else c.i[courant] = x;
+    });
+  }
+
+  function arreterLecture() {
+    if (minuteur) { clearInterval(minuteur); minuteur = null; }
+    var b = document.getElementById("ct-lire");
+    if (b) { b.textContent = "▶"; b.setAttribute("aria-label", "Dérouler les années"); }
+  }
+
+  function lecture() {
+    var s = serieCourante();
+    if (!s) return;
+    if (minuteur) { arreterLecture(); return; }
+    if (annee === s.annees[s.annees.length - 1]) annee = s.annees[0];
+    var b = document.getElementById("ct-lire");
+    if (b) { b.textContent = "❚❚"; b.setAttribute("aria-label", "Arrêter"); }
+    minuteur = setInterval(function () {
+      var j = s.annees.indexOf(annee);
+      if (j >= s.annees.length - 1) { arreterLecture(); return; }
+      allerA(s.annees[j + 1]);
+    }, 420);
+  }
+
+  function allerA(a) {
+    annee = a;
+    appliquerAnnee();
+    var r = document.getElementById("ct-annee");
+    var t = document.getElementById("ct-an-txt");
+    var s = serieCourante();
+    if (r && s) r.value = String(s.annees.indexOf(a));
+    if (t) t.textContent = a;
+    dessiner();
+    fiche();
+  }
+
+  function barreTemps() {
+    var k = document.getElementById("ct-temps");
+    if (!k) return;
+    var s = serieCourante();
+    if (!s) { k.innerHTML = ""; arreterLecture(); return; }
+    var A = s.annees;
+    if (annee === null || A.indexOf(annee) === -1) annee = A[A.length - 1];
+    k.innerHTML = '<div class="ct-temps">' +
+      '<button class="lire" id="ct-lire" aria-label="Dérouler les années">▶</button>' +
+      '<span class="an" id="ct-an-txt">' + annee + "</span>" +
+      '<span class="bornes">' + A[0] + "</span>" +
+      '<input type="range" id="ct-annee" min="0" max="' + (A.length - 1) +
+      '" step="1" value="' + A.indexOf(annee) + '" aria-label="Année affichée">' +
+      '<span class="bornes">' + A[A.length - 1] + "</span></div>";
+    var r = document.getElementById("ct-annee");
+    r.addEventListener("input", function () { arreterLecture(); allerA(A[+r.value]); });
+    document.getElementById("ct-lire").addEventListener("click", lecture);
+  }
+
   function dessiner() {
     var ind = indic();
     var vals = zones().filter(function (c) { return c.i[courant] !== undefined; })
       .map(function (c) { return c.i[courant]; });
-    var br = bornes(vals, RAMPE.length);
+    var br = (serieCourante() && echelleFixe) ? echelleFixe : bornes(vals, RAMPE.length);
     classes = br;
 
     zones().forEach(function (c) {
@@ -372,10 +480,14 @@
 
   function choisirNation(code) {
     nation = code || null;
+    arreterLecture();
+    annee = null;
     majNation();
     if (nation) courant = "nation";
     else if (courant === "nation") courant = listeIndic()[0].id;
     boutons();
+    calerEchelle();
+    barreTemps();
     dessiner();
     fiche();
   }
@@ -385,9 +497,11 @@
     var mini = Math.min.apply(null, vals), maxi = Math.max.apply(null, vals);
     var manquantes = zones().length - vals.length;
 
+    var quand = (serieCourante() && annee !== null)
+      ? ' <span class="muted" style="font-weight:400;font-size:15px">&middot; ' + annee + "</span>" : "";
     var h = "<h2 style=\"margin-top:22px\">" + (ind.a2 ? drapeau(ind) + " " : "") + esc(ind.nom) +
       (ind.unite ? ' <span class="muted" style="font-weight:400;font-size:15px">en ' + esc(ind.unite) + "</span>" : "") +
-      "</h2>";
+      quand + "</h2>";
     h += '<div class="ct-legende">';
     for (var i = 0; i < RAMPE.length; i++) {
       var bas = i === 0 ? mini : br[i - 1];
@@ -399,11 +513,16 @@
       motZone(manquantes > 1) + " sans donnée</div>";
     h += "</div>";
 
+    var s = serieCourante();
     h += '<p class="hint ct-note">' + esc(ind.aide || "") +
       (ind.aide ? " " : "") + "<strong>Source :</strong> " + esc(ind.source) +
-      ". Six classes de même effectif, ce qui évite qu'une valeur extrême n'écrase " +
-      "l'échelle : chaque couleur regroupe environ " + Math.round(vals.length / RAMPE.length) +
-      " " + motZone(true) + ".</p>";
+      (s ? ". Série de " + s.annees[0] + " à " + s.annees[s.annees.length - 1] +
+           " : l'échelle de couleurs est calculée une fois sur toute la période, " +
+           "sinon les couleurs changeraient de sens d'une année à l'autre." +
+           " Six classes de même effectif."
+         : ". Six classes de même effectif, ce qui évite qu'une valeur extrême n'écrase " +
+           "l'échelle : chaque couleur regroupe environ " + Math.round(vals.length / RAMPE.length) +
+           " " + motZone(true) + ".") + "</p>";
 
     k.innerHTML = h;
 
@@ -444,6 +563,9 @@
 
   // ---------- démarrage ----------
 
+  // Les groupes de boutons sont décrits par la base, pas ici : un indicateur
+  // ajouté au script de construction apparaît sans toucher à l'interface.
+  // Cette liste ne sert que si une base ancienne ne les porte pas.
   var GROUPES = [
     ["Louer", ["loyer_appt", "loyer_appt_m2"]],
     ["Acheter", ["prix_appt_m2", "prix_maison_m2", "prix_appt", "prix_maison"]],
@@ -452,6 +574,7 @@
     ["Nationalités", ["pct_etr", "pct_lux", "pct_eu", "pct_noneu"]],
     ["Emploi", ["chomage", "emploi"]]
   ];
+  function groupes() { return (kb && kb.groupes) || GROUPES; }
   var GROUPES_QUARTIERS = [
     ["Louer", ["loyer_appt", "loyer_appt_m2"]],
     ["Acheter", ["prix_appt_m2", "prix_appt", "prix_maison_m2", "prix_maison"]]
@@ -468,7 +591,7 @@
         '<button class="chip' + (quart ? " actif" : "") + '" data-couche="quartiers">' +
         esc(kb.quartiers.titre) + "</button></div>";
     }
-    (quart ? GROUPES_QUARTIERS : GROUPES).forEach(function (g) {
+    (quart ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
       var dedans = g[1].filter(function (id) {
         return dispo.some(function (i) { return i.id === id; });
       });
@@ -515,11 +638,16 @@
         courant = b.dataset.ind;
         nation = null;
         indNation = null;
+        arreterLecture();
+        annee = null;
         var s2 = document.getElementById("ct-nation");
         if (s2) s2.value = "";
         k.querySelectorAll("button[data-ind]").forEach(function (x) {
           x.classList.toggle("actif", x.dataset.ind === courant);
         });
+        calerEchelle();
+        barreTemps();
+        appliquerAnnee();
         dessiner();
         fiche();
       });
@@ -557,6 +685,11 @@
     cadreTotal = L.latLngBounds(tous);
     map.fitBounds(cadreTotal, { padding: [8, 8] });
     boutons();
+    // Les quartiers n'ont pas de séries : la barre du temps se retire d'elle-même.
+    arreterLecture();
+    annee = null;
+    calerEchelle();
+    barreTemps();
     dessiner();
     fiche();
   }
@@ -646,6 +779,8 @@
         " communes. Sources : " + kb.meta.sources.join(" ; ") + ".";
       boutons();
       creerCarte();
+      calerEchelle();
+      barreTemps();
       dessiner();
       setTimeout(function () {
         map.invalidateSize();
