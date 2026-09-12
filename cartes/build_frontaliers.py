@@ -49,6 +49,7 @@ USE_CACHE = "--cache" in sys.argv
 sys.path.insert(0, HERE)
 from build_cartes import anneaux, encode_polyline, centroide  # noqa: E402
 from trajets import trajets  # noqa: E402
+import voisins_data  # noqa: E402
 
 LAU = "https://gisco-services.ec.europa.eu/distribution/v2/lau/geojson/LAU_RG_01M_2021_4326.geojson"
 EUROSTAT = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/%s?format=JSON&lang=FR&%s"
@@ -299,12 +300,38 @@ def main():
     if manquants:
         print("   valeurs absentes :", dict(manquants))
 
-    print("2. Eurostat, revenu des ménages par région (NUTS 2)")
+    print("2. sources nationales, commune par commune")
+    front_lux, date_igss = voisins_data.frontaliers(telecharger)
+    ind_fr, annees_fr = voisins_data.france(zones, telecharger)
+    ind_be, an_be = voisins_data.belgique(zones, telecharger)
+
+    pose_pays = collections.Counter()
+    for z in zones:
+        code = z["lau"].split("_")[-1]
+        k = voisins_data.cle(z["nom"].split(" (")[0])
+        supp = {}
+        if z["pays"] == "FR":
+            supp = ind_fr.get(code, {})
+        elif z["pays"] == "BE":
+            supp = ind_be.get(k, {})
+        z["i"].update(supp)
+        if supp:
+            pose_pays[z["pays"]] += 1
+        n = front_lux.get((z["pays"], k))
+        if n:
+            z["i"]["vers_lux"] = n
+            if z["i"].get("pop"):
+                z["i"]["part_lux"] = round(100.0 * n / z["i"]["pop"], 1)
+    print("   communes enrichies :", dict(pose_pays))
+    print("   %d communes avec un effectif travaillant au Luxembourg"
+          % sum(1 for z in zones if "vers_lux" in z["i"]))
+
+    print("3. Eurostat, revenu des ménages par région (NUTS 2)")
     codes2 = "&".join("geo=" + r[0] for r in REGIONS)
     rev = eurostat("nama_10r_2hhinc",
                    "unit=PPS_EU27_2020_HAB&direct=BAL&na_item=B6N&" + codes2, "hhinc.json")
     chom = eurostat("lfst_r_lfu3rt", "unit=PC&sex=T&age=Y20-64&isced11=TOTAL&" + codes2, "chom.json")
-    print("3. Eurostat, produit intérieur brut par région")
+    print("4. Eurostat, produit intérieur brut par région")
     pib = eurostat("nama_10r_2gdp", "unit=PPS_EU27_2020_HAB&" + codes2, "pib.json")
 
     regions = []
@@ -327,7 +354,7 @@ def main():
         print("   %-24s revenu %s (%s) | PIB %s | chômage %s"
               % (nom, r_rev, an_rev, r_pib, r_chom))
 
-    print("4. Eurostat, niveaux de prix par pays")
+    print("5. Eurostat, niveaux de prix par pays")
     cats = "&".join("ppp_cat=" + c for c, _ in CATEGORIES_PRIX)
     pays_codes = "&".join("geo=" + p for p in ("LU", "FR", "BE", "DE"))
     brut = telecharger(EUROSTAT % ("prc_ppp_ind",
@@ -364,7 +391,11 @@ def main():
             print("   écartée, série incomplète en %s : %s" % (an_prix, nom))
     print("   %d catégories de prix, année %s" % (len(prix), an_prix))
 
-    INDICATEURS = [
+    # Un pays, une liste. Le revenu français est un niveau de vie par unité de
+    # consommation, le belge un revenu net par déclaration : ils ne se
+    # superposent pas, et la carte n'affiche qu'un pays à la fois pour qu'on ne
+    # soit jamais tenté de les lire l'un contre l'autre.
+    COMMUNS = [
         {"id": "route_min", "nom": "Temps de route jusqu'à Luxembourg-Ville", "unite": "minutes",
          "sens": -1, "fmt": "dec", "source": "Calculé sur le réseau routier par le service OSRM",
          "aide": "Trajet en voiture à vitesse libre, sans embouteillage, depuis le centre de la "
@@ -389,11 +420,136 @@ def main():
                  "un demi-kilomètre carré ne se vivent pas pareil."},
         {"id": "aire", "nom": "Superficie", "unite": "km²", "sens": 0, "fmt": "dec",
          "source": "Eurostat GISCO, référentiel LAU 2021", "aide": ""},
+        {"id": "vers_lux", "nom": "Habitants qui travaillent au Luxembourg", "unite": "personnes",
+         "sens": 0, "fmt": "ent", "source": "IGSS, emploi par commune de résidence, " + date_igss,
+         "aide": "Comptage administratif des personnes affiliées à la sécurité sociale "
+                 "luxembourgeoise, par commune de résidence. C'est la seule statistique qui "
+                 "compte les trois pays de la même façon. Elle ne voit ni les fonctionnaires "
+                 "européens, ni les travailleurs détachés par une entreprise étrangère."},
+        {"id": "part_lux", "nom": "Part des habitants qui travaillent au Luxembourg",
+         "unite": "% de la population", "sens": 0, "fmt": "pct",
+         "source": "IGSS et Eurostat GISCO, " + date_igss,
+         "aide": "Rapportée à la population entière, enfants et retraités compris : le chiffre "
+                 "n'est donc pas une part des actifs, il est plus bas. Au-dessus de vingt pour "
+                 "cent, la commune vit au rythme du Luxembourg."},
     ]
-    GROUPES = [
-        ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
-        ["Population", ["pop", "dens", "aire"]],
+
+    # France : base du dossier complet de l'INSEE.
+    IND_FR = COMMUNS + [
+        {"id": "med_sl", "nom": "Niveau de vie médian", "unite": "€/an", "sens": 1, "fmt": "eur",
+         "source": "INSEE, dispositif Filosofi",
+         "aide": "Revenu disponible du ménage après impôts et prestations, divisé par le nombre "
+                 "d'unités de consommation. La moitié des habitants vit avec moins. Ne se "
+                 "compare pas au revenu belge, qui ne mesure pas la même chose."},
+        {"id": "pauvrete", "nom": "Taux de pauvreté", "unite": "%", "sens": -1, "fmt": "pct",
+         "source": "INSEE, dispositif Filosofi",
+         "aide": "Part des habitants vivant avec moins de 60 % du niveau de vie médian national. "
+                 "Non publié dans les petites communes, où le secret statistique s'applique."},
+        {"id": "salaire", "nom": "Salaire net mensuel moyen", "unite": "€/mois", "sens": 1,
+         "fmt": "eur", "source": "INSEE, base tous salariés",
+         "aide": "En équivalent temps plein, pour les salariés qui résident dans la commune. "
+                 "Un frontalier au Luxembourg n'y figure pas : son employeur n'est pas français."},
+        {"id": "chomage", "nom": "Taux de chômage", "unite": "%", "sens": -1, "fmt": "pct",
+         "source": "INSEE, recensement de la population",
+         "aide": "Au sens du recensement, c'est-à-dire déclaré par les habitants, et non au sens "
+                 "du Bureau international du travail. Il est un peu plus élevé que le taux "
+                 "officiel du département."},
+        {"id": "part_sup", "nom": "Part de diplômés du supérieur", "unite": "%", "sens": 1,
+         "fmt": "pct", "source": "INSEE, recensement de la population",
+         "aide": "Parmi la population non scolarisée de quinze ans ou plus qui déclare un "
+                 "diplôme, la part qui a au moins un bac+2."},
+        {"id": "travail_hors", "nom": "Actifs travaillant hors de la commune", "unite": "%",
+         "sens": 0, "fmt": "pct", "source": "INSEE, recensement de la population",
+         "aide": "Toutes destinations confondues, le Luxembourg comme la commune voisine. "
+                 "Au-dessus de quatre-vingts pour cent, la commune est un lieu de résidence "
+                 "et pas un lieu de travail."},
+        {"id": "proprietaires", "nom": "Part de propriétaires", "unite": "% des résidences principales",
+         "sens": 0, "fmt": "pct", "source": "INSEE, recensement de la population",
+         "aide": "Une commune de propriétaires a peu de logements à louer, ce qui compte quand "
+                 "on arrive sans vouloir acheter tout de suite."},
+        {"id": "vacants", "nom": "Part de logements vacants", "unite": "%", "sens": 0,
+         "fmt": "pct", "source": "INSEE, recensement de la population",
+         "aide": "Élevée dans les anciennes communes sidérurgiques, où le parc a vieilli plus "
+                 "vite que la demande."},
+        {"id": "supermarches", "nom": "Supermarchés", "unite": "commerces", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
+        {"id": "boulangeries", "nom": "Boulangeries", "unite": "commerces", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
+        {"id": "medecins", "nom": "Médecins généralistes", "unite": "praticiens", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
+        {"id": "maternelles", "nom": "Écoles maternelles", "unite": "écoles", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
+        {"id": "primaires", "nom": "Écoles primaires", "unite": "écoles", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
+        {"id": "colleges", "nom": "Collèges", "unite": "établissements", "sens": 0,
+         "fmt": "ent", "source": "INSEE, base permanente des équipements", "aide": ""},
     ]
+
+    # Belgique : statistique fiscale des revenus.
+    IND_BE = COMMUNS + [
+        {"id": "revenu_decl", "nom": "Revenu net moyen par déclaration", "unite": "€/an",
+         "sens": 1, "fmt": "eur", "source": "Statbel, statistique fiscale des revenus " + an_be,
+         "aide": "Moyenne et non médiane, par déclaration et non par personne : un couple qui "
+                 "déclare ensemble compte pour une. Ne se compare pas au niveau de vie français."},
+        {"id": "impot_moyen", "nom": "Impôt moyen par déclaration", "unite": "€/an", "sens": 0,
+         "fmt": "eur", "source": "Statbel, statistique fiscale des revenus " + an_be, "aide": ""},
+        {"id": "taxe_communale", "nom": "Taxe communale, en % de l'impôt d'État", "unite": "%",
+         "sens": -1, "fmt": "pct", "source": "Statbel, statistique fiscale des revenus " + an_be,
+         "aide": "Les communes belges prélèvent des centimes additionnels sur l'impôt des "
+                 "personnes physiques. Ce taux effectif, calculé sur les montants réellement "
+                 "enrôlés, varie d'une commune à l'autre et pèse directement sur un frontalier "
+                 "qui s'installe en Belgique."},
+        {"id": "decl_sans_revenu", "nom": "Déclarations sans revenu imposable", "unite": "%",
+         "sens": -1, "fmt": "pct", "source": "Statbel, statistique fiscale des revenus " + an_be,
+         "aide": "Part des déclarations dont le revenu imposable est nul."},
+    ]
+
+    IND_DE = COMMUNS[:]
+
+    GROUPES_PAYS = {
+        "FR": [
+            ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
+            ["Frontaliers", ["part_lux", "vers_lux", "travail_hors"]],
+            ["Revenus", ["med_sl", "salaire", "pauvrete"]],
+            ["Emploi et formation", ["chomage", "part_sup"]],
+            ["Population", ["pop", "dens", "aire"]],
+            ["Logement", ["proprietaires", "vacants"]],
+            ["Commerces et écoles", ["supermarches", "boulangeries", "medecins",
+                                     "maternelles", "primaires", "colleges"]],
+        ],
+        "BE": [
+            ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
+            ["Frontaliers", ["part_lux", "vers_lux"]],
+            ["Revenus et impôts", ["revenu_decl", "impot_moyen", "taxe_communale",
+                                   "decl_sans_revenu"]],
+            ["Population", ["pop", "dens", "aire"]],
+        ],
+        "DE": [
+            ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
+            ["Frontaliers", ["part_lux", "vers_lux"]],
+            ["Population", ["pop", "dens", "aire"]],
+        ],
+    }
+    IND_PAYS = {"FR": IND_FR, "BE": IND_BE, "DE": IND_DE}
+
+    # Un indicateur trop peu couvert ne fait pas une carte : même règle que
+    # pour les cent communes luxembourgeoises.
+    SEUIL = 0.15
+    for pays in ("FR", "BE", "DE"):
+        zp = [z for z in zones if z["pays"] == pays]
+        garde = []
+        for ind in IND_PAYS[pays]:
+            n = sum(1 for z in zp if ind["id"] in z["i"])
+            if n >= max(5, SEUIL * len(zp)):
+                garde.append(ind)
+            else:
+                print("   %s : écarté, %d/%d communes, %s" % (pays, n, len(zp), ind["id"]))
+                for z in zp:
+                    z["i"].pop(ind["id"], None)
+        IND_PAYS[pays] = garde
+        ids = {i["id"] for i in garde}
+        GROUPES_PAYS[pays] = [[t, [x for x in l if x in ids]] for t, l in GROUPES_PAYS[pays]]
+        GROUPES_PAYS[pays] = [g for g in GROUPES_PAYS[pays] if g[1]]
 
     out = {
         "meta": {
@@ -406,10 +562,15 @@ def main():
                 "Eurostat, revenu des ménages par région nama_10r_2hhinc",
                 "Eurostat, produit intérieur brut par région nama_10r_2gdp",
                 "Eurostat, taux de chômage régional lfst_r_lfu3rt",
+                "IGSS, emploi total par commune de résidence, data.public.lu, CC0",
+                "INSEE, base du dossier complet, licence ouverte",
+                "Statbel, statistique fiscale des revenus, CC BY 4.0",
             ],
         },
-        "indicateurs": INDICATEURS,
-        "groupes": GROUPES,
+        "indicateurs": IND_PAYS["FR"],
+        "groupes": GROUPES_PAYS["FR"],
+        "par_pays": {p: {"indicateurs": IND_PAYS[p], "groupes": GROUPES_PAYS[p]}
+                     for p in ("FR", "BE", "DE")},
         "zones": zones,
         "regions": regions,
         "prix": {"annee": an_prix, "categories": prix},
@@ -422,14 +583,16 @@ def main():
         f.write(";\n")
     print("écrit", dst, "%.2f Mo" % (os.path.getsize(dst) / 1e6))
 
-    print("\ncouverture par indicateur :")
-    for ind in INDICATEURS:
-        vals = [z["i"][ind["id"]] for z in zones if ind["id"] in z["i"]]
-        if vals:
-            print("  %-16s %4d/%d  de %s à %s" % (ind["id"], len(vals), len(zones),
-                  round(min(vals), 1), round(max(vals), 1)))
-        else:
-            print("  %-16s AUCUNE VALEUR" % ind["id"])
+    for pays in ("FR", "BE", "DE"):
+        zp = [z for z in zones if z["pays"] == pays]
+        print("\ncouverture, %s (%d communes) :" % (pays, len(zp)))
+        for ind in IND_PAYS[pays]:
+            vals = [z["i"][ind["id"]] for z in zp if ind["id"] in z["i"]]
+            if vals:
+                print("  %-16s %4d/%d  de %s à %s" % (ind["id"], len(vals), len(zp),
+                      round(min(vals), 1), round(max(vals), 1)))
+            else:
+                print("  %-16s AUCUNE VALEUR" % ind["id"])
 
 
 if __name__ == "__main__":

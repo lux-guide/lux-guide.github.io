@@ -337,9 +337,20 @@
     }
     return kb.communes;
   }
+  // Chaque pays a sa liste : le niveau de vie médian français et le revenu par
+  // déclaration belge ne mesurent pas la même chose, et ne se rangent donc pas
+  // dans la même colonne.
+  function coucheVoisine() {
+    if (!front || !estFrontalier()) return null;
+    var p = PAYS_COUCHE[couche_nom];
+    return (front.par_pays && front.par_pays[p]) ||
+      { indicateurs: front.indicateurs, groupes: front.groupes };
+  }
+
   function listeIndic() {
     if (couche_nom === "quartiers") return kb.quartiers.indicateurs;
-    if (estFrontalier()) return (front && front.indicateurs) || [];
+    var v = coucheVoisine();
+    if (v) return v.indicateurs || [];
     return kb.indicateurs;
   }
   function indic() {
@@ -1371,7 +1382,8 @@
     ["Emploi", ["chomage", "emploi"]]
   ];
   function groupes() {
-    if (estFrontalier()) return (front && front.groupes) || [];
+    var v = coucheVoisine();
+    if (v) return v.groupes || [];
     return (kb && kb.groupes) || GROUPES;
   }
   var GROUPES_QUARTIERS = [
