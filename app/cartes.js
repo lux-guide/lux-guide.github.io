@@ -25,6 +25,10 @@
 
   var PANEL = "panel-cartes";
   var KB = "cartes/communes_kb.js?v=5";
+  // La base des communes frontalières est un second fichier, chargé seulement
+  // si l'on passe de l'autre côté de la frontière : la plupart des visiteurs
+  // ne l'ouvriront jamais, et elle pèse autant que le reste de la page.
+  var KB_FRONT = "cartes/frontaliers_kb.js?v=1";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
@@ -35,6 +39,7 @@
   var SANS = "#e8e8e6";
 
   var demarre = false, map = null, kb = null, courant = null, couche_nom = "communes";
+  var front = null;
   var couche = null, formes = {}, classes = null, selection = null, cadreTotal = null;
   var nation = null, natMode = "pct", indNation = null;
   // Déroulé du temps : année affichée, échelle de couleurs calculée une fois
@@ -111,6 +116,26 @@
       // Comparateur de communes : un tableau, une colonne par commune, les
       // indicateurs en lignes par famille. Il sert pour une commune comme
       // pour cinq, avec la même forme.
+      // La Grande Région : six régions comparables, et ce que coûte un même
+      // panier de chaque côté de la frontière.
+      ".ct-gr{margin-top:18px}",
+      ".ct-gr h3{margin:0 0 3px;font-size:16px}",
+      ".ct-gr .deux{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start;",
+      "  margin-top:16px}",
+      "@media(max-width:880px){.ct-gr .deux{grid-template-columns:1fr}}",
+      ".ct-gr table{width:100%;border-collapse:collapse;font-size:13.5px;",
+      "  font-variant-numeric:tabular-nums}",
+      ".ct-gr th,.ct-gr td{padding:6px 8px;border-top:1px solid var(--border,#e6eaef);text-align:right}",
+      ".ct-gr th:first-child,.ct-gr td:first-child{text-align:left}",
+      ".ct-gr thead th{border-top:0;font-size:11.5px;text-transform:uppercase;",
+      "  letter-spacing:.05em;color:var(--muted,#6a7583);font-weight:600}",
+      ".ct-gr td.ici{font-weight:600}",
+      ".ct-gr .bar{position:relative;height:7px;border-radius:4px;",
+      "  background:var(--border,#e6eaef);min-width:90px}",
+      ".ct-gr .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;display:block;",
+      "  background:var(--accent,#2563eb)}",
+      ".ct-gr .moins{color:#0f8b57;font-weight:600}",
+      ".ct-gr .plus{color:#c2410c;font-weight:600}",
       ".ct-cmpc{margin-top:18px}",
       ".ct-cmpc .tete{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}",
       ".ct-cmpc .tete select{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
@@ -292,11 +317,17 @@
   // Deux niveaux géographiques : les 100 communes, et les 24 quartiers de la
   // Ville de Luxembourg quand la source publie à ce grain. Tout le reste du
   // rendu passe par ces deux accesseurs et ne sait pas lequel est affiché.
+  // Trois couches, trois jeux de zones et d'indicateurs. Tout le rendu passe
+  // par ces deux accesseurs et ne sait pas laquelle est affichée.
   function zones() {
-    return couche_nom === "quartiers" ? kb.quartiers.zones : kb.communes;
+    if (couche_nom === "quartiers") return kb.quartiers.zones;
+    if (couche_nom === "frontaliers") return (front && front.zones) || [];
+    return kb.communes;
   }
   function listeIndic() {
-    return couche_nom === "quartiers" ? kb.quartiers.indicateurs : kb.indicateurs;
+    if (couche_nom === "quartiers") return kb.quartiers.indicateurs;
+    if (couche_nom === "frontaliers") return (front && front.indicateurs) || [];
+    return kb.indicateurs;
   }
   function indic() {
     if ((courant === "nation" || courant === "natcmp") && indNation) return indNation;
@@ -635,13 +666,15 @@
           color: "#ffffff", weight: 1
         });
         poly.unbindTooltip();
-        poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) + "<small>" +
-          esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
+        poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) +
+          (couche_nom === "frontaliers" ? ' <span class="muted">' + esc(c.canton) + "</span>" : "") +
+          "<small>" + esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
       });
     });
     if (selection) surligner(selection, true);
     ecrire(vals, br, ind);
     panneauInegalites();
+    panneauGrandeRegion();
   }
 
   function surligner(nom, on) {
@@ -670,9 +703,18 @@
     }
   }
 
+  // Le premier du classement est le meilleur, pas le plus grand. Pour un loyer
+  // ou une distance, « meilleur » veut dire plus petit : l'indicateur porte le
+  // sens, et le classement le suit.
+  function croissant(id) {
+    var ind = listeIndic().filter(function (i) { return i.id === id; })[0];
+    return !!(ind && ind.sens < 0);
+  }
+
   function rang(id, nom) {
+    var sgn = croissant(id) ? -1 : 1;
     var l = zones().filter(function (c) { return c.i[id] !== undefined; })
-      .sort(function (a, b) { return b.i[id] - a.i[id]; });
+      .sort(function (a, b) { return sgn * (b.i[id] - a.i[id]); });
     for (var i = 0; i < l.length; i++) if (l[i].nom === nom) return [i + 1, l.length];
     return null;
   }
@@ -711,6 +753,13 @@
       '" aria-hidden="true"><polyline fill="none" stroke="var(--accent,#2563eb)" ' +
       'stroke-width="1.4" stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>' +
       '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.1" fill="var(--accent,#2563eb)"></circle></svg>';
+  }
+
+  // Le second niveau d'une zone : le canton au Luxembourg, le pays quand on a
+  // passé la frontière. Le champ est le même, la phrase ne peut pas l'être.
+  function situation(c) {
+    if (!c || !c.canton) return "";
+    return couche_nom === "frontaliers" ? c.canton : "canton de " + c.canton;
   }
 
   function communeDe(nom) {
@@ -758,7 +807,7 @@
     }
     h += '</div><div class="defil"><table><thead><tr><th></th>';
     liste.forEach(function (c) {
-      h += "<th>" + esc(c.nom) + "<small>canton de " + esc(c.canton) + "</small></th>";
+      h += "<th>" + esc(c.nom) + "<small>" + esc(situation(c)) + "</small></th>";
     });
     h += "</tr></thead><tbody>";
 
@@ -909,11 +958,12 @@
         "</b>" + h.slice(h.indexOf('<div class="ct-legende">'), h.indexOf('<p class="hint"'));
     }
 
+    var sgn = croissant(courant) ? -1 : 1;
     var tri = zones().slice().sort(function (a, b) {
       var x = a.i[courant], y = b.i[courant];
       if (x === undefined) return 1;
       if (y === undefined) return -1;
-      return y - x;
+      return sgn * (y - x);
     });
     tableauRangs(tri, ind, courant, function (v) { return RAMPE[classe(v, br)]; });
   }
@@ -1022,6 +1072,71 @@
       "dans une commune peut donc coexister avec un revenu après redistribution beaucoup " +
       "plus resserré. Il n'y a pas de Gini par commune au Luxembourg, et ce guide n'en " +
       "fabrique pas.</p></div>";
+  }
+
+  // ---------- la Grande Région ----------
+  //
+  // Ce panneau ne peint rien sur la carte, et c'est voulu. Le revenu, le
+  // produit intérieur brut et le chômage ne sont comparables d'un pays à
+  // l'autre qu'à l'échelle de la région : les publier commune par commune
+  // reviendrait à peindre un chiffre français et un chiffre allemand sur la
+  // même échelle de couleurs, alors qu'ils ne mesurent pas la même chose.
+
+  function barreLigne(v, maxi, txt) {
+    var p = maxi ? Math.max(2, 100 * v / maxi) : 0;
+    return '<td class="n">' + txt + '</td><td style="width:110px"><div class="bar">' +
+      '<i style="width:' + p.toFixed(1) + '%"></i></div></td>';
+  }
+
+  function panneauGrandeRegion() {
+    var k = document.getElementById("ct-gr");
+    if (!k) return;
+    if (couche_nom !== "frontaliers" || !front) { k.innerHTML = ""; return; }
+
+    var regs = front.regions.filter(function (r) { return r.revenu; });
+    var maxRev = Math.max.apply(null, regs.map(function (r) { return r.revenu; }));
+    var h = '<div class="card ct-gr"><div class="deux"><div>' +
+      "<h3>Ce qui reste à un ménage, région par région</h3>" +
+      '<p class="hint" style="margin-top:2px">Revenu disponible par habitant, après impôts et ' +
+      "transferts, en standards de pouvoir d'achat : la seule mesure du revenu qui se compare " +
+      "vraiment entre les quatre pays, parce qu'elle corrige les écarts de prix." +
+      "</p><table><thead><tr><th>Région</th><th>Par habitant</th><th></th></tr></thead><tbody>";
+    regs.sort(function (a, b) { return b.revenu - a.revenu; }).forEach(function (r) {
+      h += "<tr><td" + (r.pays === "LU" ? ' class="ici"' : "") + ">" + esc(r.nom) +
+        ' <span class="muted">' + esc(front.pays[r.pays]) + "</span></td>" +
+        barreLigne(r.revenu, maxRev, Math.round(r.revenu).toLocaleString("fr-FR")) + "</tr>";
+    });
+    h += "</tbody></table>";
+    var ans = regs.map(function (r) { return r.an_revenu; }).filter(Boolean).sort();
+    h += '<p class="hint">Eurostat, revenu des ménages par région (nama_10r_2hhinc), ' +
+      (ans.length ? ans[0] + " à " + ans[ans.length - 1] : "") +
+      ". Un salaire luxembourgeois dépensé en Lorraine ne figure dans aucune de ces lignes : " +
+      "elles décrivent ce que gagnent les habitants d'une région, pas ce que gagne un " +
+      "frontalier qui y habite.</p></div>";
+
+    // Prix : le Luxembourg sert de repère, puisque c'est là qu'on travaille.
+    h += "<div><h3>Ce qui coûte moins cher de l'autre côté</h3>" +
+      '<p class="hint" style="margin-top:2px">Indices de niveau des prix ' + front.prix.annee +
+      ", Luxembourg ramené à 100. Sous 100, c'est moins cher que chez le voisin " +
+      "luxembourgeois ; au-dessus, plus cher." +
+      "</p><table><thead><tr><th>Panier</th><th>France</th><th>Belgique</th><th>Allemagne</th>" +
+      "</tr></thead><tbody>";
+    front.prix.categories.forEach(function (c) {
+      h += "<tr><td>" + esc(c.nom) + "</td>";
+      ["FR", "BE", "DE"].forEach(function (p) {
+        var r = c.LU ? Math.round(100 * c[p] / c.LU) : null;
+        var cls = r === null ? "" : (r < 95 ? "moins" : (r > 105 ? "plus" : ""));
+        h += '<td class="' + cls + '">' + (r === null ? "—" : r) + "</td>";
+      });
+      h += "</tr>";
+    });
+    h += "</tbody></table>";
+    h += '<p class="hint">Eurostat, indices de niveau des prix (prc_ppp_ind), ' +
+      front.prix.annee + ". Ce sont des moyennes de pays, pas des relevés de magasins à la " +
+      "frontière : elles disent dans quel sens va l'écart et son ordre de grandeur, pas le " +
+      "prix d'un article précis. Les carburants et le tabac font partie des postes où " +
+      "l'écart est le plus net, dans l'autre sens.</p></div></div></div>";
+    k.innerHTML = h;
   }
 
   // ---------- comparer deux cartes ----------
@@ -1205,7 +1320,10 @@
     ["Nationalités", ["pct_etr", "pct_lux", "pct_eu", "pct_noneu"]],
     ["Emploi", ["chomage", "emploi"]]
   ];
-  function groupes() { return (kb && kb.groupes) || GROUPES; }
+  function groupes() {
+    if (couche_nom === "frontaliers") return (front && front.groupes) || [];
+    return (kb && kb.groupes) || GROUPES;
+  }
   var GROUPES_QUARTIERS = [
     ["Louer", ["loyer_appt", "loyer_appt_m2"]],
     ["Acheter", ["prix_appt_m2", "prix_appt", "prix_maison_m2", "prix_maison"]]
@@ -1216,14 +1334,16 @@
     var quart = couche_nom === "quartiers";
     var dispo = listeIndic();
     var h = "";
-    if (kb.quartiers) {
-      h += '<div class="ct-couches">' +
-        '<button class="chip' + (quart ? "" : " actif") + '" data-couche="communes">Les cent communes</button>' +
-        '<button class="chip' + (quart ? " actif" : "") + '" data-couche="quartiers">' +
-        esc(kb.quartiers.titre) + "</button>" +
-        (quart ? "" : '<button class="chip' + (comparer ? " actif" : "") +
-          '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
-    }
+    var fronti = couche_nom === "frontaliers";
+    h += '<div class="ct-couches">' +
+      '<button class="chip' + (couche_nom === "communes" ? " actif" : "") +
+      '" data-couche="communes">Les cent communes</button>' +
+      (kb.quartiers ? '<button class="chip' + (quart ? " actif" : "") +
+        '" data-couche="quartiers">' + esc(kb.quartiers.titre) + "</button>" : "") +
+      '<button class="chip' + (fronti ? " actif" : "") +
+      '" data-couche="frontaliers">De l\'autre côté de la frontière</button>' +
+      (quart || fronti ? "" : '<button class="chip' + (comparer ? " actif" : "") +
+        '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
     // Les familles d'abord, sur une rangée ; puis les indicateurs de la
     // famille ouverte. La famille de l'indicateur affiché s'ouvre d'elle-même.
     var fams = (quart ? GROUPES_QUARTIERS : groupes()).map(function (g) {
@@ -1233,7 +1353,7 @@
     }).filter(function (g) { return g[1].length; });
     // Les nationalités du recensement et celles du registre forment une seule
     // famille : deux entrées « Nationalités » côte à côte n'auraient pas de sens.
-    var natFam = !quart && nations().length;
+    var natFam = !quart && !fronti && nations().length;
     var iNat = -1;
     if (natFam) {
       fams.forEach(function (g, j) { if (g[0] === "Nationalités") iNat = j; });
@@ -1393,6 +1513,18 @@
 
   function changerCouche(nom) {
     if (nom === couche_nom) return;
+    // La base des voisins n'est chargée qu'à la première visite de l'autre côté.
+    if (nom === "frontaliers" && !front) {
+      msg("Chargement des communes frontalières…");
+      charger(KB_FRONT, "js", function () {
+        front = window.FRONTALIERS;
+        if (front) changerCouche(nom);
+      });
+      return;
+    }
+    // Comparer deux cartes n'a de sens que sur les cent communes : la seconde
+    // carte ne connaît que celles-là.
+    if (comparer) basculerComparaison();
     couche_nom = nom;
     selection = null;
     panierCommunes = [];
@@ -1401,8 +1533,8 @@
     // prendre le premier proposé : passer de « salaire médian » aux quartiers,
     // qui n'ont pas de salaires, ne doit pas vider la carte.
     var dispo = listeIndic();
-    // Les nationalités ne sont publiées qu'à la commune.
-    if (nom === "quartiers") { nation = null; indNation = null; }
+    // Les nationalités ne sont publiées que pour les communes luxembourgeoises.
+    if (nom !== "communes") { nation = null; indNation = null; natSel = []; }
     if (!dispo.some(function (i) { return i.id === courant; })) courant = dispo[0].id;
     Object.keys(formes).forEach(function (n) {
       formes[n].forEach(function (p) { couche.removeLayer(p); });

@@ -267,6 +267,12 @@ def main():
     for z in zones:
         if vus[z["nom"]] > 1:
             z["nom"] = "%s (%s)" % (z["nom"], PAYS[z["pays"]])
+    # Deux Wawern voisins existent en Allemagne : le pays ne les sépare pas,
+    # le code de la commune si.
+    vus = collections.Counter(z["nom"] for z in zones)
+    for z in zones:
+        if vus[z["nom"]] > 1:
+            z["nom"] = "%s %s" % (z["nom"], z["lau"].split("_")[-1])
     zones.sort(key=lambda z: (z["pays"], z["nom"] or ""))
     print("   retenues à moins de %d km de Luxembourg-Ville :" % RAYON_KM, dict(par_pays))
     manquants = collections.Counter()
