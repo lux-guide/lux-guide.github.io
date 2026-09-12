@@ -65,7 +65,7 @@
             <b id="nom-lignes">Bus, tram et train</b><i>Les arrêts d'où l'on rejoint le travail sans changement</i>
           </button>
           <button role="menuitem" id="tab-cartes" data-panel="cartes" aria-controls="panel-cartes">
-            <b id="nom-cartes">Les cent communes</b><i>Loyers, salaires, nationalités, chiffre par chiffre</i>
+            <b id="nom-cartes">Les communes, chiffre par chiffre</b><i>Loyers, salaires, écoles et nationalités, au Luxembourg et chez les trois voisins</i>
           </button>
         </div>
       </div>
@@ -471,14 +471,17 @@
 
   <!-- Cartes : les communes comparees indicateur par indicateur -->
   <section class="panel" role="region" aria-labelledby="nom-cartes" id="panel-cartes" hidden>
-    <h1>Les cent communes, chiffre par chiffre</h1>
+    <h1>Les communes, chiffre par chiffre</h1>
     <p class="lead">
       Le Luxembourg tient dans une heure de route, et pourtant le loyer double d'une
       commune à l'autre, le salaire médian va du simple au double, et la part de
       résidents étrangers passe de 20 à 70 %. Choisissez un indicateur : les communes
       se colorent, du plus clair au plus foncé. Cliquez-en une pour voir toutes ses
-      valeurs et son rang. La Ville de Luxembourg se regarde aussi quartier par
-      quartier, là où les sources descendent à ce grain.
+      valeurs et son rang, et jusqu'à cinq se comparent côte à côte. La Ville de
+      Luxembourg se regarde aussi quartier par quartier, là où les sources descendent
+      à ce grain. Et comme un salarié sur deux habite de l'autre côté, la carte passe
+      la frontière : la France, la Belgique et l'Allemagne se regardent une par une,
+      avec ce qui s'y mesure de la même façon qu'ici.
     </p>
     <div class="card">
       <div id="ct-choix"></div>
@@ -494,12 +497,12 @@
     <div id="ct-ineg"></div>
     <div id="ct-fiche"></div>
     <p class="hint" id="ct-source"></p>
-    <p class="hint">
+    <p class="hint" id="ct-avert">
       Une carte de ce genre montre où se situe une commune, pas pourquoi. Un salaire
       médian élevé décrit les gens qui habitent là, pas le coût de la vie sur place.
       Un taux de chômage bas peut tenir à la structure d'âge. Et les prix affichés sont
-      ceux des annonces, donc au dessus des prix signés. Comme les deux autres onglets
-      de la famille « Où habiter », celui-ci demande un accès réseau pour le fond de carte.
+      ceux des annonces, donc au dessus des prix signés. Cet onglet demande un accès
+      réseau pour le fond de carte.
     </p>
   </section>
 

@@ -1312,6 +1312,15 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 /* Les rangees d'onglets secondaires passent a la ligne au lieu de deborder */
 .sous-onglets { flex-wrap: wrap; }
 
+/* Seconde rangee de couches : les trois pays voisins, un a la fois. Ils sont
+   annonces par un intitule, sinon trois noms de pays posés sous les communes
+   luxembourgeoises ne disent pas de quoi ils sont la liste. */
+.ct-voisins { align-items: center; margin-top: 10px; }
+.ct-voisins > span {
+  font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); font-weight: 600; margin-right: 4px;
+}
+
 /* Palier 2 : les sections se resserrent. Le nom du site reste, il n'a pas
    besoin de disparaitre ici, c'est la respiration des onglets qui manque. */
 @media (max-width: 1099px) {

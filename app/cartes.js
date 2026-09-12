@@ -1,4 +1,5 @@
-// Onglet Cartes : les 100 communes coloriées par indicateur.
+// Onglet Cartes : les communes coloriées par indicateur, au Luxembourg et
+// dans les trois pays voisins.
 //
 // Module autonome, même principe que app/lignes.js : style injecté, Leaflet et
 // base de données chargés à la demande, réveil quand le panneau cesse d'être caché.
@@ -319,14 +320,26 @@
   // rendu passe par ces deux accesseurs et ne sait pas lequel est affiché.
   // Trois couches, trois jeux de zones et d'indicateurs. Tout le rendu passe
   // par ces deux accesseurs et ne sait pas laquelle est affichée.
+  // Les trois pays voisins forment trois couches et non une seule. Peu de gens
+  // comparent une commune allemande à une commune française : les regarder
+  // ensemble diluait l'échelle de couleurs sur neuf cents communes, alors que
+  // la question posée est presque toujours « où, dans ce pays-là ».
+  var PAYS_COUCHE = { fr: "FR", be: "BE", de: "DE" };
+
+  function estFrontalier() { return !!PAYS_COUCHE[couche_nom]; }
+
   function zones() {
     if (couche_nom === "quartiers") return kb.quartiers.zones;
-    if (couche_nom === "frontaliers") return (front && front.zones) || [];
+    if (estFrontalier()) {
+      if (!front) return [];
+      var p = PAYS_COUCHE[couche_nom];
+      return front.zones.filter(function (z) { return z.pays === p; });
+    }
     return kb.communes;
   }
   function listeIndic() {
     if (couche_nom === "quartiers") return kb.quartiers.indicateurs;
-    if (couche_nom === "frontaliers") return (front && front.indicateurs) || [];
+    if (estFrontalier()) return (front && front.indicateurs) || [];
     return kb.indicateurs;
   }
   function indic() {
@@ -488,6 +501,25 @@
     }
     return h + "</ul>";
   }
+  // L'avertissement de bas de page ne dit pas la même chose selon la couche :
+  // les prix annoncés et le salaire médian n'existent qu'au Luxembourg.
+  function majAvertissement() {
+    var k = document.getElementById("ct-avert");
+    if (!k) return;
+    k.textContent = estFrontalier()
+      ? "Population, superficie et densité viennent du référentiel européen des communes, " +
+        "donc mesurées de la même façon dans les quatre pays. Les distances sont à vol " +
+        "d'oiseau depuis le centre de la commune, et non des temps de trajet : une commune " +
+        "à trente kilomètres sur l'autoroute peut être plus loin, le matin, qu'une commune " +
+        "à quarante sur une ligne directe. Cet onglet demande un accès réseau pour le fond " +
+        "de carte."
+      : "Une carte de ce genre montre où se situe une commune, pas pourquoi. Un salaire " +
+        "médian élevé décrit les gens qui habitent là, pas le coût de la vie sur place. Un " +
+        "taux de chômage bas peut tenir à la structure d'âge. Et les prix affichés sont ceux " +
+        "des annonces, donc au dessus des prix signés. Cet onglet demande un accès réseau " +
+        "pour le fond de carte.";
+  }
+
   function motZone(pluriel) {
     var q = couche_nom === "quartiers";
     return pluriel ? (q ? "quartiers" : "communes") : (q ? "quartier" : "commune");
@@ -667,7 +699,7 @@
         });
         poly.unbindTooltip();
         poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) +
-          (couche_nom === "frontaliers" ? ' <span class="muted">' + esc(c.canton) + "</span>" : "") +
+          (estFrontalier() ? ' <span class="muted">' + esc(c.canton) + "</span>" : "") +
           "<small>" + esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
       });
     });
@@ -675,6 +707,8 @@
     ecrire(vals, br, ind);
     panneauInegalites();
     panneauGrandeRegion();
+    majSource();
+    majAvertissement();
   }
 
   function surligner(nom, on) {
@@ -759,7 +793,7 @@
   // passé la frontière. Le champ est le même, la phrase ne peut pas l'être.
   function situation(c) {
     if (!c || !c.canton) return "";
-    return couche_nom === "frontaliers" ? c.canton : "canton de " + c.canton;
+    return estFrontalier() ? c.canton : "canton de " + c.canton;
   }
 
   function communeDe(nom) {
@@ -1088,10 +1122,26 @@
       '<i style="width:' + p.toFixed(1) + '%"></i></div></td>';
   }
 
+  // La ligne de sources sous la carte décrit la base réellement affichée : deux
+  // bases cohabitent dans cet onglet, et se tromper de source est pire que ne
+  // pas en donner.
+  function majSource() {
+    var k = document.getElementById("ct-source");
+    if (!k) return;
+    if (estFrontalier() && front) {
+      k.textContent = "Base construite le " + front.meta.construit + " sur " +
+        zones().length + " communes situées à moins de " + front.meta.rayon +
+        " km de Luxembourg-Ville. Sources : " + front.meta.sources.join(" ; ") + ".";
+    } else {
+      k.textContent = "Base construite le " + kb.meta.construit + " sur " + kb.meta.n +
+        " communes. Sources : " + kb.meta.sources.join(" ; ") + ".";
+    }
+  }
+
   function panneauGrandeRegion() {
     var k = document.getElementById("ct-gr");
     if (!k) return;
-    if (couche_nom !== "frontaliers" || !front) { k.innerHTML = ""; return; }
+    if (!estFrontalier() || !front) { k.innerHTML = ""; return; }
 
     var regs = front.regions.filter(function (r) { return r.revenu; });
     var maxRev = Math.max.apply(null, regs.map(function (r) { return r.revenu; }));
@@ -1321,7 +1371,7 @@
     ["Emploi", ["chomage", "emploi"]]
   ];
   function groupes() {
-    if (couche_nom === "frontaliers") return (front && front.groupes) || [];
+    if (estFrontalier()) return (front && front.groupes) || [];
     return (kb && kb.groupes) || GROUPES;
   }
   var GROUPES_QUARTIERS = [
@@ -1334,16 +1384,22 @@
     var quart = couche_nom === "quartiers";
     var dispo = listeIndic();
     var h = "";
-    var fronti = couche_nom === "frontaliers";
+    var fronti = estFrontalier();
     h += '<div class="ct-couches">' +
       '<button class="chip' + (couche_nom === "communes" ? " actif" : "") +
       '" data-couche="communes">Les cent communes</button>' +
       (kb.quartiers ? '<button class="chip' + (quart ? " actif" : "") +
         '" data-couche="quartiers">' + esc(kb.quartiers.titre) + "</button>" : "") +
-      '<button class="chip' + (fronti ? " actif" : "") +
-      '" data-couche="frontaliers">De l\'autre côté de la frontière</button>' +
       (quart || fronti ? "" : '<button class="chip' + (comparer ? " actif" : "") +
         '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
+    // Seconde rangée : de l'autre côté, un pays à la fois.
+    h += '<div class="ct-couches ct-voisins"><span>De l\'autre côté</span>' +
+      '<button class="chip' + (couche_nom === "fr" ? " actif" : "") +
+      '" data-couche="fr">France</button>' +
+      '<button class="chip' + (couche_nom === "be" ? " actif" : "") +
+      '" data-couche="be">Belgique</button>' +
+      '<button class="chip' + (couche_nom === "de" ? " actif" : "") +
+      '" data-couche="de">Allemagne</button></div>';
     // Les familles d'abord, sur une rangée ; puis les indicateurs de la
     // famille ouverte. La famille de l'indicateur affiché s'ouvre d'elle-même.
     var fams = (quart ? GROUPES_QUARTIERS : groupes()).map(function (g) {
@@ -1514,7 +1570,7 @@
   function changerCouche(nom) {
     if (nom === couche_nom) return;
     // La base des voisins n'est chargée qu'à la première visite de l'autre côté.
-    if (nom === "frontaliers" && !front) {
+    if (PAYS_COUCHE[nom] && !front) {
       msg("Chargement des communes frontalières…");
       charger(KB_FRONT, "js", function () {
         front = window.FRONTALIERS;
@@ -1642,9 +1698,7 @@
       if (!window.L || !window.COMMUNES) return;
       kb = window.COMMUNES;
       courant = "prix_appt_m2";
-      var s = document.getElementById("ct-source");
-      if (s) s.textContent = "Base construite le " + kb.meta.construit + " sur " + kb.meta.n +
-        " communes. Sources : " + kb.meta.sources.join(" ; ") + ".";
+      majSource();
       boutons();
       creerCarte();
       calerEchelle();

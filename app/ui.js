@@ -665,7 +665,7 @@
       ["lignes", "Bus, tram et train", "Mobilite",
        "Indiquez le lieu où vous vous rendez chaque jour : tous les arrêts d'où l'on y arrive sans changement, colorés par temps de trajet.",
        "tout le réseau"],
-      ["cartes", "Les cent communes", "Sante",
+      ["cartes", "Les communes, chiffre par chiffre", "Sante",
        "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte, et la carte passe de l'autre côté de la frontière.",
        "48 indicateurs · 1 006 communes"]
     ].forEach(function (s) {
