@@ -26,6 +26,12 @@
       "Demandez LuxTrust au moment même de l'ouverture du compte bancaire, dans le même rendez-vous. Y revenir plus tard suppose un second passage en agence.",
       "Installez l'application mobile plutôt que de dépendre d'un lecteur physique : c'est plus rapide au quotidien, et cela évite de chercher un appareil au moment de signer une démarche."
     ],
+    frontalier: [
+      "Faites le trajet une fois à l'heure où vous le ferez vraiment, un mardi matin, avant de signer quoi que ce soit. Les temps annoncés par les applications de navigation sont calculés hors bouchons, et l'écart matinal sur les axes vers la capitale se compte en dizaines de minutes.",
+      "Le plein et le tabac se font côté luxembourgeois, les courses alimentaires plutôt côté français ou allemand : c'est ce que montrent aussi les indices de prix européens. Beaucoup de frontaliers organisent leurs achats dans les deux sens plutôt que de tout faire du même côté.",
+      "Côté allemand, les magasins ferment tôt le samedi et n'ouvrent pas le dimanche : la loi fédérale sur les heures d'ouverture le prévoit, et cela surprend quand on arrive d'un pays où le dimanche matin est ouvert.",
+      "Demandez le document S1 dès l'affiliation, sans attendre le premier rendez-vous médical. L'inscription auprès de la caisse du pays de résidence prend quelques semaines, et c'est elle qui évite d'avancer les frais."
+    ],
     recherche_logement: [
       "Si votre employeur propose un accompagnement à la relocation, utilisez-le pour la mise en relation, mais gardez la décision : personne ne connaît vos contraintes de trajet mieux que vous."
     ],

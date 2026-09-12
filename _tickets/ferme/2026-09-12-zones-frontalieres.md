@@ -49,3 +49,17 @@ le revenu comparable est donné à l'échelle régionale.
    en Belgique, Gutachterausschüsse en Allemagne. Trois méthodes différentes.
 3. Temps de trajet réels vers Luxembourg-Ville, et pas seulement la distance à
    vol d'oiseau.
+
+## Fermé
+
+Fait le 2026-09-12. Troisième couche de la carte, 906 communes frontalières (515 FR,
+366 DE, 25 BE) avec géométrie, population, densité, distance à Luxembourg-Ville et à la
+frontière, toutes issues du référentiel européen LAU 2021 donc mesurées de la même façon.
+Sous la carte, les six régions de la Grande Région comparées sur le revenu disponible par
+habitant en standards de pouvoir d'achat, et les seize catégories de prix d'Eurostat avec
+le Luxembourg ramené à 100. Une fiche et trois questions fréquentes pour les conséquences
+administratives, plus quatre retours d'expérience dans le registre communauté.
+
+Le revenu médian communal de France et de Belgique n'a pas été publié, faute d'équivalent
+allemand et de définition commune : le point 1 du « reste à faire » demeure ouvert, mais
+il n'a plus d'urgence, le revenu comparable étant donné à l'échelle régionale.

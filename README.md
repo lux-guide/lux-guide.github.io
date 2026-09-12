@@ -53,7 +53,7 @@ l'assistant restent des entrées directes, ce sont les deux que l'on prend sans 
 | Budget | Comparateur | Habitation sur documents réels, auto, mobile et électricité en démonstration |
 | Où habiter | Comparer des logements | Distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
 | Où habiter | Bus, tram et train | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet. « Une ligne » tout court ne disait pas de quoi il s'agissait |
-| Où habiter | Les cent communes | Quarante-huit indicateurs par commune, douze séries annuelles, cent quatre-vingt-neuf nationalités |
+| Où habiter | Les cent communes | Quarante-huit indicateurs par commune, douze séries annuelles, cent quatre-vingt-neuf nationalités, et les neuf cent six communes frontalières de France, de Belgique et d'Allemagne |
 | | Assistant | Le seul chatbot de l'application : il construit un profil puis cible ses réponses, en pleine page, en panneau latéral ou en bulle. Son onglet porte un point qui respire : ce n'est pas une page de plus, c'est quelqu'un qui attend |
 | Outil | Paramètres | Cinq onglets : apparence, profil, mes données, contenu, calcul |
 
@@ -351,6 +351,45 @@ Trois garde-fous dans le script, parce qu'une base de données muette se trompe 
 3. **Chaque identifiant de famille doit exister dans la liste des indicateurs**, vérifié
    par assertion, et les indicateurs sans famille sont signalés : invisibles dans
    l'onglet, ils seraient du travail perdu.
+
+### De l'autre côté de la frontière
+
+Près d'un salarié sur deux du pays habite en France, en Belgique ou en Allemagne. Le guide
+était écrit comme si l'on s'installait forcément au Luxembourg : une troisième couche de la
+carte répare cela, construite par `cartes/build_frontaliers.py` dans
+`cartes/frontaliers_kb.js`. Elle porte les **906 communes situées à moins de 65 kilomètres
+de Luxembourg-Ville**, soit 515 françaises, 366 allemandes et 25 belges, de Metz à Trèves
+et d'Arlon à Bastogne.
+
+Le problème de fond est la comparabilité, et il commande toute la construction. Aucune
+statistique nationale ne se compare d'un pays à l'autre : le revenu médian français est un
+niveau de vie par unité de consommation, le belge un revenu imposable par déclaration,
+l'allemand un revenu disponible par habitant qui n'existe qu'au Kreis. Les peindre sur la
+même échelle de couleurs donnerait une carte fausse. La couche s'en tient donc à deux
+registres séparés :
+
+1. **Ce qui est mesuré pareil partout**, commune par commune, et qui seul est cartographié :
+   la géométrie et la population du référentiel européen LAU 2021, la superficie, la
+   densité, la distance à Luxembourg-Ville et la distance à la frontière.
+2. **Ce qui n'est comparable qu'à l'échelle régionale**, donné comme tel dans un panneau
+   sous la carte et jamais peint dessus : le revenu disponible par habitant des six régions
+   de la Grande Région, en standards de pouvoir d'achat, seule mesure du revenu réellement
+   comparable entre les quatre pays, et les indices de niveau des prix par catégorie de
+   produit, le Luxembourg ramené à 100.
+
+Ce second tableau répond à une question que tout le monde pose : l'alimentation,
+l'habillement et les télécommunications reviennent moins cher chez les trois voisins,
+l'énergie, les carburants et le tabac au Luxembourg. La fiche « Habiter en France, en
+Belgique ou en Allemagne » traite le reste, c'est-à-dire les conséquences administratives :
+imposition du salaire au lieu de travail, taux effectif dans le pays de résidence, et les
+deux plafonds de télétravail, l'un fiscal en jours, l'autre social en part du temps, qui
+n'ont ni la même valeur ni les mêmes conséquences. Les valeurs chiffrées de ces plafonds ne
+sont volontairement pas recopiées : elles changent plus vite que le guide, et la fiche
+renvoie aux deux administrations qui les publient.
+
+Le fichier européen des limites communales pèse 126 Mo pour les cent mille communes des
+vingt-sept pays. Il est lu en flux et jamais chargé d'un bloc, et `frontaliers_kb.js` n'est
+téléchargé par le navigateur que si le visiteur passe effectivement de l'autre côté.
 
 Sur les inégalités, la limite est dite plutôt que contournée. Le STATEC ne publie pas de
 coefficient de Gini par commune, et il ne se déduit pas de quatre points de la

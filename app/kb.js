@@ -179,6 +179,45 @@ window.KB = {
       sources: [{ t: "mobiliteit.lu, horaires et itinéraires", u: "https://www.mobiliteit.lu/" }]
     },
     {
+      id: "frontalier",
+      titre: "Habiter en France, en Belgique ou en Allemagne",
+      resume: "Près d'un salarié sur deux habite de l'autre côté. Le salaire reste imposé au Luxembourg, mais le télétravail, les soins et l'école suivent le pays de résidence.",
+      cat: "Logement",
+      tags: ["frontalier", "frontaliers", "frontière", "France", "Belgique", "Allemagne", "Thionville", "Metz", "Arlon", "Trèves", "Trier", "télétravail", "convention fiscale", "double imposition", "taux effectif", "S1", "résidence", "habiter à l'étranger"],
+      corps: [
+        "Travailler au Luxembourg n'oblige pas à y habiter, et c'est le choix de près d'un salarié sur deux : plus de deux cent mille personnes franchissent la frontière chaque matin, de France surtout, puis de Belgique et d'Allemagne. Le loyer est la première raison, et l'écart est réel. Mais le choix ne se résume pas à un loyer, parce que passer la frontière déplace une partie de votre vie administrative dans le pays de résidence.",
+        { h: "Votre salaire reste imposé au Luxembourg" },
+        "Les conventions fiscales signées par le Luxembourg avec la France, la Belgique et l'Allemagne posent toutes la même règle : un salaire est imposable là où le travail est exercé. Un frontalier est donc imposé au Luxembourg sur son salaire luxembourgeois, avec la même retenue à la source qu'un résident, et la même fiche de retenue.",
+        "Le pays de résidence n'impose pas ce salaire une seconde fois, mais il le prend en compte pour calculer le taux appliqué à vos autres revenus. C'est ce qu'on appelle le taux effectif : si vous avez un revenu locatif ou un salaire de conjoint dans votre pays de résidence, il sera imposé à un taux calculé comme si le salaire luxembourgeois s'y ajoutait. Vous devez donc déclarer ce salaire chez vous, même s'il n'y est pas imposé. Beaucoup de nouveaux frontaliers l'apprennent l'année suivante.",
+        { h: "Le télétravail a deux plafonds, et ce ne sont pas les mêmes" },
+        "C'est le point qui surprend le plus, parce que deux règles différentes s'appliquent en même temps à la même journée passée à la maison.",
+        "Le premier plafond est fiscal. Au-delà d'un certain nombre de jours travaillés hors du Luxembourg dans l'année, la part correspondante du salaire devient imposable dans le pays de résidence. Ce seuil est fixé par un accord entre les deux États, il a déjà été relevé plusieurs fois, et il n'est pas identique pour les trois pays voisins.",
+        "Le second plafond est social. Il décide de la caisse à laquelle vous cotisez, et il s'exprime en part du temps de travail, pas en jours. Un accord européen permet de rester affilié au Luxembourg tout en télétravaillant depuis chez soi, à condition de rester sous cette part et d'en faire la demande. La dépasser fait basculer toute votre sécurité sociale vers le pays de résidence : caisse maladie, allocations et retraite changent de pays en même temps.",
+        "Retenez surtout que les deux seuils sont indépendants. On peut respecter l'un et dépasser l'autre, et les conséquences n'ont rien à voir. Les chiffres en vigueur se vérifient auprès de l'Administration des contributions directes pour le fiscal, et du Centre commun de la sécurité sociale pour le social : ce guide ne les recopie pas, parce qu'ils changent plus vite que lui.",
+        { h: "Santé, allocations, école : le quotidien suit la résidence" },
+        "Vous cotisez à la sécurité sociale luxembourgeoise et vous êtes affilié à la Caisse nationale de santé. Pour vous soigner près de chez vous, vous demandez le document S1, qui vous inscrit auprès de la caisse de votre pays de résidence. Vous êtes alors couvert des deux côtés de la frontière, ce qui est utile le jour où un enfant est malade un mercredi.",
+        "Les allocations familiales sont versées par la Caisse pour l'avenir des enfants, au titre de votre activité au Luxembourg. Si votre pays de résidence verse lui aussi une prestation pour le même enfant, les deux ne s'additionnent pas librement : les règles européennes désignent qui paie en premier, l'autre pays complétant la différence s'il est plus généreux.",
+        "L'école relève entièrement du pays de résidence, avec son calendrier, ses langues et ses vacances. Une famille qui hésite entre les deux côtés compare donc deux systèmes scolaires, et pas seulement deux loyers. C'est souvent ce critère, et non le prix, qui tranche.",
+        { h: "Ce que la frontière change dans le budget" },
+        "Les niveaux de prix ne sont pas les mêmes des quatre côtés, et l'écart ne va pas toujours dans le même sens. Les indices d'Eurostat, publiés dans l'onglet Les cent communes en passant de l'autre côté de la frontière, montrent que l'alimentation, l'habillement et les télécommunications reviennent moins cher chez les voisins, tandis que l'énergie, les carburants et le tabac le sont au Luxembourg. Un ménage frontalier fait donc rarement tout du même côté.",
+        "Le trajet, enfin, se mesure en temps et non en kilomètres. Les axes vers la capitale saturent le matin, et une commune à quarante kilomètres sur une ligne de train directe peut être plus proche, en temps, qu'une commune à vingt kilomètres sur l'autoroute. Les deux autres onglets de la famille Où habiter servent exactement à ce calcul."
+      ],
+      aRetenir: [
+        "Le salaire reste imposé au Luxembourg, mais il se déclare aussi dans le pays de résidence, pour le taux appliqué au reste.",
+        "Deux plafonds de télétravail coexistent, un fiscal en jours et un social en part du temps : ils n'ont ni la même valeur ni les mêmes conséquences.",
+        "Le document S1 ouvre les soins dans le pays de résidence, tout en restant affilié à la caisse luxembourgeoise.",
+        "L'école suit le pays de résidence, les allocations se coordonnent entre les deux."
+      ],
+      sources: [
+        { t: "Guichet.lu, travail et emploi", u: "https://guichet.public.lu/fr/citoyens/travail.html" },
+        { t: "Administration des contributions directes, conventions fiscales", u: "https://impotsdirects.public.lu/fr/conventions.html" },
+        { t: "Administration des contributions directes, télétravail", u: "https://impotsdirects.public.lu/fr/az/t/teletravail.html" },
+        { t: "Centre commun de la sécurité sociale", u: "https://ccss.public.lu/fr.html" },
+        { t: "Caisse nationale de santé", u: "https://cns.public.lu/fr.html" },
+        { t: "Caisse pour l'avenir des enfants, allocations", u: "https://cae.public.lu/fr/allocations.html" }
+      ]
+    },
+    {
       id: "reclamation",
       titre: "Contester une facture ou un service",
       cat: "Quotidien",
@@ -818,6 +857,9 @@ window.KB = {
   ],
 
   faq: [
+    { q: "Puis-je travailler au Luxembourg et habiter en France, en Belgique ou en Allemagne ?", a: "Oui, et près d'un salarié sur deux le fait. Le salaire reste imposé au Luxembourg, là où le travail est exercé, mais il doit aussi être déclaré dans le pays de résidence, où il sert à calculer le taux appliqué à vos autres revenus. La santé, les allocations et l'école suivent des règles de coordination entre les deux pays.", fiche: "frontalier" },
+    { q: "Combien de jours de télétravail un frontalier peut-il faire ?", a: "Deux plafonds différents s'appliquent en même temps, et ils ne se ressemblent pas. Le plafond fiscal se compte en jours par an et décide de la part du salaire imposable dans le pays de résidence. Le plafond social se compte en part du temps de travail et décide de la caisse à laquelle vous cotisez. Les valeurs changent régulièrement : elles se vérifient auprès de l'Administration des contributions directes et du Centre commun de la sécurité sociale.", fiche: "frontalier" },
+    { q: "Qu'est-ce qui coûte moins cher de l'autre côté de la frontière ?", a: "D'après les indices de niveau des prix d'Eurostat, l'alimentation, l'habillement et les télécommunications reviennent moins cher chez les trois voisins, tandis que l'énergie, les carburants et le tabac sont moins chers au Luxembourg. L'onglet Les cent communes publie le détail par catégorie, en passant de l'autre côté de la frontière.", fiche: "frontalier" },
     { q: "Sur quels critères choisir sa commune ?", a: "Pas sur la distance. En voiture, élargissez la zone et regardez le temps aux heures de pointe. En transports, vérifiez les horaires réels depuis l'arrêt le plus proche, y compris le week-end. Et cherchez autour de l'école, pas autour du bureau.", fiche: "choisir_commune" },
     { q: "Vers qui se tourner en cas de litige avec un professionnel ?", a: "Pour les communications électroniques, la médiation relève de l'Institut luxembourgeois de régulation et elle est gratuite. Pour les autres litiges de consommation, le service national du Médiateur de la consommation est compétent. Dans les deux cas, une réclamation écrite préalable au professionnel est une condition de recevabilité : un appel téléphonique ne suffit pas.", fiche: "reclamation" },
     { q: "Une complémentaire santé est-elle utile ?", a: "Elle est facultative et couvre surtout la chambre seule, le dentaire et l'optique. Si vous en prenez une, souscrivez dès l'arrivée : la plupart des contrats prévoient des délais de carence de plusieurs mois sur ces postes.", fiche: "assurance_sante" },

@@ -666,8 +666,8 @@
        "Indiquez le lieu où vous vous rendez chaque jour : tous les arrêts d'où l'on y arrive sans changement, colorés par temps de trajet.",
        "tout le réseau"],
       ["cartes", "Les cent communes", "Sante",
-       "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte.",
-       "48 indicateurs · 189 nationalités"]
+       "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte, et la carte passe de l'autre côté de la frontière.",
+       "48 indicateurs · 1 006 communes"]
     ].forEach(function (s) {
       g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }, null));
     });
