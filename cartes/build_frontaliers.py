@@ -48,6 +48,7 @@ USE_CACHE = "--cache" in sys.argv
 # communes : les recopier ici ferait deux versions à corriger au lieu d'une.
 sys.path.insert(0, HERE)
 from build_cartes import anneaux, encode_polyline, centroide  # noqa: E402
+from trajets import trajets  # noqa: E402
 
 LAU = "https://gisco-services.ec.europa.eu/distribution/v2/lau/geojson/LAU_RG_01M_2021_4326.geojson"
 EUROSTAT = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/%s?format=JSON&lang=FR&%s"
@@ -240,9 +241,11 @@ def main():
         d_bord = min((distance_km(c, b) for b in bord), default=None)
         pop = pr.get("POP_2021") or pr.get("POP_2020") or pr.get("POP")
         aire = pr.get("AREA_KM2") or pr.get("_AREA")
-        ind = {"dist_lux": round(d_lux, 1)}
+        ind = {}
         if d_bord is not None:
             ind["dist_frontiere"] = round(d_bord, 1)
+        # La distance à vol d'oiseau ne sert qu'à décider qui entre dans la
+        # base ; elle n'est pas publiée, parce qu'elle ne dit rien du trajet.
         if pop:
             ind["pop"] = int(pop)
         if aire:
@@ -273,6 +276,19 @@ def main():
     for z in zones:
         if vus[z["nom"]] > 1:
             z["nom"] = "%s %s" % (z["nom"], z["lau"].split("_")[-1])
+    print("   temps de route jusqu'à Luxembourg-Ville")
+    routes = trajets(zones)
+    manque_route = 0
+    for z in zones:
+        r = routes.get(z["lau"])
+        if r:
+            z["i"]["route_min"] = r[0]
+            z["i"]["route_km"] = r[1]
+        else:
+            manque_route += 1
+    if manque_route:
+        print("   %d communes sans temps de route" % manque_route)
+
     zones.sort(key=lambda z: (z["pays"], z["nom"] or ""))
     print("   retenues à moins de %d km de Luxembourg-Ville :" % RAYON_KM, dict(par_pays))
     manquants = collections.Counter()
@@ -349,15 +365,20 @@ def main():
     print("   %d catégories de prix, année %s" % (len(prix), an_prix))
 
     INDICATEURS = [
-        {"id": "dist_lux", "nom": "Distance de Luxembourg-Ville", "unite": "km", "sens": -1,
-         "fmt": "dec", "source": "Calculée à vol d'oiseau depuis le centre de la commune",
-         "aide": "À vol d'oiseau, et non en temps de trajet. Une commune à 30 km sur l'autoroute "
-                 "A31 aux heures de pointe est plus loin, en temps, qu'une commune à 45 km sur "
-                 "une ligne de train directe."},
+        {"id": "route_min", "nom": "Temps de route jusqu'à Luxembourg-Ville", "unite": "minutes",
+         "sens": -1, "fmt": "dec", "source": "Calculé sur le réseau routier par le service OSRM",
+         "aide": "Trajet en voiture à vitesse libre, sans embouteillage, depuis le centre de la "
+                 "commune jusqu'au centre de la capitale. Le matin, les axes vers le Luxembourg "
+                 "saturent et l'écart réel se creuse : ce chiffre sert à classer les communes "
+                 "entre elles, pas à prévoir une heure d'arrivée."},
+        {"id": "route_km", "nom": "Distance par la route", "unite": "km", "sens": -1,
+         "fmt": "dec", "source": "Calculée sur le réseau routier par le service OSRM",
+         "aide": "Par la route et non à vol d'oiseau : la Moselle, les crêtes de l'Eifel et le "
+                 "tracé des autoroutes changent beaucoup deux communes voisines."},
         {"id": "dist_frontiere", "nom": "Distance de la frontière", "unite": "km", "sens": -1,
-         "fmt": "dec", "source": "Calculée depuis les limites administratives luxembourgeoises",
-         "aide": "Utile pour les courses et les services du quotidien, moins pour le trajet du "
-                 "travail : la frontière n'est pas l'endroit où l'on va travailler."},
+         "fmt": "dec", "source": "Calculée à vol d'oiseau depuis les limites luxembourgeoises",
+         "aide": "Utile pour les courses et la station-service, moins pour le trajet du travail : "
+                 "la frontière n'est pas l'endroit où l'on va travailler."},
         {"id": "pop", "nom": "Population", "unite": "habitants", "sens": 0, "fmt": "ent",
          "source": "Eurostat GISCO, référentiel LAU 2021",
          "aide": "Comptée de la même façon dans les trois pays, ce que les recensements "
@@ -370,7 +391,7 @@ def main():
          "source": "Eurostat GISCO, référentiel LAU 2021", "aide": ""},
     ]
     GROUPES = [
-        ["Distance", ["dist_lux", "dist_frontiere"]],
+        ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
         ["Population", ["pop", "dens", "aire"]],
     ]
 
