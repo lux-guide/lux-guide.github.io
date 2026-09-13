@@ -36,19 +36,28 @@
   // sait pas ce qu'il regarde. Le fond clair passe donc dessous, les communes
   // au milieu, et les noms de lieux repassent par-dessus dans une couche à
   // part. C'est ce qui manquait : les noms étaient recouverts par la couleur.
-  var FOND = "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  var FOND_NOMS = "https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png";
-  var FOND_CREDIT = "© OpenStreetMap, © CARTO · Données : STATEC, ACT, Eurostat, INSEE, Statbel, IGSS";
+  // Fond gris clair d'Esri, fait pour porter des aplats de couleur, et sa
+  // couche de noms séparée. Aucune clé n'est demandée, contrairement à la
+  // plupart des fonds de ce genre.
+  var FOND = "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+  var FOND_NOMS = "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+  var FOND_SECOURS = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  var FOND_CREDIT = "Fond : Esri, © OpenStreetMap · Données : STATEC, ACT, Eurostat, INSEE, Statbel, IGSS";
+  var FOND_CREDIT_2 = "© OpenStreetMap · Données : STATEC, ACT, Eurostat, INSEE, Statbel, IGSS";
 
   // Les deux couches de tuiles et le panneau qui les sépare, posés sur une
   // carte Leaflet quelconque.
+  //
+  // Un fond de carte gratuit peut se fermer du jour au lendemain, ou répondre
+  // une tuile « clé d'interface demandée » au lieu d'une image. On surveille
+  // donc les erreurs de chargement : au-delà de quelques-unes, on bascule sur
+  // les tuiles d'OpenStreetMap, moins sobres mais toujours là. Mieux vaut une
+  // carte chargée qu'une carte élégante et vide.
   function poserFond(m, credit) {
-    L.tileLayer(FOND, {
-      maxZoom: 19, detectRetina: true,
+    var base = L.tileLayer(FOND, {
+      maxZoom: 19,
       attribution: credit === false ? "" : FOND_CREDIT
     }).addTo(m);
-    // Les noms vivent dans un panneau au-dessus des polygones, mais qui ne
-    // reçoit pas la souris : cliquer une commune doit rester possible.
     if (!m.getPane("noms")) {
       var pane = m.createPane("noms");
       // Au-dessus des communes (400), en dessous des bulles de survol (650) :
@@ -56,7 +65,27 @@
       pane.style.zIndex = 640;
       pane.style.pointerEvents = "none";
     }
-    L.tileLayer(FOND_NOMS, { maxZoom: 19, detectRetina: true, pane: "noms" }).addTo(m);
+    var noms = L.tileLayer(FOND_NOMS, { maxZoom: 19, pane: "noms" }).addTo(m);
+
+    var ratees = 0, bascule = false;
+    function surveiller() {
+      if (bascule || ++ratees < 4) return;
+      bascule = true;
+      m.removeLayer(base);
+      m.removeLayer(noms);
+      L.tileLayer(FOND_SECOURS, {
+        maxZoom: 19, opacity: .85,
+        attribution: credit === false ? "" : FOND_CREDIT_2
+      }).addTo(m);
+      // Sans couche de noms séparée, les aplats doivent laisser lire la carte.
+      Object.keys(formes).forEach(function (n) {
+        formes[n].forEach(function (p) {
+          if (p.options.fillOpacity > .5) p.setStyle({ fillOpacity: .5 });
+        });
+      });
+    }
+    base.on("tileerror", surveiller);
+    noms.on("tileerror", surveiller);
   }
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
