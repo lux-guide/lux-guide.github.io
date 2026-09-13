@@ -387,6 +387,28 @@ n'ont ni la même valeur ni les mêmes conséquences. Les valeurs chiffrées de 
 sont volontairement pas recopiées : elles changent plus vite que le guide, et la fiche
 renvoie aux deux administrations qui les publient.
 
+### Lire une carte d'un pays qu'on ne connaît pas
+
+Une carte thématique pose des aplats de couleur sur un territoire, et si le lecteur ne
+reconnaît ni les communes ni les régions, il ne sait pas ce qu'il regarde. Trois choses le
+rendent lisible.
+
+Le fond de carte est monté **en sandwich** : un fond clair dessous, les communes au milieu
+à 68 % d'opacité, et les **noms de lieux repassent par-dessus** dans un panneau Leaflet
+dédié, sans interception de la souris. C'était le défaut : les noms de villes existaient,
+mais la couleur les recouvrait.
+
+Chaque commune porte **sa région**, rattachée par la table de correspondance officielle
+entre communes et régions NUTS 3, et non par les premiers chiffres du code, qui marchent en
+France et moins ailleurs. La région s'affiche sous le nom de la commune, et une rangée de
+boutons ramène la carte à une seule d'entre elles : Moselle, Meurthe-et-Moselle, Meuse et
+Ardennes côté français, les quatre arrondissements côté belge, l'Eifelkreis Bitburg-Prüm,
+Trier-Saarburg, Bernkastel-Wittlich et les Kreise sarrois côté allemand.
+
+Enfin, un indicateur commun aux quatre pays dit **ville, bourg ou campagne** : c'est le
+degré d'urbanisation d'Eurostat, calculé sur la densité par carreau d'un kilomètre et non
+sur le statut administratif, donc comparable d'un pays à l'autre.
+
 Le fichier européen des limites communales pèse 126 Mo pour les cent mille communes des
 vingt-sept pays. Il est lu en flux et jamais chargé d'un bloc, et `frontaliers_kb.js` n'est
 téléchargé par le navigateur que si le visiteur passe effectivement de l'autre côté.

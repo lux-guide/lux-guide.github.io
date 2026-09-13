@@ -301,13 +301,24 @@ def main():
         print("   valeurs absentes :", dict(manquants))
 
     print("2. sources nationales, commune par commune")
+    reg, urb = voisins_data.regions(telecharger)
     front_lux, date_igss = voisins_data.frontaliers(telecharger)
     ind_fr, annees_fr = voisins_data.france(zones, telecharger)
     ind_be, an_be = voisins_data.belgique(zones, telecharger)
 
     pose_pays = collections.Counter()
+    sans_region = 0
     for z in zones:
         code = z["lau"].split("_")[-1]
+        r = reg.get((z["pays"], code))
+        if r:
+            z["nuts"] = r[0]
+            z["region"] = r[1]
+        else:
+            sans_region += 1
+        u = urb.get((z["pays"], code))
+        if u:
+            z["i"]["urbain"] = u
         k = voisins_data.cle(z["nom"].split(" (")[0])
         supp = {}
         if z["pays"] == "FR":
@@ -323,6 +334,8 @@ def main():
             if z["i"].get("pop"):
                 z["i"]["part_lux"] = round(100.0 * n / z["i"]["pop"], 1)
     print("   communes enrichies :", dict(pose_pays))
+    if sans_region:
+        print("   %d communes sans région rattachée" % sans_region)
     print("   %d communes avec un effectif travaillant au Luxembourg"
           % sum(1 for z in zones if "vers_lux" in z["i"]))
 
@@ -420,6 +433,11 @@ def main():
                  "un demi-kilomètre carré ne se vivent pas pareil."},
         {"id": "aire", "nom": "Superficie", "unite": "km²", "sens": 0, "fmt": "dec",
          "source": "Eurostat GISCO, référentiel LAU 2021", "aide": ""},
+        {"id": "urbain", "nom": "Ville, bourg ou campagne", "unite": "1 ville, 2 bourg, 3 rural",
+         "sens": 0, "fmt": "dec", "source": "Eurostat, degré d'urbanisation DEGURBA 2021",
+         "aide": "Classement européen en trois niveaux, appliqué de la même façon dans les "
+                 "quatre pays : ville, bourg ou banlieue, zone rurale. Il repose sur la densité "
+                 "de population par carreau d'un kilomètre, et non sur le statut administratif."},
         {"id": "vers_lux", "nom": "Habitants qui travaillent au Luxembourg", "unite": "personnes",
          "sens": 0, "fmt": "ent", "source": "IGSS, emploi par commune de résidence, " + date_igss,
          "aide": "Comptage administratif des personnes affiliées à la sécurité sociale "
@@ -512,7 +530,7 @@ def main():
             ["Frontaliers", ["part_lux", "vers_lux", "travail_hors"]],
             ["Revenus", ["med_sl", "salaire", "pauvrete"]],
             ["Emploi et formation", ["chomage", "part_sup"]],
-            ["Population", ["pop", "dens", "aire"]],
+            ["Population", ["pop", "dens", "aire", "urbain"]],
             ["Logement", ["proprietaires", "vacants"]],
             ["Commerces et écoles", ["supermarches", "boulangeries", "medecins",
                                      "maternelles", "primaires", "colleges"]],
@@ -522,12 +540,12 @@ def main():
             ["Frontaliers", ["part_lux", "vers_lux"]],
             ["Revenus et impôts", ["revenu_decl", "impot_moyen", "taxe_communale",
                                    "decl_sans_revenu"]],
-            ["Population", ["pop", "dens", "aire"]],
+            ["Population", ["pop", "dens", "aire", "urbain"]],
         ],
         "DE": [
             ["Trajet", ["route_min", "route_km", "dist_frontiere"]],
             ["Frontaliers", ["part_lux", "vers_lux"]],
-            ["Population", ["pop", "dens", "aire"]],
+            ["Population", ["pop", "dens", "aire", "urbain"]],
         ],
     }
     IND_PAYS = {"FR": IND_FR, "BE": IND_BE, "DE": IND_DE}
@@ -551,6 +569,19 @@ def main():
         GROUPES_PAYS[pays] = [[t, [x for x in l if x in ids]] for t, l in GROUPES_PAYS[pays]]
         GROUPES_PAYS[pays] = [g for g in GROUPES_PAYS[pays] if g[1]]
 
+    # Les régions présentes, pour que l'interface puisse ramener la carte à une
+    # seule d'entre elles.
+    REGIONS_PAYS = {}
+    for pays in ("FR", "BE", "DE"):
+        compte = collections.Counter()
+        for z in zones:
+            if z["pays"] == pays and z.get("region"):
+                compte[(z["nuts"], z["region"])] += 1
+        REGIONS_PAYS[pays] = [{"code": c, "nom": n, "n": v}
+                              for (c, n), v in sorted(compte.items(), key=lambda x: -x[1])]
+        print("   %s : %s" % (pays, ", ".join("%s (%d)" % (r["nom"], r["n"])
+                                              for r in REGIONS_PAYS[pays])))
+
     out = {
         "meta": {
             "construit": datetime.date.today().isoformat(),
@@ -569,7 +600,8 @@ def main():
         },
         "indicateurs": IND_PAYS["FR"],
         "groupes": GROUPES_PAYS["FR"],
-        "par_pays": {p: {"indicateurs": IND_PAYS[p], "groupes": GROUPES_PAYS[p]}
+        "par_pays": {p: {"indicateurs": IND_PAYS[p], "groupes": GROUPES_PAYS[p],
+                         "regions": REGIONS_PAYS[p]}
                      for p in ("FR", "BE", "DE")},
         "zones": zones,
         "regions": regions,

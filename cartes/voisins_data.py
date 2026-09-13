@@ -46,6 +46,67 @@ def cle(s):
     return " ".join(s.split())
 
 
+LAU_NUTS = ("https://ec.europa.eu/eurostat/documents/345175/501971/EU-27-LAU-2021-NUTS-2021.xlsx",
+            "lau_nuts.xlsx")
+NUTS_NOMS = ("https://gisco-services.ec.europa.eu/distribution/v2/nuts/csv/NUTS_AT_2021.csv",
+             "nuts_at.csv")
+
+# Degré d'urbanisation d'Eurostat, la même définition dans les quatre pays.
+DEGURBA = {1: "Ville", 2: "Bourg ou banlieue", 3: "Zone rurale"}
+
+
+def regions(telecharger):
+    """Région de chaque commune, et degré d'urbanisation.
+
+    Une carte thématique pose des couleurs sur un territoire que le lecteur ne
+    connaît pas. Savoir qu'une commune est en Moselle, dans l'arrondissement
+    d'Arlon ou dans le Trier-Saarburg lui rend le pays lisible, et permet de
+    ramener la carte à la seule région qui l'intéresse.
+
+    Le rapprochement passe par la table de correspondance officielle entre les
+    communes et les régions NUTS 3, et non par les premiers chiffres du code :
+    ceux-ci marchent en France, moins ailleurs.
+    """
+    import csv as _csv
+    import pandas as pd
+    p_noms = telecharger(*NUTS_NOMS)
+    noms = {}
+    for r in _csv.DictReader(io.open(p_noms, encoding="utf-8-sig")):
+        noms[r["NUTS_ID"]] = r["NAME_LATN"]
+    p_corr = telecharger(*LAU_NUTS)
+    out, urb = {}, {}
+    for pays in ("FR", "BE", "DE"):
+        d = pd.read_excel(p_corr, sheet_name=pays)
+        d.columns = [str(c).strip() for c in d.columns]
+        # Le tableur a lu les codes comme des nombres : les zéros de tête ont
+        # sauté, et un code allemand de huit chiffres en compte sept. On les
+        # remet, sinon presque aucune commune ne se rattache à sa région.
+        largeur = {"FR": 5, "BE": 5, "DE": 8}[pays]
+        for _, r in d.iterrows():
+            code = str(r["LAU CODE"]).strip()
+            if code.endswith(".0"):
+                code = code[:-2]
+            if code.isdigit():
+                code = code.zfill(largeur)
+            n3 = str(r["NUTS 3 CODE"]).strip()
+            nom = noms.get(n3)
+            if nom:
+                # « Arr. Arlon » se lit mal dans une liste : le mot entier vaut
+                # mieux que l'abréviation d'un formulaire européen.
+                if nom.startswith("Arr. "):
+                    reste = nom[5:]
+                    lien = "d'" if reste[:1].upper() in "AEIOUYH" else "de "
+                    nom = "Arrondissement " + lien + reste
+                nom = nom.replace("’", "'")
+            out[(pays, code)] = (n3, nom or n3)
+            try:
+                urb[(pays, code)] = int(r["DEGURBA"])
+            except (ValueError, TypeError, KeyError):
+                pass
+        print("   régions %s : %d communes rattachées" % (pays, len(d)))
+    return out, urb
+
+
 # ---------------------------------------------------------------- IGSS
 def frontaliers(telecharger):
     """Habitants de chaque commune qui travaillent au Luxembourg.

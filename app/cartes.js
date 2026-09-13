@@ -31,6 +31,33 @@
   // ne l'ouvriront jamais, et elle pèse autant que le reste de la page.
   var KB_FRONT = "cartes/frontaliers_kb.js?v=1";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  // Fond de carte en sandwich. Une carte thématique pose des aplats de couleur
+  // sur un territoire que le lecteur ne connaît pas : sans nom de ville, il ne
+  // sait pas ce qu'il regarde. Le fond clair passe donc dessous, les communes
+  // au milieu, et les noms de lieux repassent par-dessus dans une couche à
+  // part. C'est ce qui manquait : les noms étaient recouverts par la couleur.
+  var FOND = "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  var FOND_NOMS = "https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png";
+  var FOND_CREDIT = "© OpenStreetMap, © CARTO · Données : STATEC, ACT, Eurostat, INSEE, Statbel, IGSS";
+
+  // Les deux couches de tuiles et le panneau qui les sépare, posés sur une
+  // carte Leaflet quelconque.
+  function poserFond(m, credit) {
+    L.tileLayer(FOND, {
+      maxZoom: 19, detectRetina: true,
+      attribution: credit === false ? "" : FOND_CREDIT
+    }).addTo(m);
+    // Les noms vivent dans un panneau au-dessus des polygones, mais qui ne
+    // reçoit pas la souris : cliquer une commune doit rester possible.
+    if (!m.getPane("noms")) {
+      var pane = m.createPane("noms");
+      // Au-dessus des communes (400), en dessous des bulles de survol (650) :
+      // un nom de ville ne doit jamais passer devant l'infobulle qu'on lit.
+      pane.style.zIndex = 640;
+      pane.style.pointerEvents = "none";
+    }
+    L.tileLayer(FOND_NOMS, { maxZoom: 19, detectRetina: true, pane: "noms" }).addTo(m);
+  }
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
   // Rampe séquentielle bleue, du clair au foncé. Six pas retenus sur les onze
@@ -40,7 +67,7 @@
   var SANS = "#e8e8e6";
 
   var demarre = false, map = null, kb = null, courant = null, couche_nom = "communes";
-  var front = null;
+  var front = null, regionSel = null;
   var couche = null, formes = {}, classes = null, selection = null, cadreTotal = null;
   var nation = null, natMode = "pct", indNation = null;
   // Déroulé du temps : année affichée, échelle de couleurs calculée une fois
@@ -333,7 +360,9 @@
     if (estFrontalier()) {
       if (!front) return [];
       var p = PAYS_COUCHE[couche_nom];
-      return front.zones.filter(function (z) { return z.pays === p; });
+      return front.zones.filter(function (z) {
+        return z.pays === p && (!regionSel || z.nuts === regionSel);
+      });
     }
     return kb.communes;
   }
@@ -643,7 +672,7 @@
       f.forEach(function (poly) {
         poly.setStyle({
           fillColor: ok ? CAT[d] : SANS,
-          fillOpacity: ok ? Math.max(.22, Math.min(.9, .22 + .68 * (v / maxi))) : .4,
+          fillOpacity: ok ? Math.max(.18, Math.min(.8, .18 + .62 * (v / maxi))) : .4,
           color: "#ffffff", weight: 1
         });
         poly.unbindTooltip();
@@ -705,12 +734,12 @@
       f.forEach(function (poly) {
         poly.setStyle({
           fillColor: ok ? RAMPE[classe(v, br)] : SANS,
-          fillOpacity: ok ? .82 : .45,
+          fillOpacity: ok ? .68 : .35,
           color: "#ffffff", weight: 1
         });
         poly.unbindTooltip();
         poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) +
-          (estFrontalier() ? ' <span class="muted">' + esc(c.canton) + "</span>" : "") +
+          (estFrontalier() ? ' <span class="muted">' + esc(c.region || c.canton) + "</span>" : "") +
           "<small>" + esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
       });
     });
@@ -804,7 +833,8 @@
   // passé la frontière. Le champ est le même, la phrase ne peut pas l'être.
   function situation(c) {
     if (!c || !c.canton) return "";
-    return estFrontalier() ? c.canton : "canton de " + c.canton;
+    if (!estFrontalier()) return "canton de " + c.canton;
+    return c.region ? c.region + ", " + c.canton : c.canton;
   }
 
   function communeDe(nom) {
@@ -1285,13 +1315,12 @@
         preferCanvas: true, scrollWheelZoom: false, zoomControl: i === 0,
         zoomSnap: 0, attributionControl: false
       }).setView([49.78, 6.09], 8);
-      L.tileLayer("https://wmts{s}.geoportail.lu/opendata/wmts/topomap_gray/GLOBAL_WEBMERCATOR/{z}/{x}/{y}.png",
-        { subdomains: "1234", maxZoom: 19, opacity: .28 }).addTo(m);
+      poserFond(m, false);
       var couche_i = L.layerGroup().addTo(m);
       formesCmp[i] = {};
       kb.communes.forEach(function (c) {
         formesCmp[i][c.nom] = c.g.map(function (enc) {
-          var poly = L.polygon(decoder(enc), { color: "#fff", weight: .8, fillOpacity: .82 })
+          var poly = L.polygon(decoder(enc), { color: "#fff", weight: .8, fillOpacity: .68 })
             .addTo(couche_i);
           poly.on("mouseover", function () { survolCmp(c.nom, true); });
           poly.on("mouseout", function () { survolCmp(c.nom, false); });
@@ -1350,7 +1379,7 @@
     kb.communes.forEach(function (c) {
       var v = c.i[id], ok = v !== undefined;
       (formesCmp[i][c.nom] || []).forEach(function (poly) {
-        poly.setStyle({ fillColor: ok ? RAMPE[classe(v, br)] : SANS, fillOpacity: ok ? .82 : .45 });
+        poly.setStyle({ fillColor: ok ? RAMPE[classe(v, br)] : SANS, fillOpacity: ok ? .68 : .35 });
         poly.unbindTooltip();
         poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) + "<small>" +
           esc(ind.nom) + " : " + nf(v, ind.fmt) + "</small></span>", { sticky: true });
@@ -1412,6 +1441,20 @@
       '" data-couche="be">Belgique</button>' +
       '<button class="chip' + (couche_nom === "de" ? " actif" : "") +
       '" data-couche="de">Allemagne</button></div>';
+    // Troisième rangée : les régions du pays affiché. Une carte de cinq cents
+    // communes qu'on ne connaît pas se lit mieux ramenée à un département.
+    var v = coucheVoisine();
+    if (v && v.regions && v.regions.length > 1) {
+      h += '<div class="ct-couches ct-voisins"><span>Région</span>' +
+        '<button class="chip' + (regionSel ? "" : " actif") + '" data-region="">Toutes</button>';
+      v.regions.forEach(function (r) {
+        h += '<button class="chip' + (regionSel === r.code ? " actif" : "") +
+          '" data-region="' + r.code + '">' + esc(r.nom) +
+          ' <span class="muted">' + r.n + "</span></button>";
+      });
+      h += "</div>";
+    }
+
     // Les familles d'abord, sur une rangée ; puis les indicateurs de la
     // famille ouverte. La famille de l'indicateur affiché s'ouvre d'elle-même.
     var fams = (quart ? GROUPES_QUARTIERS : groupes()).map(function (g) {
@@ -1528,6 +1571,13 @@
     }
     var cmp = k.querySelector("button[data-natcmp]");
     if (cmp) cmp.addEventListener("click", lancerComparaison);
+    k.querySelectorAll("button[data-region]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        regionSel = b.dataset.region || null;
+        // Les formes affichées changent : on redessine la couche entière.
+        redessinerCouche();
+      });
+    });
     k.querySelectorAll("button[data-mode]").forEach(function (b) {
       b.addEventListener("click", function () {
         natMode = b.dataset.mode;
@@ -1579,6 +1629,35 @@
     if (bc) bc.addEventListener("click", basculerComparaison);
   }
 
+  // Reconstruit les polygones de la couche courante. Sert au changement de
+  // couche comme au filtrage par région : dans les deux cas, l'ensemble des
+  // zones à dessiner change.
+  function redessinerCouche() {
+    Object.keys(formes).forEach(function (n) {
+      formes[n].forEach(function (p) { couche.removeLayer(p); });
+    });
+    formes = {};
+    selection = null;
+    panierCommunes = [];
+    var tous = [];
+    zones().forEach(function (c) {
+      formes[c.nom] = c.g.map(function (enc) {
+        var pts = decoder(enc);
+        tous = tous.concat(pts);
+        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
+        poly.on("click", function () { choisir(c.nom); });
+        return poly;
+      });
+    });
+    if (tous.length) {
+      cadreTotal = L.latLngBounds(tous);
+      map.fitBounds(cadreTotal, { padding: [8, 8] });
+    }
+    boutons();
+    dessiner();
+    fiche();
+  }
+
   function changerCouche(nom) {
     if (nom === couche_nom) return;
     // La base des voisins n'est chargée qu'à la première visite de l'autre côté.
@@ -1597,6 +1676,7 @@
     selection = null;
     panierCommunes = [];
     famille = null;
+    regionSel = null;
     // Garder l'indicateur courant s'il existe aussi dans l'autre niveau, sinon
     // prendre le premier proposé : passer de « salaire médian » aux quartiers,
     // qui n'ont pas de salaires, ne doit pas vider la carte.
@@ -1613,7 +1693,7 @@
       formes[c.nom] = c.g.map(function (enc) {
         var pts = decoder(enc);
         tous = tous.concat(pts);
-        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .82 }).addTo(couche);
+        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
         poly.on("click", function () { choisir(c.nom); });
         return poly;
       });
@@ -1680,10 +1760,7 @@
       return d;
     });
 
-    L.tileLayer("https://wmts{s}.geoportail.lu/opendata/wmts/topomap_gray/GLOBAL_WEBMERCATOR/{z}/{x}/{y}.png", {
-      subdomains: "1234", maxZoom: 19, opacity: .35,
-      attribution: "Fond : geoportail.lu · Données : STATEC, ACT, Observatoire de l'Habitat"
-    }).addTo(map);
+    poserFond(map, true);
 
     couche = L.layerGroup().addTo(map);
     var tous = [];
@@ -1692,7 +1769,7 @@
       formes[c.nom] = c.g.map(function (enc) {
         var pts = decoder(enc);
         tous = tous.concat(pts);
-        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .82 }).addTo(couche);
+        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
         poly.on("click", function () { choisir(c.nom); });
         return poly;
       });
