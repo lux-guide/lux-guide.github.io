@@ -1,5 +1,6 @@
 // Simulateur de salaire net luxembourgeois.
-// Bareme officiel ACD 2025 (voir bareme.js). Parametres sociaux 2026.
+// Bareme officiel ACD 2025 (voir bareme.js), toujours en vigueur en 2026 : l'ACD
+// n'a pas publie de bareme 2026. Parametres sociaux 2026, credits d'impot 2026.
 // Resultat indicatif : il ne remplace pas une fiche de paie ni un calcul de l'ACD.
 
 window.SIM = (function () {
@@ -22,7 +23,33 @@ window.SIM = (function () {
     impatrieTaux: 0.50,        // 50 % du brut exonere
     impatriePlafond: 400000,   // remuneration eligible plafonnee
     fraisObtention: 540,       // forfait annuel
-    depensesSpeciales: 480     // forfait annuel
+    depensesSpeciales: 480,    // forfait annuel
+
+    // Credits d'impot portes sur la fiche de paie par l'employeur. Ils sont
+    // restituables : ils s'ajoutent au net meme quand l'impot est nul. Sans
+    // eux, le net affiche etait trop bas, jusqu'a 200 EUR par mois pour un
+    // salaire modeste. Sources : ACD, CIS et CI-CO2 salarie a partir de
+    // l'annee d'imposition 2026 ; CISSM, exemples de calcul du 11.02.2025 ;
+    // CIM a partir de l'annee d'imposition 2025.
+    cisMin: 936,               // en dessous, aucun credit
+    cisBas: 300,               // de 936 a 11 265 : 300 + (brut - 936) x 0,029
+    cisTauxBas: 0.029,
+    cisSeuil1: 11265,
+    cisPlein: 600,             // de 11 266 a 40 000 : 600 par an
+    cisSeuil2: 40000,
+    cisTauxHaut: 0.015,        // de 40 001 a 79 999 : 600 - (brut - 40 000) x 0,015
+    cisFin: 80000,             // a partir de 80 000 : rien
+    cico2Plein: 216,           // jusqu'a 40 000 : 216 par an
+    cico2Taux: 0.0054,         // de 40 001 a 79 999 : 216 - (brut - 40 000) x 0,0054
+    cissmMensuel: 81,          // brut mensuel de 1 800 a 3 000 : 81 par mois
+    cissmBas: 1800,
+    cissmPalier: 3000,
+    cissmHaut: 3600,           // de 3 000 a 3 600 : 81/600 x (3 600 - brut mensuel)
+    cimPlein: 3504,            // revenu imposable ajuste jusqu'a 60 000 : 3 504 par an
+    cimSeuil1: 60000,
+    cimSeuil2: 105000,         // au-dela : 750 par an
+    cimTaux: 0.0612,           // entre les deux : 3 504 - (revenu - 60 000) x 0,0612
+    cimMin: 750
   };
 
   function params() { return P; }
@@ -41,8 +68,46 @@ window.SIM = (function () {
     return Math.max(0, last[2] * R - last[3]);
   }
 
+  // ---------- Credits d'impot ----------
+
+  // Credit d'impot pour salaries, sur le salaire brut annuel.
+  function creditSalarie(brut) {
+    if (brut < P.cisMin) return 0;
+    if (brut <= P.cisSeuil1) return P.cisBas + (brut - P.cisMin) * P.cisTauxBas;
+    if (brut <= P.cisSeuil2) return P.cisPlein;
+    if (brut < P.cisFin) return Math.max(0, P.cisPlein - (brut - P.cisSeuil2) * P.cisTauxHaut);
+    return 0;
+  }
+
+  // Credit d'impot CO2 du salarie, memes bornes que le CIS.
+  function creditCO2(brut) {
+    if (brut < P.cisMin) return 0;
+    if (brut <= P.cisSeuil2) return P.cico2Plein;
+    if (brut < P.cisFin) return Math.max(0, P.cico2Plein - (brut - P.cisSeuil2) * P.cico2Taux);
+    return 0;
+  }
+
+  // Credit d'impot salaire social minimum, calcule mois par mois sur le brut
+  // mensuel d'un temps plein.
+  function creditSSM(brutMensuel) {
+    if (brutMensuel < P.cissmBas || brutMensuel >= P.cissmHaut) return 0;
+    if (brutMensuel <= P.cissmPalier) return P.cissmMensuel;
+    return P.cissmMensuel / (P.cissmHaut - P.cissmPalier) * (P.cissmHaut - brutMensuel);
+  }
+
+  // Credit d'impot monoparental, sur le revenu imposable ajuste. Il est reduit
+  // de la moitie des allocations percues pour l'enfant au-dela de 2 712 EUR
+  // par an ; cette reduction depend de la situation et n'est pas modelisee.
+  function creditMonoparental(imposable) {
+    if (imposable <= P.cimSeuil1) return P.cimPlein;
+    if (imposable <= P.cimSeuil2) {
+      return Math.max(P.cimMin, P.cimPlein - (imposable - P.cimSeuil1) * P.cimTaux);
+    }
+    return P.cimMin;
+  }
+
   // opts : { brut, classe: 'classe1'|'classe1a'|'classe2', impatrie: bool,
-  //          mois: 12|13, forfaits: bool }
+  //          mois: 12|13, forfaits: bool, monoparental: bool }
   function calcul(opts) {
     var brut = Math.max(0, Number(opts.brut) || 0);
     var classe = opts.classe || "classe1";
@@ -75,7 +140,17 @@ window.SIM = (function () {
     var fonds = impot * tauxFonds;
     var impotTotal = impot + fonds;
 
-    var netAnnuel = netAvantImpot - impotTotal;
+    // Les credits s'imputent sur l'impot, fonds pour l'emploi compris, et le
+    // surplus est verse : ils s'ajoutent donc au net tels quels. Le CISSM
+    // suit le salaire mensuel courant ; un treizieme mois est une remuneration
+    // non periodique, il n'en porte pas.
+    var cis = creditSalarie(brut);
+    var cico2 = creditCO2(brut);
+    var cissm = 12 * creditSSM(brut / mois);
+    var cim = opts.monoparental ? creditMonoparental(imposable) : 0;
+    var credits = cis + cico2 + cissm + cim;
+
+    var netAnnuel = netAvantImpot - impotTotal + credits;
 
     return {
       brut: brut,
@@ -89,6 +164,11 @@ window.SIM = (function () {
       fondsEmploi: fonds,
       tauxFondsEmploi: tauxFonds,
       impotTotal: impotTotal,
+      cis: cis,
+      cico2: cico2,
+      cissm: cissm,
+      cim: cim,
+      credits: credits,
       netAnnuel: netAnnuel,
       netMensuel: netAnnuel / mois,
       mois: mois,
@@ -128,7 +208,9 @@ window.SIM = (function () {
 
     var retenueTotale = rP.impotTotal + impotSecondaire;
     var netAvantImpotMenage = rP.netAvantImpot + rS.netAvantImpot;
-    var netRetenue = netAvantImpotMenage - retenueTotale;
+    // Chaque conjoint touche ses propres credits, sur son propre salaire.
+    var creditsMenage = rP.credits + rS.credits;
+    var netRetenue = netAvantImpotMenage - retenueTotale + creditsMenage;
 
     // Régularisation annuelle : barème appliqué au revenu imposable cumulé.
     var imposableCumule = Math.max(0, rP.imposable + rS.netAvantImpot - (forfaits ? (P.fraisObtention + P.depensesSpeciales) : 0));
@@ -136,7 +218,7 @@ window.SIM = (function () {
     var seuil = (classe === "classe2") ? P.seuilFondsClasse2 : P.seuilFondsClasse1;
     var tauxFonds = imposableCumule > seuil ? P.fondsEmploiTaux2 : P.fondsEmploi;
     var impotAssietteTotal = impotAssiette * (1 + tauxFonds);
-    var netReel = netAvantImpotMenage - impotAssietteTotal;
+    var netReel = netAvantImpotMenage - impotAssietteTotal + creditsMenage;
 
     return {
       brutPrincipal: principal,
@@ -147,6 +229,7 @@ window.SIM = (function () {
       tauxFixeSecondaire: tauxFixe,
       impotPrincipal: rP.impotTotal,
       impotSecondaire: impotSecondaire,
+      credits: creditsMenage,
       retenueTotale: retenueTotale,
       netRetenue: netRetenue,
       netMensuelRetenue: netRetenue / mois,
@@ -207,6 +290,10 @@ window.SIM = (function () {
     tauxFicheAdditionnelle: TAUX_FICHE_ADDITIONNELLE,
     comparatif: comparatif,
     impotBareme: impotBareme,
+    creditSalarie: creditSalarie,
+    creditCO2: creditCO2,
+    creditSSM: creditSSM,
+    creditMonoparental: creditMonoparental,
     capaciteEmprunt: capaciteEmprunt,
     mensualite: mensualite,
     params: params,

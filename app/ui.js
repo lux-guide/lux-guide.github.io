@@ -1235,7 +1235,8 @@
       classe: $("#s-classe").value,
       mois: mois,
       impatrie: $("#s-impatrie").checked,
-      forfaits: $("#s-forfaits").checked
+      forfaits: $("#s-forfaits").checked,
+      monoparental: $("#s-monoparental") ? $("#s-monoparental").checked : false
     });
 
     var k = $("#s-kpis");
@@ -1265,6 +1266,11 @@
     lignes.push(["Revenu imposable retenu", eur(r.imposable)]);
     lignes.push(["Impôt sur le revenu", "- " + eur(r.impot)]);
     lignes.push(["Fonds pour l'emploi (" + pct(r.tauxFondsEmploi) + ")", "- " + eur(r.fondsEmploi)]);
+    // Les credits portes sur la fiche de paie, un par ligne quand il joue.
+    if (r.cis > 0) lignes.push(["Crédit d'impôt pour salariés", "+ " + eur(r.cis)]);
+    if (r.cico2 > 0) lignes.push(["Crédit d'impôt CO2", "+ " + eur(r.cico2)]);
+    if (r.cissm > 0) lignes.push(["Crédit d'impôt salaire social minimum", "+ " + eur(r.cissm)]);
+    if (r.cim > 0) lignes.push(["Crédit d'impôt monoparental", "+ " + eur(r.cim)]);
     lignes.push(["Net annuel", eur(r.netAnnuel)]);
     lignes.push(["Net sur " + r.mois + " mois", eur(r.netMensuel)]);
     var tb = el("tbody");
@@ -1280,7 +1286,7 @@
     if (r.brut > 0) {
       var rep = el("div", "repartition");
       var b = el("div", "barre");
-      var pNet = r.netAnnuel / r.brut, pImp = r.impotTotal / r.brut;
+      var pNet = r.netAnnuel / r.brut, pImp = Math.max(0, r.impotTotal - r.credits) / r.brut;
       var pCot = Math.max(0, 1 - pNet - pImp);
       var sNet = el("span", "net"); sNet.style.width = (pNet * 100) + "%";
       var sImp = el("span", "impot"); sImp.style.width = (pImp * 100) + "%";
@@ -1314,19 +1320,22 @@
           forfaits: $("#s-forfaits").checked
         });
 
-        zoneM.appendChild(el("h2", null, "Le ménage, avec deux salaires"));
+        zoneM.appendChild(el("h2", null, "À deux salaires : ce qui est retenu, et ce qui est vraiment dû"));
 
         var intro = el("p", "lead small");
-        intro.textContent = "Aucun employeur ne connaît le salaire du conjoint. Le plus élevé des deux "
-          + "porte la fiche principale et subit le barème ; le second est retenu à un taux fixe de "
-          + pct(m.tauxFixeSecondaire) + ", qui ne dépend que de la classe d'impôt. La déclaration "
-          + "annuelle commune régularise ensuite l'écart.";
+        intro.textContent = "Personne ne vous demande le salaire de votre conjoint, et c'est normal : "
+          + "aucun employeur ne le connaît. Le plus élevé des deux porte la fiche principale et "
+          + "subit le barème ; le second est retenu à un taux fixe de " + pct(m.tauxFixeSecondaire)
+          + ", qui ne dépend que de la classe d'impôt. Chacun reçoit donc son net comme si l'autre "
+          + "n'existait pas. La déclaration annuelle commune recalcule ensuite l'impôt du ménage sur "
+          + "les deux salaires réunis, et l'écart se paie ou se rembourse l'année suivante. Le net "
+          + "réel, celui qui reste une fois cet écart réglé, est la deuxième colonne.";
         zoneM.appendChild(intro);
 
         var km = el("div", "kpis");
-        [["Net mensuel retenu", eur(m.netMensuelRetenue), true],
-         ["Net mensuel réel", eur(m.netMensuelReel), false],
-         [m.solde >= 0 ? "Solde à payer" : "Remboursement attendu", eur(Math.abs(m.solde)), false],
+        [["Net mensuel du ménage, sur les paies", eur(m.netMensuelRetenue), false],
+         ["Net mensuel réel, après déclaration", eur(m.netMensuelReel), true],
+         [m.solde >= 0 ? "À payer l'année suivante" : "Remboursement l'année suivante", eur(Math.abs(m.solde)), false],
          ["Brut du ménage", eur(m.brutMenage), false]
         ].forEach(function (x) {
           var d = el("div", "kpi" + (x[2] ? " hl" : ""));
@@ -1684,7 +1693,7 @@
         if (b.dataset.sim === "officiels") rendreOutilsOfficiels();
       });
     });
-    ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits"].forEach(function (s) {
+    ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits", "#s-monoparental"].forEach(function (s) {
       $(s).addEventListener("input", majSimulateur);
       $(s).addEventListener("change", majSimulateur);
     });
@@ -4123,7 +4132,16 @@
       impatrieTaux: "Exonération impatriés",
       impatriePlafond: "Plafond de rémunération éligible",
       fraisObtention: "Forfait frais d'obtention",
-      depensesSpeciales: "Forfait dépenses spéciales"
+      depensesSpeciales: "Forfait dépenses spéciales",
+      cisPlein: "Crédit salarié, montant plein",
+      cisSeuil2: "Crédit salarié, début de la dégressivité",
+      cisFin: "Crédit salarié, plus rien à partir de",
+      cico2Plein: "Crédit CO2, montant plein",
+      cissmMensuel: "Crédit salaire social minimum, par mois",
+      cissmBas: "Crédit SSM, brut mensuel minimum",
+      cissmHaut: "Crédit SSM, plus rien à partir de",
+      cimPlein: "Crédit monoparental, montant plein",
+      cimMin: "Crédit monoparental, plancher"
     };
     var cont = $("#a-params");
     cont.innerHTML = "";

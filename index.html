@@ -193,8 +193,10 @@
   <section class="panel" role="region" aria-labelledby="nom-simulateur" id="panel-simulateur" hidden>
     <h1>Simulateur de salaire net</h1>
     <p class="lead">
-      Barème officiel de l'Administration des contributions directes et paramètres sociaux en vigueur.
-      Résultat indicatif : il ne remplace ni une fiche de paie, ni un calcul de l'administration.
+      Barème officiel de l'Administration des contributions directes, paramètres sociaux 2026,
+      et les crédits d'impôt que l'employeur porte sur la fiche de paie : salarié, CO2, salaire
+      social minimum et, sur demande, monoparental. Résultat indicatif : il ne remplace ni une
+      fiche de paie, ni un calcul de l'administration.
     </p>
 
     <div class="sous-onglets" id="sim-tabs">
@@ -227,8 +229,8 @@
           </select>
         </div>
         <div>
-          <label for="s-brut2">Salaire du conjoint (EUR, facultatif)</label>
-          <input type="number" id="s-brut2" value="0" min="0" step="1000" placeholder="0">
+          <label for="s-brut2">Brut annuel du conjoint, pour le net après déclaration commune</label>
+          <input type="number" id="s-brut2" value="0" min="0" step="1000" placeholder="0 si une seule paie">
         </div>
       </div>
       <div class="row" style="margin-top:12px">
@@ -240,6 +242,10 @@
         <div class="check">
           <input type="checkbox" id="s-forfaits" checked>
           <label for="s-forfaits">Forfaits frais et dépenses spéciales</label>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="s-monoparental">
+          <label for="s-monoparental">Parent seul avec enfant à charge, crédit d'impôt monoparental</label>
         </div>
       </div>
     </div>

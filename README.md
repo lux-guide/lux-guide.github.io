@@ -198,6 +198,15 @@ Chaîne de calcul :
 3. Exonération de 50 % au titre du régime des impatriés, si l'option est cochée.
 4. Forfaits de frais d'obtention et de dépenses spéciales, optionnels.
 5. Impôt selon le barème, puis contribution au fonds pour l'emploi.
+6. Crédits d'impôt portés sur la fiche de paie, tous restituables : crédit pour salariés
+   (jusqu'à 600 € par an, nul à partir de 80 000 € de brut), crédit CO2 (216 € jusqu'à
+   40 000 €, dégressif ensuite), crédit salaire social minimum (81 € par mois entre 1 800 et
+   3 000 € de brut mensuel, dégressif jusqu'à 3 600 €), et sur demande le crédit
+   monoparental (3 504 € par an jusqu'à 60 000 € de revenu imposable, 750 € au-delà de
+   105 000 €). Ils manquaient, et le net affiché était trop bas, jusqu'à 200 € par mois pour
+   un salaire modeste. Le barème 2025 reste celui de 2026 : l'administration n'en a pas
+   publié d'autre. La cotisation pension est passée à 8,5 % au 1er janvier 2026, loi du
+   18 décembre 2025.
 
 **Limite à connaître.** Le résultat correspond à la retenue sur un seul salaire. En classe 2, la déclaration retient un taux moyen mondial qui intègre les revenus étrangers exonérés : le net réel peut être inférieur. Le simulateur donne donc un plafond, pas un net définitif, et l'interface le dit (encadré « un ordre de grandeur, pas un chiffre à l'euro près »). Aucune marge chiffrée n'est affichée : aucune source n'en donne, et l'écart dépend de la situation.
 
