@@ -564,6 +564,19 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
    liste deroulante longue ; celle du pret en porte six, qui se replient par
    trois puis par deux. */
 .e-personnes { display: grid; gap: 14px; grid-template-columns: 1fr; }
+.e-qui { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.e-qui-choix {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer; margin: 0;
+  padding: 14px 16px; border: 1px solid var(--border-fort); border-radius: 12px; background: var(--surface);
+  transition: border-color .16s, background .16s;
+}
+.e-qui-choix:hover { border-color: var(--accent); }
+.e-qui-choix input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.e-qui-choix span { display: flex; flex-direction: column; gap: 2px; }
+.e-qui-choix b { font-size: 15px; color: var(--text); }
+.e-qui-choix i { font-style: normal; font-size: 13px; color: var(--muted); }
+.e-qui-choix:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+@media (max-width: 620px) { .e-qui { grid-template-columns: 1fr; } }
 .e-personne { padding: 14px 16px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
 .e-personne h4, .e-sous { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
 .e-sous { margin-top: 22px; }

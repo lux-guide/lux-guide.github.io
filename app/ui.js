@@ -1550,7 +1550,7 @@
   function majEtranger(o) {
     var z = $("#e-etranger");
     if (!z) return;
-    var p1 = $("#e-pays1").value, p2 = o.acquereurs > 1 || o.netConjoint > 0 ? $("#e-pays2").value : "lu";
+    var p1 = $("#e-pays1").value, p2 = o.acquereurs > 1 ? $("#e-pays2").value : "lu";
     var hors = [p1, p2].filter(function (p) { return p !== "lu"; });
     z.hidden = !hors.length;
     if (!hors.length) return;
@@ -1588,7 +1588,7 @@
     };
     var lignes = [
       { l: nom(1, "Votre net"), brut: v("#e-net1"), part: (Number($("#e-statut1").value) || 1) * decote(1) },
-      { l: nom(2, "Net du conjoint"), brut: v("#e-net2"), part: (Number($("#e-statut2").value) || 1) * decote(2) },
+      { l: nom(2, "Net de la seconde personne"), brut: acq > 1 ? v("#e-net2") : 0, part: (Number($("#e-statut2").value) || 1) * decote(2) },
       { l: "Loyers perçus", brut: v("#e-loyers"), part: part },
       { l: "Primes et bonus", brut: v("#e-variables"), part: part },
       { l: "Allocations, pension reçue, autres", brut: v("#e-autres"), part: 1 }
@@ -1652,7 +1652,17 @@
     return { wrap: wrap, tb: tb };
   }
 
+  // Une ou deux personnes : le choix vient en premier, et le bloc de la
+  // seconde personne n'apparait que si l'on achete a deux.
+  function majQui() {
+    var deux = $("#e-acquereurs").value === "2";
+    $$("input[name=e-qui]").forEach(function (r) { r.checked = r.value === (deux ? "2" : "1"); });
+    $("#e-personne2").hidden = !deux;
+    $("#e-titre1").textContent = deux ? "La première personne" : "Vous";
+  }
+
   function majEmprunt() {
+    majQui();
     var o = lireEmprunt();
     var plan = window.SIM.planFinancement(o);
     majEtranger(o);
@@ -2358,15 +2368,20 @@
     });
     // Le net calcule sur l'autre sous-onglet se reporte d'un clic : c'est le
     // meme chiffre que la banque demande, et personne ne devrait le retaper.
+    $$("input[name=e-qui]").forEach(function (r) {
+      r.addEventListener("change", function () {
+        $("#e-acquereurs").value = r.value;
+        majEmprunt(); sauverSimulateur();
+      });
+    });
     $("#e-reprendre").addEventListener("click", function () {
       if (!dernierNetSim) return;
       // Le simulateur ne calcule que des salaires luxembourgeois : le net d'un
       // emprunteur paye ailleurs n'est pas remplace.
       var copie = [];
       if ($("#e-pays1").value === "lu") { $("#e-net1").value = Math.round(dernierNetSim.net1); copie.push(eur(dernierNetSim.net1)); }
-      if (dernierNetSim.net2 > 0 && $("#e-pays2").value === "lu") {
+      if (dernierNetSim.net2 > 0 && $("#e-acquereurs").value === "2" && $("#e-pays2").value === "lu") {
         $("#e-net2").value = Math.round(dernierNetSim.net2);
-        $("#e-acquereurs").value = "2";
         copie.push(eur(dernierNetSim.net2));
       }
       $("#e-reprendre-info").textContent = copie.length

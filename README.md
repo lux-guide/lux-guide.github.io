@@ -239,7 +239,8 @@ formule d'annuité, puis prix maximal trouvé par dichotomie sous la double cont
 sont les droits d'enregistrement et de transcription (7 %) moins le Bëllegen Akt (40 000 € par
 acquéreur, loi du 3 juillet 2025 ; 45 000 € annoncés le 16 juillet 2026, loi à voter), les
 honoraires du notaire au barème par tranches, et l'acte de prêt (droit d'obligation 0,24 %,
-inscription 0,05 %, honoraires). Les revenus se saisissent en entier : chaque emprunteur séparément (net après retenue, type
+inscription 0,05 %, honoraires). Le formulaire commence par « J'achète seul » ou « Nous achetons à deux » ; le bloc de la
+seconde personne n'apparaît qu'à deux. Les revenus se saisissent en entier : chaque emprunteur séparément (net après retenue, type
 de contrat, âge), les loyers perçus, les primes, les allocations et pensions reçues, puis les
 crédits en cours et les autres charges fixes. La banque ne retient qu'une part des loyers, des
 primes et des revenus d'un CDD ou d'un indépendant (80 % par défaut, réglable), et le plan

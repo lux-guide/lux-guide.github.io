@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=38">
+<link rel="stylesheet" href="app/styles.css?v=39">
 </head>
 <body>
 
@@ -340,10 +340,21 @@
       puis le prix d'achat une fois les frais d'acte payés.
     </p>
     <div class="card">
-      <h3 class="premier">Ce que le ménage gagne, et ce qu'il rembourse déjà</h3>
+      <h3 class="premier">Qui achète</h3>
+      <div class="e-qui" role="radiogroup" aria-label="Qui achète">
+        <label class="e-qui-choix"><input type="radio" name="e-qui" value="1" checked> <span><b>J'achète seul</b><i>Une personne sur l'acte et sur le prêt</i></span></label>
+        <label class="e-qui-choix"><input type="radio" name="e-qui" value="2"> <span><b>Nous achetons à deux</b><i>Deux personnes sur l'acte, les deux revenus comptent</i></span></label>
+      </div>
+      <select id="e-acquereurs" hidden aria-hidden="true" tabindex="-1">
+        <option value="1" selected>Une personne</option>
+        <option value="2">Deux personnes</option>
+      </select>
+      <p class="aide-champ">Le Bëllegen Akt, les plafonds des aides et la part des revenus que la banque retient se comptent par personne inscrite sur l'acte.</p>
+
+      <h3>Ce que le ménage gagne, et ce qu'il rembourse déjà</h3>
       <div class="e-personnes">
         <div class="e-personne">
-          <h4>Vous</h4>
+          <h4 id="e-titre1">Vous</h4>
           <div class="row row-personne avec-aides">
         <div>
           <label for="e-net1">Net mensuel, après retenue</label>
@@ -374,12 +385,12 @@
         </div>
           </div>
         </div>
-        <div class="e-personne">
-          <h4>Votre conjoint, s'il emprunte avec vous</h4>
+        <div class="e-personne" id="e-personne2" hidden>
+          <h4>La seconde personne</h4>
           <div class="row row-personne avec-aides">
         <div>
           <label for="e-net2">Net mensuel, après retenue</label>
-          <input type="number" id="e-net2" value="0" min="0" step="100" placeholder="0 si seul">
+          <input type="number" id="e-net2" value="0" min="0" step="100" >
           <p class="aide-champ">Le « net à payer » de la fiche de paie. Avec un 13e mois : le net annuel divisé par 12.</p>
         </div>
         <div>
@@ -494,14 +505,6 @@
             <option value="locatif">Investissement locatif</option>
           </select>
           <p class="aide-champ">Fixe la part du prix que le prêt peut couvrir : 100, 90 ou 80 %.</p>
-        </div>
-        <div>
-          <label for="e-acquereurs">Acquéreurs sur l'acte</label>
-          <select id="e-acquereurs">
-            <option value="1" selected>Une personne</option>
-            <option value="2">Deux personnes</option>
-          </select>
-          <p class="aide-champ">Le Bëllegen Akt se compte par personne inscrite sur l'acte.</p>
         </div>
         <div>
           <label for="e-enfants">Enfants à charge</label>
@@ -1096,18 +1099,18 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=38"></script>
-<script src="app/kb.js?v=38"></script>
-<script src="app/simulateur.js?v=38"></script>
-<script src="comparateur/contrats_kb.js?v=38"></script>
-<script src="comparateur/mrh_kb.js?v=38"></script>
-<script src="comparateur/offres_kb.js?v=38"></script>
-<script src="app/chat.js?v=38"></script>
+<script src="app/bareme.js?v=39"></script>
+<script src="app/kb.js?v=39"></script>
+<script src="app/simulateur.js?v=39"></script>
+<script src="comparateur/contrats_kb.js?v=39"></script>
+<script src="comparateur/mrh_kb.js?v=39"></script>
+<script src="comparateur/offres_kb.js?v=39"></script>
+<script src="app/chat.js?v=39"></script>
 <script src="app/avantages.js?v=2"></script>
 <script src="app/ui.js?v=39"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=8"></script>
-<script src="app/communaute.js?v=38"></script>
+<script src="app/communaute.js?v=39"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
