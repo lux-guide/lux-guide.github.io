@@ -220,7 +220,7 @@ Chaîne de calcul :
    publié d'autre. La cotisation pension est passée à 8,5 % au 1er janvier 2026, loi du
    18 décembre 2025.
 
-**Organisation du panneau.** Les quatre outils se choisissent par des cartes numérotées, et
+**Organisation du panneau.** Les quatre outils se choisissent par des cartes, et
 chacun a son adresse (`#simulateur`, `#simulateur/emprunt`, `#simulateur/classe`,
 `#simulateur/officiels`), le bouton retour du navigateur passant de l'un à l'autre. Dans un
 outil, le formulaire et les chiffres restent en haut, et des onglets internes (barre soulignée,
