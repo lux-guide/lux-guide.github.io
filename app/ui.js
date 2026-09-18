@@ -1585,9 +1585,16 @@
     return tr;
   }
 
+  // Le titre se place au-dessus du cadre du tableau, pas dedans : le cadre n'a
+  // pas de marge interieure, et un titre a l'interieur touchait le bord.
   function tableau(titre, entetes) {
-    var wrap = el("div", "table-wrap");
-    if (titre) wrap.appendChild(el("h3", null, titre));
+    var cadre = el("div", "table-wrap");
+    var wrap = cadre;
+    if (titre) {
+      wrap = el("div", "tableau-titre");
+      wrap.appendChild(el("h3", null, titre));
+      wrap.appendChild(cadre);
+    }
     var tab = el("table", "plan-table");
     if (entetes) {
       var th = el("thead"), tr = el("tr");
@@ -1595,7 +1602,7 @@
       th.appendChild(tr); tab.appendChild(th);
     }
     var tb = el("tbody");
-    tab.appendChild(tb); wrap.appendChild(tab);
+    tab.appendChild(tb); cadre.appendChild(tab);
     return { wrap: wrap, tb: tb };
   }
 

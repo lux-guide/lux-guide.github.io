@@ -598,6 +598,9 @@ details.e-autres summary { cursor: pointer; color: var(--accent); font-weight: 6
 .card.aide .liens a, .card.aide .liens button { font-size: 13.5px; }
 .card.aide .liens button { background: none; border: 0; padding: 0; margin: 0; color: var(--accent); cursor: pointer; font: inherit; font-size: 13.5px; text-decoration: underline; }
 .dossier { margin-top: 8px; }
+.tableau-titre { margin: 30px 0 0; }
+.tableau-titre > h3 { margin: 0 0 10px; }
+.tableau-titre > .table-wrap { margin-top: 0; }
 .aides .aides-locatif { grid-column: 1 / -1; margin: 0; }
 
 /* Rangee de saisie du simulateur. Quatre colonnes egales donnaient a « 12 mois »
