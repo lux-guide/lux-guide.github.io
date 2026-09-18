@@ -109,6 +109,7 @@
     ["luxguide.surmesure.v1", "Les lignes de votre tableau de comparaison"],
     ["luxguide.kb.v1", "Les fiches modifiées depuis les paramètres"],
     ["luxguide.params.v1", "Les paramètres de calcul modifiés"],
+    ["luxguide.simulateur.v1", "Les montants saisis dans le simulateur"],
     ["luxguide.theme.v1", "Le thème choisi"],
     ["luxguide.rail.v1", "L'assistant ouvert en panneau ou non"],
     ["luxguide.rail.largeur.v1", "La largeur du panneau de l'assistant"],
@@ -1678,6 +1679,36 @@
   }
 
 
+  // Les montants saisis restent dans ce navigateur d'une visite a l'autre.
+  // Quelqu'un qui revient comparer deux scenarios ne doit pas retaper son
+  // salaire, et un brut par defaut a 80 000 EUR n'est le salaire de personne.
+  var STORAGE_SIM = "luxguide.simulateur.v1";
+  var CHAMPS_SIM = ["s-brut", "s-brut2", "s-classe", "s-mois", "s-impatrie",
+                    "s-forfaits", "s-monoparental", "e-net", "e-charges",
+                    "e-taux", "e-duree"];
+
+  function sauverSimulateur() {
+    var etat = {};
+    CHAMPS_SIM.forEach(function (id) {
+      var e = document.getElementById(id);
+      if (!e) return;
+      etat[id] = e.type === "checkbox" ? e.checked : e.value;
+    });
+    try { localStorage.setItem(STORAGE_SIM, JSON.stringify(etat)); } catch (e) { /* prive */ }
+  }
+
+  function chargerSimulateur() {
+    var etat;
+    try { etat = JSON.parse(localStorage.getItem(STORAGE_SIM) || "null"); } catch (e) { return; }
+    if (!etat) return;
+    CHAMPS_SIM.forEach(function (id) {
+      var e = document.getElementById(id);
+      if (!e || etat[id] === undefined || etat[id] === null) return;
+      if (e.type === "checkbox") e.checked = !!etat[id];
+      else e.value = etat[id];
+    });
+  }
+
   function initSimulateur() {
     // Quatre sous-onglets : salaire net, capacite d'emprunt, classe d'impot,
     // et les simulateurs officiels que le guide ne refait pas.
@@ -1693,12 +1724,13 @@
         if (b.dataset.sim === "officiels") rendreOutilsOfficiels();
       });
     });
+    chargerSimulateur();
     ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits", "#s-monoparental"].forEach(function (s) {
-      $(s).addEventListener("input", majSimulateur);
-      $(s).addEventListener("change", majSimulateur);
+      $(s).addEventListener("input", function () { majSimulateur(); sauverSimulateur(); });
+      $(s).addEventListener("change", function () { majSimulateur(); sauverSimulateur(); });
     });
     ["#e-net", "#e-charges", "#e-taux", "#e-duree"].forEach(function (s) {
-      $(s).addEventListener("input", majEmprunt);
+      $(s).addEventListener("input", function () { majEmprunt(); sauverSimulateur(); });
     });
     majSimulateur();
     majEmprunt();

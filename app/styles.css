@@ -536,13 +536,38 @@ input, select, textarea {
   width: 100%; padding: 12px 14px; border: 1px solid var(--border-fort);
   border-radius: 11px; background: var(--surface); color: var(--text);
   font: inherit; font-size: 15px; transition: border-color .16s, box-shadow .16s;
+  line-height: 1.68;
 }
+/* Une liste deroulante ne tient pas compte de sa hauteur de ligne pour calculer
+   sa propre hauteur : elle faisait quatre pixels de moins qu'un champ de saisie,
+   et une rangee qui melange les deux ne s'alignait jamais tout a fait. On lui
+   impose donc la hauteur d'un champ, calculee de la meme facon : hauteur de
+   ligne, plus les deux rembourrages, plus les deux bordures. */
+select { min-height: calc(1.68em + 26px); }
 input:focus, select:focus, textarea:focus {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 .row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+
+/* Un champ s'aligne sur son controle, pas sur son etiquette. Sans cela, une
+   etiquette qui passe a la ligne pousse son champ vers le bas et la rangee
+   part en escalier. Les cases a cocher gardent leur disposition en ligne. */
+.row > div:not(.check) { display: flex; flex-direction: column; justify-content: flex-end; }
+.row > div:not(.check) > label { margin-top: 0; }
+
+/* Rangee de saisie du simulateur. Quatre colonnes egales donnaient a « 12 mois »
+   la meme largeur qu'a un libelle de soixante caracteres : la premiere flottait
+   dans le vide, la derniere se repliait sur trois lignes. Chaque colonne est
+   donc calibree sur ce qu'elle recoit. */
+.row-champs {
+  grid-template-columns:
+    minmax(140px, 1fr) minmax(140px, 1fr) minmax(104px, .62fr) minmax(170px, 1.25fr);
+}
+@media (max-width: 900px) {
+  .row-champs { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
 .check { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .check input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
 .check label {
