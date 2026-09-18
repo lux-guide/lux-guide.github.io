@@ -219,6 +219,16 @@ Chaîne de calcul :
    publié d'autre. La cotisation pension est passée à 8,5 % au 1er janvier 2026, loi du
    18 décembre 2025.
 
+**Organisation du panneau.** Les quatre outils se choisissent par des cartes numérotées, et
+chacun a son adresse (`#simulateur`, `#simulateur/emprunt`, `#simulateur/classe`,
+`#simulateur/officiels`), le bouton retour du navigateur passant de l'un à l'autre. Dans un
+outil, le formulaire et les chiffres restent en haut, et des onglets internes (barre soulignée,
+collée sous l'en-tête) découpent le reste : pour le salaire, le détail du calcul, le ménage à deux
+salaires, la comparaison des classes ; pour l'emprunt, le plan de financement, ce que le prix
+achète, les aides de l'État, le dossier pour la banque. Le composant est générique
+(`initOngletsInternes` dans `ui.js`) : une barre `.onglets-internes` de boutons `data-vue`, suivie
+de blocs `data-pane` du même nom.
+
 **Capacité d'emprunt.** Le sous-onglet ne s'arrête plus au capital : il va du net mensuel au
 prix d'achat, frais compris. La chaîne : mensualité acceptée (33, 35, 40 ou 45 % du net, sans
 règle légale, la quotité CSSF 20-08 étant la seule limite réglementaire : 100 % du prix pour un
@@ -228,7 +238,12 @@ formule d'annuité, puis prix maximal trouvé par dichotomie sous la double cont
 sont les droits d'enregistrement et de transcription (7 %) moins le Bëllegen Akt (40 000 € par
 acquéreur, loi du 3 juillet 2025 ; 45 000 € annoncés le 16 juillet 2026, loi à voter), les
 honoraires du notaire au barème par tranches, et l'acte de prêt (droit d'obligation 0,24 %,
-inscription 0,05 %, honoraires). Le net se reprend d'un clic depuis le simulateur de salaire.
+inscription 0,05 %, honoraires). Les revenus se saisissent en entier : chaque emprunteur séparément (net après retenue, type
+de contrat, âge), les loyers perçus, les primes, les allocations et pensions reçues, puis les
+crédits en cours et les autres charges fixes. La banque ne retient qu'une part des loyers, des
+primes et des revenus d'un CDD ou d'un indépendant (80 % par défaut, réglable), et le plan
+l'affiche ligne par ligne. L'âge sert à la subvention d'intérêt (35 ans ou moins) et à l'âge en
+fin de prêt. Les deux nets se reprennent d'un clic depuis le simulateur de salaire.
 Le prix possible se traduit en m² par commune avec les prix annoncés de `cartes/communes_kb.js`,
 chargé à la demande. Sept cartes d'aides suivent (Bëllegen Akt, TVA logement 3 %, prime
 d'accession, garantie de l'État, subvention d'intérêt, déduction des intérêts, droits sur le

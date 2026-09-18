@@ -205,22 +205,36 @@
 
   <!-- Simulateur -->
   <section class="panel" role="region" aria-labelledby="nom-simulateur" id="panel-simulateur" hidden>
-    <h1>Simulateur de salaire net</h1>
+    <h1>Simulateurs</h1>
     <p class="lead">
+      Quatre outils, dans l'ordre où l'on s'en sert : ce que le brut laisse en net, ce que ce net
+      permet d'emprunter, la classe d'impôt qui s'applique, et les calculateurs officiels pour tout
+      le reste. Les montants saisis restent dans ce navigateur d'une visite à l'autre.
+    </p>
+
+    <div class="sim-choix" id="sim-tabs" role="tablist" aria-label="Choisir un outil">
+      <button role="tab" data-sim="salaire" class="actif" aria-selected="true">
+        <span class="n">1</span><b>Salaire net</b><i>Du brut annuel au net mensuel, avec le barème officiel</i>
+      </button>
+      <button role="tab" data-sim="emprunt" aria-selected="false">
+        <span class="n">2</span><b>Capacité d'emprunt</b><i>Du net au prix d'achat, frais d'acte et aides de l'État</i>
+      </button>
+      <button role="tab" data-sim="classe" aria-selected="false">
+        <span class="n">3</span><b>Ma classe d'impôt</b><i>Quelques questions, et les deux cas où l'on se trompe</i>
+      </button>
+      <button role="tab" data-sim="officiels" aria-selected="false">
+        <span class="n">4</span><b>Calculateurs officiels</b><i>Onze outils des administrations, testés</i>
+      </button>
+    </div>
+
+    <div id="sim-salaire">
+    <h2 class="sim-titre">Du brut au net</h2>
+    <p class="lead small">
       Barème officiel de l'Administration des contributions directes, paramètres sociaux 2026,
       et les crédits d'impôt que l'employeur porte sur la fiche de paie : salarié, CO2, salaire
       social minimum et, sur demande, monoparental. Résultat indicatif : il ne remplace ni une
       fiche de paie, ni un calcul de l'administration.
     </p>
-
-    <div class="sous-onglets" id="sim-tabs">
-      <button data-sim="salaire" class="actif">Salaire net</button>
-      <button data-sim="emprunt">Capacité d'emprunt</button>
-      <button data-sim="classe">Ma classe d'impôt</button>
-      <button data-sim="officiels">Simulateurs officiels</button>
-    </div>
-
-    <div id="sim-salaire">
     <div class="card">
       <div class="row row-champs">
         <div>
@@ -275,16 +289,26 @@
       (un seul salaire, pas d'autre revenu), plus l'écart peut être grand.
     </div>
 
-    <div id="s-menage"></div>
-
-    <div id="s-detail"></div>
-
-    <h2>Comparaison des situations</h2>
-    <div class="table-wrap"><table id="s-comp"></table></div>
+    <div class="onglets-internes" role="tablist" aria-label="Sections du salaire net">
+      <button role="tab" data-vue="detail" class="actif" aria-selected="true">Le détail du calcul</button>
+      <button role="tab" data-vue="menage" aria-selected="false">À deux salaires</button>
+      <button role="tab" data-vue="comparer" aria-selected="false">Comparer les classes</button>
+    </div>
+    <div data-pane="detail">
+      <div id="s-detail"></div>
+    </div>
+    <div data-pane="menage" hidden>
+      <div id="s-menage"></div>
+    </div>
+    <div data-pane="comparer" hidden>
+      <h2>Comparaison des situations</h2>
+      <p class="hint">Le même brut dans chaque classe, avec et sans le régime des impatriés : ce que change la situation de famille, et ce que le régime apporterait.</p>
+      <div class="table-wrap"><table id="s-comp"></table></div>
+    </div>
     </div>
 
     <div id="sim-emprunt" hidden>
-    <h2 style="margin-top:0">Du salaire net au prix d'achat</h2>
+    <h2 class="sim-titre">Du salaire net au prix d'achat</h2>
     <p class="lead small">
       La banque raisonne sur le net qui arrive sur le compte, après cotisations et retenue
       d'impôt, jamais sur le brut. Elle en accepte 33 à 45 % en mensualités selon l'établissement,
@@ -293,18 +317,88 @@
       puis le prix d'achat une fois les frais d'acte payés.
     </p>
     <div class="card">
-      <h3 class="premier">Ce que le ménage gagne</h3>
-      <div class="row row-revenus">
+      <h3 class="premier">Ce que le ménage gagne, et ce qu'il rembourse déjà</h3>
+      <div class="e-personnes">
+        <div class="e-personne">
+          <h4>Vous</h4>
+          <div class="row row-personne">
+            <div>
+              <label for="e-net1">Net mensuel, après retenue</label>
+              <input type="number" id="e-net1" value="5000" min="0" step="100">
+            </div>
+            <div>
+              <label for="e-statut1">Contrat</label>
+              <select id="e-statut1">
+                <option value="1" selected>CDI, fonctionnaire</option>
+                <option value="0.8">CDD, indépendant, variable</option>
+              </select>
+            </div>
+            <div>
+              <label for="e-age1">Âge</label>
+              <input type="number" id="e-age1" value="35" min="18" max="90" step="1">
+            </div>
+          </div>
+        </div>
+        <div class="e-personne">
+          <h4>Votre conjoint, s'il emprunte avec vous</h4>
+          <div class="row row-personne">
+            <div>
+              <label for="e-net2">Net mensuel, après retenue</label>
+              <input type="number" id="e-net2" value="0" min="0" step="100" placeholder="0 si seul">
+            </div>
+            <div>
+              <label for="e-statut2">Contrat</label>
+              <select id="e-statut2">
+                <option value="1" selected>CDI, fonctionnaire</option>
+                <option value="0.8">CDD, indépendant, variable</option>
+              </select>
+            </div>
+            <div>
+              <label for="e-age2">Âge</label>
+              <input type="number" id="e-age2" value="35" min="18" max="90" step="1">
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="hint e-reprise">
+        <button type="button" class="btn ghost petit" id="e-reprendre">Reprendre les nets du simulateur de salaire</button>
+        <span id="e-reprendre-info"></span>
+      </p>
+      <h4 class="e-sous">Les autres revenus du ménage, par mois</h4>
+      <div class="row row-autres">
         <div>
-          <label for="e-net">Revenus nets du ménage, par mois</label>
-          <input type="number" id="e-net" value="5000" min="0" step="100">
+          <label for="e-loyers">Loyers perçus</label>
+          <input type="number" id="e-loyers" value="0" min="0" step="50">
         </div>
         <div>
-          <label for="e-charges">Crédits en cours, par mois</label>
+          <label for="e-variables">Primes et bonus, moyenne mensuelle</label>
+          <input type="number" id="e-variables" value="0" min="0" step="50">
+        </div>
+        <div>
+          <label for="e-autres">Allocations familiales, pension reçue, autres revenus réguliers</label>
+          <input type="number" id="e-autres" value="0" min="0" step="50">
+        </div>
+        <div>
+          <label for="e-part">Part des loyers et des primes que la banque retient</label>
+          <select id="e-part">
+            <option value="1">100 %, tout compte</option>
+            <option value="0.8" selected>80 %, le plus courant</option>
+            <option value="0.7">70 %, prudent</option>
+          </select>
+        </div>
+      </div>
+      <h4 class="e-sous">Ce que le ménage rembourse déjà, par mois</h4>
+      <div class="row row-charges">
+        <div>
+          <label for="e-charges">Crédits en cours : auto, consommation, autre logement</label>
           <input type="number" id="e-charges" value="0" min="0" step="50">
         </div>
         <div>
-          <label for="e-effort">Part du net que la banque accepte</label>
+          <label for="e-charges2">Pension versée, leasing, autres charges fixes</label>
+          <input type="number" id="e-charges2" value="0" min="0" step="50">
+        </div>
+        <div>
+          <label for="e-effort">Part des revenus que la banque accepte</label>
           <select id="e-effort">
             <option value="0.33">33 %, la plus prudente</option>
             <option value="0.35">35 %, la moyenne observée</option>
@@ -313,10 +407,6 @@
           </select>
         </div>
       </div>
-      <p class="hint e-reprise">
-        <button type="button" class="btn ghost petit" id="e-reprendre">Reprendre le net du simulateur de salaire</button>
-        <span id="e-reprendre-info"></span>
-      </p>
     </div>
     <div class="card">
       <h3 class="premier">Le prêt et l'achat</h3>
@@ -353,29 +443,40 @@
           <input type="number" id="e-enfants" value="0" min="0" max="10" step="1">
         </div>
       </div>
-      <div class="check" style="margin-top:14px">
-        <input type="checkbox" id="e-jeune">
-        <label for="e-jeune">Tous les acquéreurs ont 35 ans ou moins</label>
-      </div>
     </div>
     <div class="kpis" id="e-kpis"></div>
-    <div id="e-plan"></div>
-    <div id="e-surface"></div>
 
-    <h2 id="e-titre-aides">Les aides de l'État, et les papiers à préparer</h2>
-    <p class="lead small">
-      Six dispositifs existent pour l'achat d'une résidence principale. Deux se règlent chez le
-      notaire ou avec l'entreprise, les autres se demandent au Guichet unique des aides au logement,
-      sous conditions de revenu. Chaque carte donne le montant, les conditions, les pièces, et le
-      lien officiel où déposer la demande.
-    </p>
-    <div id="e-aides" class="grid serre aides"></div>
-    <div id="e-dossier"></div>
-    <div class="notice small" id="e-sources"></div>
+    <div class="onglets-internes" role="tablist" aria-label="Sections de la capacité d'emprunt">
+      <button role="tab" data-vue="plan" class="actif" aria-selected="true">Le plan de financement</button>
+      <button role="tab" data-vue="surface" aria-selected="false">Ce que ça achète</button>
+      <button role="tab" data-vue="aides" aria-selected="false">Les aides de l'État</button>
+      <button role="tab" data-vue="dossier" aria-selected="false">Le dossier pour la banque</button>
+    </div>
+    <div data-pane="plan">
+      <div id="e-plan"></div>
+    </div>
+    <div data-pane="surface" hidden>
+      <div id="e-surface"></div>
+    </div>
+    <div data-pane="aides" hidden>
+      <h2 id="e-titre-aides">Les aides de l'État, et les papiers à demander</h2>
+      <p class="lead small">
+        Sept dispositifs pour l'achat d'une résidence principale. Deux se règlent chez le notaire
+        ou avec l'entreprise, les autres se demandent au Guichet unique des aides au logement, sous
+        conditions de revenu. Chaque carte donne le montant pour la situation saisie, les conditions,
+        les pièces, et le lien officiel où déposer la demande.
+      </p>
+      <div id="e-aides" class="grid serre aides"></div>
+    </div>
+    <div data-pane="dossier" hidden>
+      <div id="e-dossier"></div>
+      <div class="notice small" id="e-sources"></div>
+    </div>
     </div>
 
     <!-- Quelle classe d'impot : un arbre de decision, pas un calcul -->
     <div id="sim-classe" hidden>
+      <h2 class="sim-titre">Quelle classe d'impôt</h2>
       <p class="lead small">
         La classe d'impôt pèse davantage sur votre net que bien des négociations salariales.
         Ce n'est pas un calcul mais une règle : quelques questions suffisent à savoir laquelle
@@ -389,6 +490,7 @@
 
     <!-- Simulateurs officiels : ce que nous ne refaisons pas -->
     <div id="sim-officiels" hidden>
+      <h2 class="sim-titre">Les calculateurs des administrations</h2>
       <p class="lead small">
         Le guide ne calcule que deux choses, le salaire net et la capacité d'emprunt, parce que ce
         sont les deux dont on a besoin avant même d'arriver. Pour tout le reste, les administrations

@@ -475,6 +475,12 @@
       montrerFiche(id, true);
       return;
     }
+    if (h.indexOf("simulateur/") === 0) {
+      ouvrir("simulateur", true);
+      choisirVueSim(h.slice(11), true);
+      return;
+    }
+    if (h === "simulateur" && $("#sim-tabs")) choisirVueSim("salaire", true);
     ouvrir(h, true);
   }
 
@@ -1274,7 +1280,7 @@
       monoparental: $("#s-monoparental") ? $("#s-monoparental").checked : false
     });
 
-    dernierNetSim = { net: r.netMensuel, texte: "le net d'une paie sur " + mois + " mois" };
+    dernierNetSim = { net1: r.netMensuel, net2: 0, texte: eur(r.netMensuel) + " par mois, le net d'une paie sur " + mois + " mois" };
 
     var k = $("#s-kpis");
     k.innerHTML = "";
@@ -1349,6 +1355,14 @@
     if (zoneM) {
       zoneM.innerHTML = "";
       var brut2 = Number($("#s-brut2") ? $("#s-brut2").value : 0) || 0;
+      if (!(brut2 > 0 && brut > 0)) {
+        var vide = el("div", "notice small");
+        vide.appendChild(el("strong", null, "Un seul salaire pour l'instant. "));
+        vide.appendChild(document.createTextNode("Saisissez le brut annuel du conjoint dans le formulaire "
+          + "ci-dessus : cette section montre alors ce que chaque paie retient, ce que la déclaration "
+          + "commune recalcule, et le net réel du ménage une fois l'écart réglé."));
+        zoneM.appendChild(vide);
+      }
       if (brut2 > 0 && brut > 0) {
         var m = window.SIM.menage({
           brut1: brut, brut2: brut2,
@@ -1357,7 +1371,8 @@
           forfaits: $("#s-forfaits").checked
         });
 
-        dernierNetSim = { net: m.netMensuelRetenue, texte: "le net des deux paies réunies, avant régularisation" };
+        dernierNetSim = { net1: m.netMensuelPrincipal, net2: m.netMensuelSecondaire,
+          texte: eur(m.netMensuelPrincipal) + " et " + eur(m.netMensuelSecondaire) + " par mois, les deux paies telles qu'elles sont retenues" };
 
         zoneM.appendChild(el("h2", null, "À deux salaires : ce qui est retenu, et ce qui est vraiment dû"));
 
@@ -1441,6 +1456,59 @@
     ct.appendChild(cb);
   }
 
+  // ---------- Le panneau Simulateur : quatre outils, une adresse chacun ----------
+
+  // #simulateur/emprunt ouvre directement l'outil, et le bouton retour du
+  // navigateur revient a l'outil precedent.
+  function choisirVueSim(vue, sansHash) {
+    var vues = ["salaire", "emprunt", "classe", "officiels"];
+    if (vues.indexOf(vue) < 0) vue = "salaire";
+    $$("#sim-tabs button").forEach(function (x) {
+      var on = x.dataset.sim === vue;
+      x.classList.toggle("actif", on);
+      x.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    vues.forEach(function (v) {
+      var z = $("#sim-" + v);
+      if (z) z.hidden = v !== vue;
+    });
+    if (vue === "classe") rendreClasse();
+    if (vue === "officiels") rendreOutilsOfficiels();
+    var h = vue === "salaire" ? "#simulateur" : "#simulateur/" + vue;
+    if (!sansHash && window.location.hash !== h) {
+      try { history.pushState(null, "", h); } catch (e) { /* file:// */ }
+    }
+  }
+
+  // Onglets internes generiques : les boutons [data-vue] d'une barre montrent
+  // le [data-pane] du meme nom parmi les freres qui suivent la barre.
+  function initOngletsInternes(barre) {
+    var parent = barre.parentNode;
+    var boutons = $$("button[data-vue]", barre);
+    function panes() {
+      return $$(":scope > [data-pane]", parent);
+    }
+    boutons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        boutons.forEach(function (x) {
+          var on = x === b;
+          x.classList.toggle("actif", on);
+          x.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        panes().forEach(function (p) { p.hidden = p.dataset.pane !== b.dataset.vue; });
+        // La barre est collee sous l'en-tete : on remonte juste au-dessus
+        // d'elle pour que la section choisie commence en haut de l'ecran.
+        var y = barre.getBoundingClientRect().top + window.pageYOffset - hauteurEntete() - 8;
+        if (window.pageYOffset > y) window.scrollTo(0, y);
+      });
+    });
+  }
+
+  function hauteurEntete() {
+    var h = document.querySelector("header.top");
+    return h ? h.getBoundingClientRect().height : 0;
+  }
+
   // ---------- Capacite d'emprunt ----------
   //
   // Trois etapes, dans l'ordre ou la banque les fait : la mensualite que le
@@ -1465,19 +1533,41 @@
   function lireEmprunt() {
     var sit = $("#e-situation").value;
     var P = window.SIM.params();
+    var acq = Number($("#e-acquereurs").value) || 1;
+    var v = function (id) { return Math.max(0, Number($(id).value) || 0); };
+    var part = Number($("#e-part").value) || 0.8;
+    var lignes = [
+      { l: "Votre net", brut: v("#e-net1"), part: Number($("#e-statut1").value) || 1 },
+      { l: "Net du conjoint", brut: v("#e-net2"), part: Number($("#e-statut2").value) || 1 },
+      { l: "Loyers perçus", brut: v("#e-loyers"), part: part },
+      { l: "Primes et bonus", brut: v("#e-variables"), part: part },
+      { l: "Allocations, pension reçue, autres", brut: v("#e-autres"), part: 1 }
+    ].filter(function (x) { return x.brut > 0; });
+    lignes.forEach(function (x) { x.retenu = x.brut * x.part; });
+    var revenusReels = lignes.reduce(function (a, x) { return a + x.brut; }, 0);
+    var revenusRetenus = lignes.reduce(function (a, x) { return a + x.retenu; }, 0);
+    var charges = [
+      { l: "Crédits en cours", m: v("#e-charges") },
+      { l: "Pension versée, leasing, autres charges fixes", m: v("#e-charges2") }
+    ].filter(function (x) { return x.m > 0; });
+    var age1 = v("#e-age1") || 35, age2 = v("#e-age2") || 35;
+    var ageMax = acq > 1 ? Math.max(age1, age2) : age1;
     return {
-      netMensuel: Number($("#e-net").value) || 0,
-      chargesMensuelles: Number($("#e-charges").value) || 0,
+      lignes: lignes, chargesDetail: charges,
+      revenusReels: revenusReels,
+      netMensuel: revenusRetenus,
+      chargesMensuelles: charges.reduce(function (a, x) { return a + x.m; }, 0),
+      age1: age1, age2: age2, ageMax: ageMax,
       tauxAnnuel: (Number($("#e-taux").value) || 0) / 100,
       annees: Number($("#e-duree").value) || 25,
       effort: Number($("#e-effort").value) || 0.40,
       apport: Number($("#e-apport").value) || 0,
       quotite: sit === "locatif" ? P.quotiteLocatif : (sit === "autre" ? P.quotiteAutre : P.quotitePrimo),
       situation: sit,
-      acquereurs: Number($("#e-acquereurs").value) || 1,
+      acquereurs: acq,
       sansAkt: sit === "locatif",
       enfants: Math.max(0, Number($("#e-enfants").value) || 0),
-      jeune: $("#e-jeune").checked
+      jeune: age1 <= 35 && (acq < 2 || age2 <= 35)
     };
   }
 
@@ -1526,14 +1616,32 @@
     var z = $("#e-plan");
     z.innerHTML = "";
     if (plan.mensualiteMax <= 0) {
-      z.appendChild(el("p", "notice small", "Les crédits en cours absorbent déjà toute la part du net qu'une banque accepte. Aucun nouveau prêt n'est possible sans les solder ou sans revenus supplémentaires."));
+      z.appendChild(el("p", "notice small", o.netMensuel > 0
+        ? "Les charges en cours absorbent déjà toute la part des revenus qu'une banque accepte. Aucun nouveau prêt n'est possible sans les solder ou sans revenus supplémentaires."
+        : "Saisissez au moins un revenu pour calculer une capacité d'emprunt."));
       $("#e-surface").innerHTML = "";
       rendreAides(o, plan);
       return;
     }
 
+    // Ce que la banque retient, ligne par ligne
+    var t0 = tableau("Ce que la banque retient", ["", "Déclaré", "Part retenue", "Retenu"]);
+    o.lignes.forEach(function (x) {
+      ligneTab(t0.tb, [x.l, eur(x.brut), pct0(x.part), eur(x.retenu)]);
+    });
+    ligneTab(t0.tb, ["Revenus retenus", eur(o.revenusReels), "", eur(o.netMensuel)], "total");
+    ligneTab(t0.tb, ["Mensualités acceptées, " + pct0(o.effort) + " des revenus retenus", "", "", eur(o.netMensuel * o.effort)]);
+    o.chargesDetail.forEach(function (x) {
+      ligneTab(t0.tb, [x.l, "", "", "- " + eur(x.m)]);
+    });
+    ligneTab(t0.tb, ["Mensualité disponible pour le nouveau prêt", "", "", eur(plan.mensualiteMax)], "total");
+    z.appendChild(t0.wrap);
+    z.appendChild(el("p", "hint", "Un salaire en CDI compte en entier. Les loyers, les primes et les revenus d'un indépendant ou d'un CDD "
+      + "ne sont retenus qu'en partie, le plus souvent 80 %, parce qu'ils peuvent baisser. Les allocations familiales et une pension "
+      + "reçue comptent, une pension versée ou un leasing se déduisent comme un crédit."));
+
     // Selon la part du net acceptee
-    var t1 = tableau("Selon la part du net que la banque accepte", ["Part du net", "Mensualité", "Capital", "Prix possible"]);
+    var t1 = tableau("Selon la part des revenus que la banque accepte", ["Part retenue", "Mensualité", "Capital", "Prix possible"]);
     EFFORTS.forEach(function (e) {
       var p = window.SIM.planFinancement(Object.assign({}, o, { effort: e[0] }));
       ligneTab(t1.tb, [e[1], eur(p.mensualiteMax), eur(p.capital), eur(p.prix)],
@@ -1581,8 +1689,15 @@
       + "pour toute la durée.";
     z.appendChild(stress);
 
+    var ageFin = o.ageMax + plan.annees;
+    z.appendChild(el("p", "hint", "À la fin du prêt, " + (o.acquereurs > 1 ? "le plus âgé des deux emprunteurs aura " : "vous aurez ")
+      + ageFin + " ans. La banque demande presque toujours une assurance solde restant dû, dont la prime monte avec l'âge et la durée : "
+      + "la demander en même temps que l'offre de prêt, elle pèse sur la mensualité réelle."));
+
     rendreSurfaces(plan);
     rendreAides(o, plan);
+    var bs = $("#sim-emprunt .onglets-internes button[data-vue=surface]");
+    if (bs) bs.textContent = plan.prix > 0 ? "Ce que " + eur(plan.prix) + " achète" : "Ce que ça achète";
   }
 
   // Ce que le prix possible achete, commune par commune, d'apres les prix
@@ -2104,9 +2219,12 @@
   // salaire, et un brut par defaut a 80 000 EUR n'est le salaire de personne.
   var STORAGE_SIM = "luxguide.simulateur.v1";
   var CHAMPS_SIM = ["s-brut", "s-brut2", "s-classe", "s-mois", "s-impatrie",
-                    "s-forfaits", "s-monoparental", "e-net", "e-charges",
-                    "e-taux", "e-duree", "e-effort", "e-apport", "e-situation",
-                    "e-acquereurs", "e-enfants", "e-jeune"];
+                    "s-forfaits", "s-monoparental",
+                    "e-net1", "e-statut1", "e-age1", "e-net2", "e-statut2", "e-age2",
+                    "e-loyers", "e-variables", "e-autres", "e-part",
+                    "e-charges", "e-charges2", "e-effort",
+                    "e-taux", "e-duree", "e-apport", "e-situation",
+                    "e-acquereurs", "e-enfants"];
 
   function sauverSimulateur() {
     var etat = {};
@@ -2135,23 +2253,20 @@
     // et les simulateurs officiels que le guide ne refait pas.
     var vues = ["salaire", "emprunt", "classe", "officiels"];
     $$("#sim-tabs button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        $$("#sim-tabs button").forEach(function (x) { x.classList.toggle("actif", x === b); });
-        vues.forEach(function (v) {
-          var z = $("#sim-" + v);
-          if (z) z.hidden = v !== b.dataset.sim;
-        });
-        if (b.dataset.sim === "classe") rendreClasse();
-        if (b.dataset.sim === "officiels") rendreOutilsOfficiels();
-      });
+      b.addEventListener("click", function () { choisirVueSim(b.dataset.sim); });
     });
+    // Chaque outil decoupe sa page en onglets internes : le formulaire et les
+    // chiffres restent en haut, le reste se lit section par section.
+    $$("#panel-simulateur .onglets-internes").forEach(initOngletsInternes);
     chargerSimulateur();
     ["#s-brut", "#s-brut2", "#s-classe", "#s-mois", "#s-impatrie", "#s-forfaits", "#s-monoparental"].forEach(function (s) {
       $(s).addEventListener("input", function () { majSimulateur(); sauverSimulateur(); });
       $(s).addEventListener("change", function () { majSimulateur(); sauverSimulateur(); });
     });
-    ["#e-net", "#e-charges", "#e-taux", "#e-duree", "#e-effort", "#e-apport",
-     "#e-situation", "#e-acquereurs", "#e-enfants", "#e-jeune"].forEach(function (s) {
+    ["#e-net1", "#e-statut1", "#e-age1", "#e-net2", "#e-statut2", "#e-age2",
+     "#e-loyers", "#e-variables", "#e-autres", "#e-part", "#e-charges", "#e-charges2",
+     "#e-effort", "#e-taux", "#e-duree", "#e-apport", "#e-situation", "#e-acquereurs",
+     "#e-enfants"].forEach(function (s) {
       $(s).addEventListener("input", function () { majEmprunt(); sauverSimulateur(); });
       $(s).addEventListener("change", function () { majEmprunt(); sauverSimulateur(); });
     });
@@ -2159,8 +2274,10 @@
     // meme chiffre que la banque demande, et personne ne devrait le retaper.
     $("#e-reprendre").addEventListener("click", function () {
       if (!dernierNetSim) return;
-      $("#e-net").value = Math.round(dernierNetSim.net);
-      $("#e-reprendre-info").textContent = "Repris : " + eur(dernierNetSim.net) + ", " + dernierNetSim.texte + ".";
+      $("#e-net1").value = Math.round(dernierNetSim.net1);
+      $("#e-net2").value = Math.round(dernierNetSim.net2 || 0);
+      if (dernierNetSim.net2 > 0) $("#e-acquereurs").value = "2";
+      $("#e-reprendre-info").textContent = "Repris : " + dernierNetSim.texte + ".";
       majEmprunt(); sauverSimulateur();
     });
     majSimulateur();

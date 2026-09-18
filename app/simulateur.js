@@ -239,6 +239,8 @@ window.SIM = (function () {
     // Chaque conjoint touche ses propres credits, sur son propre salaire.
     var creditsMenage = rP.credits + rS.credits;
     var netRetenue = netAvantImpotMenage - retenueTotale + creditsMenage;
+    var netPrincipal = rP.netAvantImpot - rP.impotTotal + rP.credits;
+    var netSecondaire = rS.netAvantImpot - impotSecondaire + rS.credits;
 
     // Régularisation annuelle : barème appliqué au revenu imposable cumulé.
     var imposableCumule = Math.max(0, rP.imposable + rS.netAvantImpot - (forfaits ? (P.fraisObtention + P.depensesSpeciales) : 0));
@@ -261,6 +263,8 @@ window.SIM = (function () {
       retenueTotale: retenueTotale,
       netRetenue: netRetenue,
       netMensuelRetenue: netRetenue / mois,
+      netMensuelPrincipal: netPrincipal / mois,
+      netMensuelSecondaire: netSecondaire / mois,
       imposableCumule: imposableCumule,
       impotAssiette: impotAssietteTotal,
       netReel: netReel,
@@ -334,6 +338,7 @@ window.SIM = (function () {
     var quotite = Number(opts.quotite) || 1;
     var n = Math.max(1, Number(opts.acquereurs) || 1);
     var sansAkt = !!opts.sansAkt;
+    var revenusReels = Number(opts.revenusReels) || net;
 
     var cap = capaciteEmprunt({ netMensuel: net, chargesMensuelles: charges,
                                 tauxAnnuel: taux, annees: annees, effort: effort });
@@ -363,7 +368,7 @@ window.SIM = (function () {
       mensualiteMax: Math.max(0, cap.mensualiteDisponible || 0),
       capital: capital, prix: prix, frais: frais, emprunt: emprunt, apport: apport,
       quotite: quotite, quotiteReelle: prix > 0 ? emprunt / prix : 0,
-      mensualite: mens, resteAVivre: net - charges - mens,
+      mensualite: mens, resteAVivre: revenusReels - charges - mens,
       mensualiteStress: mensStress, capitalStress: capitalStress,
       interetsAn1: emprunt * taux, limite: limite,
       effort: effort, taux: taux, annees: annees, net: net, charges: charges
