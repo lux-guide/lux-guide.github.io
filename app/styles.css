@@ -1521,6 +1521,12 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
    de communes. */
 html { overflow-x: hidden; }
 
+/* Les cartes Leaflet empilent leurs couches jusqu'a z-index 1000, ce qui les
+   faisait passer devant l'en-tete fixe (z-index 60) des qu'on defilait. Chaque
+   carte forme son propre contexte d'empilement : ses couches se classent
+   entre elles, et la carte entiere reste sous l'en-tete. */
+.leaflet-container { isolation: isolate; }
+
 /* ---------- Cibles tactiles ---------- */
 /* Au doigt, une case a cocher de 17 px se rate. On agrandit la case et surtout
    la zone cliquable autour, sans toucher au rendu a la souris. */

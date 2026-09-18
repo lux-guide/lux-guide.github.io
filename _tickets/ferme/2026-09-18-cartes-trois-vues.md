@@ -31,8 +31,9 @@ homogènes. Et comparer deux cartes, c'est un autre registre. »
    disparaît. La carte devient un sélecteur : communes grises, celles du
    panier colorées. La colonne de droite devient une liste alphabétique avec
    un champ de recherche. Le tableau complet se lit dessous, avec les mêmes
-   couleurs en tête de colonne. Cliquer le nom d'une ligne repasse en vue
-   « une carte » sur cet indicateur.
+   couleurs en tête de colonne. Le nom d'une ligne ne fait rien au clic : il
+   a un temps ramené en vue « une carte », et l'on changeait de vue sans
+   l'avoir demandé. On change de vue par la rangée « Vue » seulement.
 5. Le panier de communes est le même dans les deux vues : on choisit les
    communes une fois, et on change seulement la façon de les regarder.
 

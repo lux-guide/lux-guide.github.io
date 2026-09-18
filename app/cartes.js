@@ -278,7 +278,6 @@
       ".ct-cmpc thead th .outils button[disabled]{opacity:.3;cursor:default}",
       ".ct-cmpc thead th .outils button[data-retirer]:hover{color:#c2410c;border-color:#c2410c}",
       ".ct-cmpc tr.ind:hover td{background:var(--surface-2,#f4f6f9)}",
-      ".ct-cmpc tr.ind td:first-child{cursor:pointer}",
       ".ct-cmpc thead th .pt{margin-right:7px}",
       ".ct-cmpc td .nb{display:inline-flex;align-items:center;gap:8px}",
       ".ct-cmpc td .nb b{min-width:3.6em;text-align:right}",
@@ -1163,8 +1162,7 @@
     var dispo = listeIndic();
     var h = '<div class="card ct-cmpc"><div class="tete">' +
       '<h3 style="margin:0 8px 0 0">' + (liste.length > 1 ? liste.length + " " + motZone(true) +
-      " côte à côte" : esc(liste[0].nom) + ", toutes ses données") + "</h3>" +
-      '<span class="muted" style="font-size:13px">Cliquer le nom d\'une ligne la porte sur la carte.</span>';
+      " côte à côte" : esc(liste[0].nom) + ", toutes ses données") + "</h3>";
     h += '</div><div class="defil"><table><thead><tr><th></th>';
     // Chaque colonne porte ses commandes : la déplacer d'un cran, la retirer.
     // La couleur suit la position, sur la carte comme ici.
@@ -1252,34 +1250,10 @@
     k.querySelectorAll("button[data-deplacer]").forEach(function (b) {
       b.addEventListener("click", function () { deplacerCommune(b.dataset.deplacer, +b.dataset.sens); });
     });
-
-    // Cliquer le nom d'un indicateur le porte sur la carte, une nationalité
-    // aussi : on repasse alors en vue « une carte », c'est là qu'il se lit.
-    k.querySelectorAll("tr.ind[data-ind] td:first-child").forEach(function (td) {
-      td.title = "Voir sur la carte";
-      td.addEventListener("click", function () {
-        var id = td.parentNode.dataset.ind;
-        if (id === "nation" || id === "natcmp") return;
-        courant = id;
-        nation = null;
-        indNation = null;
-        annee = null;
-        arreterLecture();
-        famille = null;
-        changerMode("carte");
-      });
-    });
-    k.querySelectorAll("tr.ind[data-nat] td:first-child").forEach(function (td) {
-      td.style.cursor = "pointer";
-      td.title = "Voir sur la carte";
-      td.addEventListener("click", function () {
-        var code = td.parentNode.dataset.nat;
-        mode = "carte";
-        comparer = false;
-        appliquerMode();
-        choisirNation(code);
-      });
-    });
+    // Le nom d'une ligne ne fait rien au clic. Il a un temps ramené en vue
+    // « une carte » sur cet indicateur, et l'on se retrouvait sur une autre
+    // vue sans l'avoir demandé : on change de vue par la rangée « Vue », pas
+    // par un clic dans le tableau.
   }
 
   // La fiche de la vue « une carte » : l'indicateur affiché, et pour chaque
