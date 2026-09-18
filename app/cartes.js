@@ -110,8 +110,17 @@
   // pour la comparaison (cinq au plus : au-delà le tableau ne se lit plus).
   var famille = null, panierCommunes = [];
   var CAT = ["#2563eb", "#d1620a", "#0f8b57", "#8b3fd1", "#c2185b", "#00757f"];
+  // Trois vues, trois registres. « carte » : un indicateur peint sur une
+  // carte, et une commune cliquée montre sa valeur, son rang et sa courbe sur
+  // cet indicateur. « deux » : deux cartes côte à côte, chacune son
+  // indicateur. « communes » : la carte ne mesure plus rien, elle sert à
+  // choisir jusqu'à cinq communes dont toutes les données se lisent côte à
+  // côte. Avant, le tableau complet s'ouvrait dès le premier clic alors que
+  // l'on venait de choisir un seul indicateur : deux registres se mélangeaient.
+  var mode = "carte";
   var comparer = false, cartesCmp = [null, null], formesCmp = [{}, {}];
   var indCmp = ["loyer_appt", "sal_med"], syncCmp = false;
+  var filtreTxt = "";
 
   // ---------- style ----------
 
@@ -128,9 +137,37 @@
       "#ct-cote h3{margin:0;padding:12px 14px 10px;font-size:13px;text-transform:uppercase;",
       "  letter-spacing:.05em;color:var(--muted,#6a7583);border-bottom:1px solid var(--border,#e6eaef)}",
       ".ct-choix{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}",
-      ".ct-couches{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:14px;",
-      "  border-bottom:1px solid var(--border,#e6eaef)}",
+      // L'en-tête du sélecteur : des rangées annoncées par un intitulé, le
+      // territoire puis la vue. Sans intitulé, cinq noms de lieux posés à
+      // côté de trois façons de regarder ne disent pas de quoi ils sont la liste.
+      ".ct-tete{padding-bottom:14px;border-bottom:1px solid var(--border,#e6eaef)}",
+      ".ct-couches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
+      ".ct-couches + .ct-couches{margin-top:10px}",
+      ".ct-couches > span{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
+      "  color:var(--muted,#6a7583);font-weight:600;margin-right:4px;min-width:5.5em}",
       ".ct-couches .chip{font-weight:600}",
+      ".ct-couches .chip[disabled]{opacity:.45;cursor:not-allowed;transform:none}",
+      // Le panier de communes, et la pastille de couleur qui suit chaque
+      // commune de la carte au tableau.
+      ".ct-panier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}",
+      ".ct-ajout{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
+      "  font:inherit;font-size:13.5px;border:1px solid var(--border-fort,#d4dae2);",
+      "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      ".pt{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:8px;",
+      "  vertical-align:middle;flex:none}",
+      ".ct-cherche{padding:8px 10px;border-bottom:1px solid var(--border,#e6eaef)}",
+      ".ct-cherche input{width:100%;padding:7px 9px;border-radius:9px;font:inherit;font-size:13.5px;",
+      "  border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      "#ct-cote .ct-scroll-choix{max-height:calc(min(74vh,620px) - 96px)}",
+      // La fiche d'une vue « une carte » : les communes retenues sur
+      // l'indicateur affiché, valeur, rang, position, puis leur courbe.
+      ".ct-fi .tete{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}",
+      ".ct-fi h4{margin:18px 0 6px;font-size:14px}",
+      ".ct-fitbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}",
+      ".ct-fitbl td{padding:8px 10px;border-top:1px solid var(--border,#e6eaef);vertical-align:middle}",
+      ".ct-fitbl td.n{text-align:right;white-space:nowrap}",
+      ".ct-fitbl td small{display:block;color:var(--muted,#6a7583);font-size:12px;margin-left:19px}",
+      ".ct-fi-actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}",
       ".ct-groupe{margin-top:14px}",
       ".ct-groupe > span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
       "  color:var(--muted,#6a7583);font-weight:600;margin-bottom:6px}",
@@ -195,9 +232,6 @@
       ".ct-gr .plus{color:#c2410c;font-weight:600}",
       ".ct-cmpc{margin-top:18px}",
       ".ct-cmpc .tete{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}",
-      ".ct-cmpc .tete select{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
-      "  font:inherit;font-size:13.5px;border:1px solid var(--border-fort,#d4dae2);",
-      "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
       ".ct-cmpc table{width:100%;border-collapse:collapse;font-size:13.5px;",
       "  font-variant-numeric:tabular-nums}",
       ".ct-cmpc th,.ct-cmpc td{padding:7px 10px;border-top:1px solid var(--border,#e6eaef);",
@@ -215,6 +249,7 @@
       ".ct-cmpc .defil{overflow-x:auto}",
       ".ct-cmpc tr.ind:hover td{background:var(--surface-2,#f4f6f9)}",
       ".ct-cmpc tr.ind td:first-child{cursor:pointer}",
+      ".ct-cmpc thead th .pt{margin-right:7px}",
       ".ct-tip{font-weight:600}",
       ".ct-tip small{display:block;font-weight:400;opacity:.75}",
       // Plein écran : la carte sort du gabarit à deux colonnes et couvre la fenêtre.
@@ -749,7 +784,85 @@
     });
   }
 
+  // ---------- vue « comparer des communes » ----------
+  //
+  // Ici la carte ne mesure rien : toutes les communes sont grises, celles du
+  // panier prennent chacune une couleur, la même que dans le tableau. La
+  // colonne de droite cesse d'être un classement, il n'y a rien à classer,
+  // et devient une liste alphabétique avec un champ de recherche.
+
+  function dessinerChoix() {
+    var liste = communesComparees().map(function (c) { return c.nom; });
+    classes = null;
+    zones().forEach(function (c) {
+      var j = liste.indexOf(c.nom);
+      (formes[c.nom] || []).forEach(function (poly) {
+        poly.setStyle({
+          fillColor: j >= 0 ? CAT[j] : "#c9d2dd",
+          fillOpacity: j >= 0 ? .78 : .28,
+          color: j >= 0 ? "#0b0f16" : "#ffffff", weight: j >= 0 ? 2 : 1
+        });
+        if (j >= 0) poly.bringToFront();
+        poly.unbindTooltip();
+        poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) +
+          (estFrontalier() ? ' <span class="muted">' + esc(c.region || c.canton) + "</span>" : "") +
+          "<small>" + (j >= 0 ? "dans la comparaison" :
+            (liste.length >= 5 ? "la comparaison est pleine, retirez-en une" :
+              "cliquer pour l'ajouter à la comparaison")) + "</small></span>", { sticky: true });
+      });
+    });
+    var encart = document.getElementById("ct-mini");
+    if (encart) {
+      encart.innerHTML = '<b class="t">Comparer des ' + motZone(true) + "</b>" +
+        (liste.length ? '<div class="ct-natpuces" style="margin-top:0">' + puces(communesComparees(), false) + "</div>"
+          : '<span class="muted">Cliquez les ' + motZone(true) + " à comparer</span>");
+    }
+    var ineg = document.getElementById("ct-ineg");
+    if (ineg) ineg.innerHTML = "";
+    listeChoix();
+    panneauGrandeRegion();
+    majSource();
+    majAvertissement();
+  }
+
+  function normaliser(s) {
+    return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  }
+
+  function listeChoix() {
+    var cote = document.getElementById("ct-cote");
+    if (!cote) return;
+    var liste = communesComparees().map(function (c) { return c.nom; });
+    var tri = zones().slice().sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); });
+    var h = "<h3>Les " + zones().length + " " + motZone(true) + ", de A à Z</h3>" +
+      '<div class="ct-cherche"><input type="search" id="ct-filtre" placeholder="Chercher une ' +
+      motZone(false) + '…" aria-label="Chercher une ' + motZone(false) + '" value="' + esc(filtreTxt) + '"></div>' +
+      '<div class="ct-scroll ct-scroll-choix"><table class="ct-tbl"><tbody id="ct-rangs">';
+    tri.forEach(function (c) {
+      var j = liste.indexOf(c.nom);
+      h += '<tr data-nom="' + esc(c.nom) + '" data-cle="' + esc(normaliser(c.nom)) + '"' +
+        (j >= 0 ? ' class="on"' : "") + '><td style="width:14px;padding-right:0"><i class="pt" style="margin:0;background:' +
+        (j >= 0 ? CAT[j] : "transparent") + '"></i></td><td>' + esc(c.nom) +
+        (estFrontalier() ? ' <span class="muted">' + esc(c.region || c.canton) + "</span>" : "") +
+        "</td></tr>";
+    });
+    h += "</tbody></table></div>";
+    cote.innerHTML = h;
+    var lignes = cote.querySelectorAll("tr[data-nom]");
+    lignes.forEach(function (tr) {
+      tr.addEventListener("click", function () { choisir(tr.dataset.nom); });
+    });
+    function filtrer() {
+      var q = normaliser(filtreTxt.trim());
+      lignes.forEach(function (tr) { tr.hidden = !!q && tr.dataset.cle.indexOf(q) === -1; });
+    }
+    var inp = document.getElementById("ct-filtre");
+    inp.addEventListener("input", function () { filtreTxt = inp.value; filtrer(); });
+    filtrer();
+  }
+
   function dessiner() {
+    if (mode === "communes") { dessinerChoix(); return; }
     if (multiple()) { dessinerCat(); return; }
     var ind = indic();
     var vals = zones().filter(function (c) { return c.i[courant] !== undefined; })
@@ -793,7 +906,8 @@
     selection = nom;
     surligner(nom, true);
     var c = zones().filter(function (x) { return x.nom === nom; })[0];
-    if (c) map.panTo(c.c);
+    if (c && mode !== "deux") map.panTo(c.c);
+    if (mode === "communes") { boutons(); dessinerChoix(); }
     fiche();
     var k = document.getElementById("ct-rangs");
     if (k) {
@@ -886,32 +1000,70 @@
     panierCommunes.push(nom);
   }
 
+  function retirerCommune(nom) {
+    var j = panierCommunes.indexOf(nom);
+    if (j >= 0) panierCommunes.splice(j, 1);
+    if (selection === nom) { surligner(nom, false); selection = panierCommunes[0] || null; }
+    if (mode === "communes") { boutons(); dessinerChoix(); }
+    else if (mode === "carte") {
+      var k = document.getElementById("ct-rangs");
+      if (k) k.querySelectorAll("tr").forEach(function (tr) {
+        tr.classList.toggle("on", tr.dataset.nom === selection);
+      });
+    }
+    fiche();
+  }
+
+  // Les communes du panier en puces colorées, avec ou sans la croix qui
+  // retire ; et la liste déroulante qui en ajoute une. Les deux servent dans
+  // le sélecteur et dans la fiche, et se branchent par brancherPanier.
+  function puces(liste, retirable) {
+    var h = "";
+    liste.forEach(function (c, j) {
+      h += retirable
+        ? '<button class="ct-natpuce" data-retirer="' + esc(c.nom) + '" title="Retirer de la comparaison">' +
+          '<i style="background:' + CAT[j] + '"></i><b>' + esc(c.nom) + '</b><span class="x">✕</span></button>'
+        : '<span class="ct-natpuce"><i style="background:' + CAT[j] + '"></i><b>' + esc(c.nom) + "</b></span>";
+    });
+    return h;
+  }
+
+  function selectAjout(liste) {
+    if (liste.length >= 5) return "";
+    var h = '<select class="ct-ajout" data-ajout aria-label="Ajouter une ' + motZone(false) + ' à la comparaison">' +
+      '<option value="">+ ajouter ' + (liste.length ? "une autre " : "une ") + motZone(false) + "…</option>";
+    zones().slice().sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); })
+      .forEach(function (c) {
+        if (liste.indexOf(c) === -1) h += '<option value="' + esc(c.nom) + '">' + esc(c.nom) + "</option>";
+      });
+    return h + "</select>";
+  }
+
+  function brancherPanier(k) {
+    k.querySelectorAll("button[data-retirer]").forEach(function (b) {
+      b.addEventListener("click", function () { retirerCommune(b.dataset.retirer); });
+    });
+    k.querySelectorAll("select[data-ajout]").forEach(function (s) {
+      s.addEventListener("change", function () { if (s.value) choisir(s.value); });
+    });
+  }
+
   function fiche() {
     var k = document.getElementById("ct-fiche");
     if (!k) return;
+    if (mode === "deux") { k.innerHTML = ""; return; }
+    if (mode === "carte") { ficheIndicateur(); return; }
     var liste = communesComparees();
     if (!liste.length) { k.innerHTML = ""; return; }
     var dispo = listeIndic();
     var h = '<div class="card ct-cmpc"><div class="tete">' +
-      '<h3 style="margin:0 8px 0 0">' + (liste.length > 1 ? "Comparer " + liste.length + " " +
-      motZone(true) : esc(liste[0].nom)) + "</h3>";
-    liste.forEach(function (c) {
-      h += '<button class="ct-natpuce" data-retirer="' + esc(c.nom) + '" title="Retirer">' +
-        "<b>" + esc(c.nom) + '</b><span class="x">✕</span></button>';
-    });
-    if (liste.length < 5) {
-      h += '<select id="ct-ajout" aria-label="Ajouter une commune à la comparaison">' +
-        '<option value="">+ ajouter ' + (liste.length > 1 ? "une autre " : "une ") + motZone(false) +
-        " à comparer…</option>";
-      zones().slice().sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); })
-        .forEach(function (c) {
-          if (liste.indexOf(c) === -1) h += '<option value="' + esc(c.nom) + '">' + esc(c.nom) + "</option>";
-        });
-      h += "</select>";
-    }
+      '<h3 style="margin:0 8px 0 0">' + (liste.length > 1 ? liste.length + " " + motZone(true) +
+      " côte à côte" : esc(liste[0].nom) + ", toutes ses données") + "</h3>" +
+      '<span class="muted" style="font-size:13px">Cliquer le nom d\'une ligne la porte sur la carte.</span>';
     h += '</div><div class="defil"><table><thead><tr><th></th>';
-    liste.forEach(function (c) {
-      h += "<th>" + esc(c.nom) + "<small>" + esc(situation(c)) + "</small></th>";
+    liste.forEach(function (c, j) {
+      h += '<th><i class="pt" style="background:' + CAT[j] + '"></i>' + esc(c.nom) +
+        "<small>" + esc(situation(c)) + "</small></th>";
     });
     h += "</tr></thead><tbody>";
 
@@ -969,19 +1121,10 @@
     h += "</tbody></table></div></div>";
     k.innerHTML = h;
 
-    k.querySelectorAll("button[data-retirer]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var nom = b.dataset.retirer;
-        var j = panierCommunes.indexOf(nom);
-        if (j >= 0) panierCommunes.splice(j, 1);
-        if (selection === nom) { surligner(nom, false); selection = panierCommunes[0] || null; }
-        fiche();
-      });
-    });
-    var aj = document.getElementById("ct-ajout");
-    if (aj) aj.addEventListener("change", function () { if (aj.value) choisir(aj.value); });
-    // Cliquer le nom d'un indicateur le porte sur la carte, une nationalité aussi.
+    // Cliquer le nom d'un indicateur le porte sur la carte, une nationalité
+    // aussi : on repasse alors en vue « une carte », c'est là qu'il se lit.
     k.querySelectorAll("tr.ind[data-ind] td:first-child").forEach(function (td) {
+      td.title = "Voir sur la carte";
       td.addEventListener("click", function () {
         var id = td.parentNode.dataset.ind;
         if (id === "nation" || id === "natcmp") return;
@@ -991,17 +1134,133 @@
         annee = null;
         arreterLecture();
         famille = null;
-        boutons();
-        calerEchelle();
-        barreTemps();
-        dessiner();
-        fiche();
+        changerMode("carte");
       });
     });
     k.querySelectorAll("tr.ind[data-nat] td:first-child").forEach(function (td) {
       td.style.cursor = "pointer";
-      td.addEventListener("click", function () { choisirNation(td.parentNode.dataset.nat); });
+      td.title = "Voir sur la carte";
+      td.addEventListener("click", function () {
+        var code = td.parentNode.dataset.nat;
+        mode = "carte";
+        comparer = false;
+        appliquerMode();
+        choisirNation(code);
+      });
     });
+  }
+
+  // La fiche de la vue « une carte » : l'indicateur affiché, et pour chaque
+  // commune retenue sa valeur, son rang, sa position dans l'étendue, puis la
+  // courbe de toutes les communes retenues quand la série existe. Rien
+  // d'autre : on a choisi un indicateur, on lit cet indicateur.
+  function ficheIndicateur() {
+    var k = document.getElementById("ct-fiche");
+    var liste = communesComparees();
+    var ind = indic();
+    if (!liste.length || !ind) { k.innerHTML = ""; return; }
+    var champ = ind.id;
+    var h = '<div class="card ct-fi"><div class="tete">' +
+      '<h3 style="margin:0 8px 0 0">' + esc(ind.nom) +
+      (ind.unite ? ' <span class="muted" style="font-weight:400;font-size:14px">en ' + esc(ind.unite) + "</span>" : "") +
+      "</h3>" + puces(liste, true) + selectAjout(liste) + "</div>";
+    h += '<table class="ct-fitbl"><tbody>';
+    liste.forEach(function (c, j) {
+      var v = c.i[champ], rg = v === undefined ? null : rang(champ, c.nom), p = position(champ, v);
+      h += '<tr><td><i class="pt" style="background:' + CAT[j] + '"></i>' + esc(c.nom) +
+        "<small>" + esc(situation(c)) + '</small></td><td class="n"><b>' + nf(v, ind.fmt) + "</b></td>" +
+        '<td class="n muted">' + (rg ? rg[0] + "e sur " + rg[1] : "") + "</td>" +
+        '<td style="width:120px"><div class="ct-jauge"><i style="width:' +
+        (p === null ? 0 : Math.max(2, 100 * p)).toFixed(1) + "%;background:" + CAT[j] + '"></i></div></td></tr>';
+    });
+    h += "</tbody></table>";
+
+    var s = couche_nom === "communes" ? serieDe(champ) : null;
+    if (s) {
+      var lignes = [];
+      liste.forEach(function (c, j) {
+        var v = (c.s || {})[champ];
+        if (v) lignes.push({ vals: v, couleur: CAT[j] });
+      });
+      if (lignes.length) {
+        h += "<h4>De " + s.annees[0] + " à " + s.annees[s.annees.length - 1] +
+          (annee !== null ? ', l\'année affichée sur la carte marquée' : "") + "</h4>" +
+          graphe(s.annees, lignes, ind.fmt, annee);
+      }
+    } else if (couche_nom === "communes" && champ !== "nation" && champ !== "natcmp") {
+      h += '<p class="hint" style="margin-top:12px">La base ne porte pas de série annuelle pour ' +
+        "cet indicateur, seulement la dernière valeur publiée.</p>";
+    }
+    if (couche_nom === "communes" && (champ === "nation" || champ === "natcmp")) h += listeNations(liste[0]);
+
+    h += '<div class="ct-fi-actions"><button class="chip" data-tout="1">' +
+      (liste.length > 1 ? "Toutes leurs données côte à côte" : "Toutes les données de " + esc(liste[0].nom)) +
+      "</button></div></div>";
+    k.innerHTML = h;
+    brancherPanier(k);
+    k.querySelector("button[data-tout]").addEventListener("click", function () { changerMode("communes"); });
+    k.querySelectorAll("li[data-nat]").forEach(function (li) {
+      li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
+      li.style.cursor = "pointer";
+    });
+  }
+
+  // ---------- les vues ----------
+
+  function changerMode(m) {
+    if (m === "deux" && couche_nom !== "communes") m = "carte";
+    if (m === mode) return;
+    mode = m;
+    comparer = mode === "deux";
+    if (mode !== "carte") {
+      // Le tableau et les deux cartes lisent la dernière valeur : si le
+      // curseur du temps avait posé une autre année, on la retire d'abord.
+      arreterLecture();
+      var s = serieCourante();
+      if (s && annee !== null) { annee = s.annees[s.annees.length - 1]; appliquerAnnee(); }
+      annee = null;
+    }
+    appliquerMode();
+  }
+
+  // Pose la vue courante : ce qui se cache, ce qui se montre, puis le rendu.
+  function appliquerMode() {
+    var deux = mode === "deux", choix = mode === "communes";
+    var k = document.getElementById("ct-comparer");
+    if (k) k.hidden = !deux;
+    var vue = document.querySelector("#panel-cartes .ct-vue");
+    if (vue) vue.hidden = deux;
+    ["ct-temps", "ct-sortie", "ct-ineg"].forEach(function (id) {
+      var e = document.getElementById(id);
+      if (e) e.hidden = deux || choix;
+    });
+    boutons();
+    if (deux) {
+      if (!cartesCmp[0]) construireComparaison();
+      if (courant !== "nation" && courant !== "natcmp") {
+        indCmp[0] = courant;
+        var sel0 = document.getElementById("ct-sel-0");
+        if (sel0) sel0.value = courant;
+      }
+      [0, 1].forEach(function (i) {
+        setTimeout(function () {
+          cartesCmp[i].invalidateSize();
+          if (cadreTotal) cartesCmp[i].fitBounds(cadreTotal, { padding: [6, 6] });
+        }, 60);
+        dessinerCmp(i);
+      });
+      fiche();
+      return;
+    }
+    // La carte unique a pu être cachée : Leaflet doit reprendre sa taille.
+    setTimeout(function () {
+      if (map) map.invalidateSize();
+      if (map && cadreTotal) map.fitBounds(cadreTotal, { padding: [8, 8] });
+    }, 60);
+    if (choix) arreterLecture();
+    else { calerEchelle(); barreTemps(); }
+    dessiner();
+    fiche();
   }
 
   function choisirNation(code) {
@@ -1110,21 +1369,19 @@
 
   var INEGALITES = ["sal_ratio", "sal_p50_p10", "sal_p90_p50"];
 
-  function graphe(annees, valeurs, fmt) {
+  // Une ou plusieurs courbes sur les mêmes années, chacune sa couleur, et
+  // l'année marquée par un trait vertical quand la carte en affiche une.
+  function graphe(annees, lignes, fmt, marque) {
     var L_ = 460, H = 170, mg = 34, i;
-    var vals = valeurs.filter(function (v) { return v !== null && v !== undefined; });
+    var vals = [];
+    lignes.forEach(function (l) {
+      l.vals.forEach(function (v) { if (v !== null && v !== undefined) vals.push(v); });
+    });
     if (vals.length < 2) return "";
     var mini = Math.min.apply(null, vals), maxi = Math.max.apply(null, vals);
     var bas = mini - (maxi - mini) * .25, haut = maxi + (maxi - mini) * .2;
     var x = function (j) { return mg + j * (L_ - mg - 8) / (annees.length - 1); };
     var y = function (v) { return 12 + (haut - v) / (haut - bas || 1) * (H - 34); };
-    var pts = [];
-    for (i = 0; i < valeurs.length; i++) {
-      if (valeurs[i] === null || valeurs[i] === undefined) continue;
-      pts.push(x(i).toFixed(1) + "," + y(valeurs[i]).toFixed(1));
-    }
-    var dern = valeurs.length - 1;
-    while (dern > 0 && (valeurs[dern] === null || valeurs[dern] === undefined)) dern--;
     var g = '<svg viewBox="0 0 ' + L_ + " " + H + '" width="100%" height="' + H +
       '" role="img" aria-label="Courbe de ' + annees[0] + " à " + annees[annees.length - 1] + '">';
     // Deux repères horizontaux seulement : une grille dense ferait un tableau.
@@ -1134,10 +1391,25 @@
         '<text x="0" y="' + (y(v) + 4).toFixed(1) + '" font-size="11" fill="var(--muted,#6a7583)">' +
         nf(v, fmt) + "</text>";
     });
-    g += '<polyline fill="none" stroke="var(--accent,#2563eb)" stroke-width="2" ' +
-      'stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>';
-    g += '<circle cx="' + x(dern).toFixed(1) + '" cy="' + y(valeurs[dern]).toFixed(1) +
-      '" r="3.4" fill="var(--accent,#2563eb)"></circle>';
+    var jm = marque === null || marque === undefined ? -1 : annees.indexOf(marque);
+    if (jm >= 0) {
+      g += '<line x1="' + x(jm).toFixed(1) + '" x2="' + x(jm).toFixed(1) + '" y1="8" y2="' + (H - 20) +
+        '" stroke="var(--muted,#6a7583)" stroke-width="1" stroke-dasharray="3 3"></line>';
+    }
+    lignes.forEach(function (l) {
+      var valeurs = l.vals, pts = [];
+      for (i = 0; i < valeurs.length; i++) {
+        if (valeurs[i] === null || valeurs[i] === undefined) continue;
+        pts.push(x(i).toFixed(1) + "," + y(valeurs[i]).toFixed(1));
+      }
+      if (!pts.length) return;
+      var dern = valeurs.length - 1;
+      while (dern > 0 && (valeurs[dern] === null || valeurs[dern] === undefined)) dern--;
+      g += '<polyline fill="none" stroke="' + l.couleur + '" stroke-width="2" ' +
+        'stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>';
+      g += '<circle cx="' + x(dern).toFixed(1) + '" cy="' + y(valeurs[dern]).toFixed(1) +
+        '" r="3.4" fill="' + l.couleur + '"></circle>';
+    });
     g += '<text x="' + mg + '" y="' + (H - 4) + '" font-size="11" fill="var(--muted,#6a7583)">' +
       annees[0] + "</text>";
     g += '<text x="' + (L_ - 8) + '" y="' + (H - 4) + '" font-size="11" text-anchor="end" ' +
@@ -1159,7 +1431,8 @@
       '<p class="hint" style="margin-top:2px">' +
       "Coefficient de Gini des revenus disponibles, enquête SILC. Zéro voudrait dire que " +
       "tout le monde a le même revenu, un que tout revient à une seule personne." +
-      "</p>" + graphe(n.annees, n.gini, "dec") + "</div><div>" +
+      "</p>" + graphe(n.annees, [{ vals: n.gini, couleur: "var(--accent,#2563eb)" }], "dec") +
+      "</div><div>" +
       '<div class="chiffres">' +
       '<div class="c"><b>' + nf(n.gini[d], "dec") + "</b><span>Gini du pays en " +
       n.annees[d] + "</span></div>" +
@@ -1269,42 +1542,8 @@
   // La comparaison remplace la carte unique, elle ne s'ajoute pas dessous :
   // c'est une autre façon de regarder les mêmes communes, pas un bloc de plus.
   // La carte unique, sa barre du temps, sa légende et le panneau des
-  // inégalités se retirent ; les boutons d'indicateurs restent et pilotent la
-  // carte de gauche.
-  function basculerComparaison() {
-    comparer = !comparer;
-    var k = document.getElementById("ct-comparer");
-    k.hidden = !comparer;
-    ["ct-temps", "ct-sortie", "ct-ineg"].forEach(function (id) {
-      var e = document.getElementById(id);
-      if (e) e.hidden = comparer;
-    });
-    var vue = document.querySelector("#panel-cartes .ct-vue");
-    if (vue) vue.hidden = comparer;
-    var b = document.getElementById("ct-cmp-btn");
-    if (b) b.classList.toggle("actif", comparer);
-    if (!comparer) {
-      // La carte unique a été cachée : Leaflet doit reprendre sa taille.
-      setTimeout(function () {
-        if (map) map.invalidateSize();
-        if (map && cadreTotal) map.fitBounds(cadreTotal, { padding: [8, 8] });
-      }, 60);
-      return;
-    }
-    if (!cartesCmp[0]) construireComparaison();
-    if (courant !== "nation" && courant !== "natcmp") {
-      indCmp[0] = courant;
-      var sel0 = document.getElementById("ct-sel-0");
-      if (sel0) sel0.value = courant;
-    }
-    [0, 1].forEach(function (i) {
-      setTimeout(function () {
-        cartesCmp[i].invalidateSize();
-        if (cadreTotal) cartesCmp[i].fitBounds(cadreTotal, { padding: [6, 6] });
-      }, 60);
-      dessinerCmp(i);
-    });
-  }
+  // inégalités se retirent (voir appliquerMode) ; les boutons d'indicateurs
+  // restent et pilotent la carte de gauche.
 
   function optionsIndic(choisi) {
     var h = "";
@@ -1455,26 +1694,25 @@
     var dispo = listeIndic();
     var h = "";
     var fronti = estFrontalier();
-    h += '<div class="ct-couches">' +
-      '<button class="chip' + (couche_nom === "communes" ? " actif" : "") +
-      '" data-couche="communes">Les cent communes</button>' +
-      (kb.quartiers ? '<button class="chip' + (quart ? " actif" : "") +
-        '" data-couche="quartiers">' + esc(kb.quartiers.titre) + "</button>" : "") +
-      (quart || fronti ? "" : '<button class="chip' + (comparer ? " actif" : "") +
-        '" id="ct-cmp-btn">Comparer deux cartes</button>') + "</div>";
-    // Seconde rangée : de l'autre côté, un pays à la fois.
-    h += '<div class="ct-couches ct-voisins"><span>De l\'autre côté</span>' +
-      '<button class="chip' + (couche_nom === "fr" ? " actif" : "") +
-      '" data-couche="fr">France</button>' +
-      '<button class="chip' + (couche_nom === "be" ? " actif" : "") +
-      '" data-couche="be">Belgique</button>' +
-      '<button class="chip' + (couche_nom === "de" ? " actif" : "") +
-      '" data-couche="de">Allemagne</button></div>';
-    // Troisième rangée : les régions du pays affiché. Une carte de cinq cents
-    // communes qu'on ne connaît pas se lit mieux ramenée à un département.
+    // Première rangée, le territoire : cinq choix de même nature, les cent
+    // communes du pays, la capitale par quartier, et la zone frontalière de
+    // chacun des trois voisins. Avant, les pays étaient sur une rangée à part
+    // et « comparer deux cartes » se trouvait parmi les territoires.
+    function terr(code, nom) {
+      return '<button class="chip' + (couche_nom === code ? " actif" : "") +
+        '" data-couche="' + code + '">' + esc(nom) + "</button>";
+    }
+    h += '<div class="ct-tete"><div class="ct-couches"><span>Territoire</span>' +
+      terr("communes", "Luxembourg, les cent communes") +
+      (kb.quartiers ? terr("quartiers", kb.quartiers.titre) : "") +
+      terr("fr", "France, zone frontalière") +
+      terr("be", "Belgique, zone frontalière") +
+      terr("de", "Allemagne, zone frontalière") + "</div>";
+    // Les régions du pays affiché. Une carte de cinq cents communes qu'on ne
+    // connaît pas se lit mieux ramenée à un département.
     var v = coucheVoisine();
     if (v && v.regions && v.regions.length > 1) {
-      h += '<div class="ct-couches ct-voisins"><span>Région</span>' +
+      h += '<div class="ct-couches"><span>Région</span>' +
         '<button class="chip' + (regionSel ? "" : " actif") + '" data-region="">Toutes</button>';
       v.regions.forEach(function (r) {
         h += '<button class="chip' + (regionSel === r.code ? " actif" : "") +
@@ -1482,6 +1720,31 @@
           ' <span class="muted">' + r.n + "</span></button>";
       });
       h += "</div>";
+    }
+    // Seconde rangée, la vue : une carte, deux cartes, ou des communes côte à
+    // côte. Trois registres, trois boutons, et un seul actif.
+    function vueBtn(code, nom, off) {
+      return '<button class="chip' + (mode === code ? " actif" : "") + '" data-vue="' + code + '"' +
+        (off ? ' disabled title="' + esc(off) + '"' : "") + ">" + esc(nom) + "</button>";
+    }
+    h += '<div class="ct-couches"><span>Vue</span>' +
+      vueBtn("carte", "Une carte") +
+      vueBtn("deux", "Deux cartes côte à côte",
+        couche_nom === "communes" ? "" : "Seulement sur les cent communes du Luxembourg") +
+      vueBtn("communes", "Comparer des " + motZone(true)) + "</div></div>";
+
+    if (mode === "communes") {
+      // Pas d'indicateur à choisir ici : le tableau les montre tous. À la
+      // place, le panier des communes retenues.
+      var liste = communesComparees();
+      h += '<div class="ct-panier">' +
+        (liste.length ? "" : '<span class="muted">Jusqu\'à cinq ' + motZone(true) +
+          " : cliquez-les sur la carte, ou prenez-les dans la liste à droite.</span>") +
+        puces(liste, true) + selectAjout(liste) + "</div>";
+      k.innerHTML = h;
+      brancherPanier(k);
+      brancherCouches(k);
+      return;
     }
 
     // Les familles d'abord, sur une rangée ; puis les indicateurs de la
@@ -1600,13 +1863,7 @@
     }
     var cmp = k.querySelector("button[data-natcmp]");
     if (cmp) cmp.addEventListener("click", lancerComparaison);
-    k.querySelectorAll("button[data-region]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        regionSel = b.dataset.region || null;
-        // Les formes affichées changent : on redessine la couche entière.
-        redessinerCouche();
-      });
-    });
+    brancherCouches(k);
     k.querySelectorAll("button[data-mode]").forEach(function (b) {
       b.addEventListener("click", function () {
         natMode = b.dataset.mode;
@@ -1651,11 +1908,24 @@
         fiche();
       });
     });
+  }
+
+  // Les rangées de l'en-tête, territoire, région et vue, se branchent de la
+  // même façon quelle que soit la vue affichée.
+  function brancherCouches(k) {
     k.querySelectorAll("button[data-couche]").forEach(function (b) {
       b.addEventListener("click", function () { changerCouche(b.dataset.couche); });
     });
-    var bc = document.getElementById("ct-cmp-btn");
-    if (bc) bc.addEventListener("click", basculerComparaison);
+    k.querySelectorAll("button[data-region]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        regionSel = b.dataset.region || null;
+        // Les formes affichées changent : on redessine la couche entière.
+        redessinerCouche();
+      });
+    });
+    k.querySelectorAll("button[data-vue]").forEach(function (b) {
+      b.addEventListener("click", function () { changerMode(b.dataset.vue); });
+    });
   }
 
   // Reconstruit les polygones de la couche courante. Sert au changement de
@@ -1699,8 +1969,8 @@
       return;
     }
     // Comparer deux cartes n'a de sens que sur les cent communes : la seconde
-    // carte ne connaît que celles-là.
-    if (comparer) basculerComparaison();
+    // carte ne connaît que celles-là. Comparer des communes vaut partout.
+    if (mode === "deux" && nom !== "communes") { mode = "carte"; comparer = false; }
     couche_nom = nom;
     selection = null;
     panierCommunes = [];
@@ -1729,14 +1999,11 @@
     });
     cadreTotal = L.latLngBounds(tous);
     map.fitBounds(cadreTotal, { padding: [8, 8] });
-    boutons();
     // Les quartiers n'ont pas de séries : la barre du temps se retire d'elle-même.
     arreterLecture();
     annee = null;
-    calerEchelle();
-    barreTemps();
-    dessiner();
-    fiche();
+    filtreTxt = "";
+    appliquerMode();
   }
 
   // Plein écran. L'API Fullscreen du navigateur est refusée dans une iframe et

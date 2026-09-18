@@ -1,4 +1,4 @@
-// Base de connaissances : s'installer au Luxembourg.
+// Base de connaissances : vivre au Luxembourg.
 // Contenu générique et anonyme. Aucune donnée personnelle.
 // Rédaction originale, sources officielles citées par fiche. Vérification : août 2026.
 //

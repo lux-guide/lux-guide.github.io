@@ -338,7 +338,7 @@
         if (e.key !== "ArrowDown") return;
         e.preventDefault();
         ouvrirMenu(b);
-        var premier = $("[data-panel]", menuDe(b));
+        var premier = $("[data-panel], [data-lien]", menuDe(b));
         if (premier) premier.focus();
       });
     });
@@ -352,7 +352,7 @@
           if (e.key === "Escape" && b) { b.focus(); e.preventDefault(); }
           return;
         }
-        var items = $$("[data-panel]", m);
+        var items = $$("[data-panel], [data-lien]", m);
         var i = items.indexOf(document.activeElement);
         if (i === -1) return;
         var j = null;
@@ -518,7 +518,10 @@
     "Famille": "assets/famille.jpg",
     "Sante": "assets/nature.jpg",
     "Mobilite": "assets/mobilite.jpg",
-    "Quotidien": "assets/quotidien.jpg"
+    "Quotidien": "assets/quotidien.jpg",
+    // La tuile de l'epargne partageait le visuel du comparateur, deux fois la
+    // meme photo cote a cote dans la meme rangee.
+    "Epargne": "assets/nature.jpg"
   };
   function visuel(cat) { return VISUELS[cat] || "assets/hero.jpg"; }
 
@@ -644,6 +647,15 @@
     var nbCats = {};
     window.KB.fiches.forEach(function (f) { nbCats[f.cat] = 1; });
 
+    // Les tuiles suivent les trois familles du menu du haut. Alignees a plat,
+    // elles se lisaient comme une liste pour qui arrive : le parcours en tete,
+    // les outils de tous les jours ensuite. Chaque famille porte son intitule.
+    var FAMILLES = [
+      ["Guide d'installation", "Pour qui vient d'arriver", ["parcours", "fiches", "faq"]],
+      ["Budget", "Pour tout le monde", ["simulateur", "comparateur", "epargne"]],
+      ["Où habiter", "Pour tout le monde", ["carte", "lignes", "cartes"]]
+    ];
+    var TUILES = {};
     [
       ["parcours", "Parcours", "Administratif",
        "Les démarches dans l'ordre où elles se conditionnent : la commune d'abord, puis le matricule, la sécurité sociale, la banque et les impôts. Chaque étape se coche.",
@@ -668,9 +680,29 @@
        "tout le réseau"],
       ["cartes", "Les communes, chiffre par chiffre", "Sante",
        "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte, et la carte passe de l'autre côté de la frontière.",
-       "48 indicateurs · 1 006 communes"]
-    ].forEach(function (s) {
-      g.appendChild(tuile(s[2], s[1], s[3], s[4], function () { ouvrir(s[0]); }, null));
+       "48 indicateurs · 1 006 communes"],
+      // L'epargne et la retraite ont leur propre site : la tuile y mene au
+      // lieu d'ouvrir une section.
+      ["epargne", "Épargne et retraite", "Epargne",
+       "La déduction de la prévoyance-vieillesse et des autres postes, chiffrée sur votre situation. Un site à part, parce que le sujet concerne toute personne imposée au Luxembourg.",
+       "site voisin"]
+    ].forEach(function (s) { TUILES[s[0]] = s; });
+
+    FAMILLES.forEach(function (fam) {
+      var tete = el("div", "grp-tete");
+      tete.appendChild(el("h2", null, fam[0]));
+      tete.appendChild(el("span", "grp-compte", fam[1]));
+      g.appendChild(tete);
+      var sous = el("div", "grid grp-grille");
+      fam[2].forEach(function (id) {
+        var s = TUILES[id];
+        if (!s) return;
+        var action = id === "epargne"
+          ? function () { window.location.href = "prevoyance/"; }
+          : function () { ouvrir(s[0]); };
+        sous.appendChild(tuile(s[2], s[1], s[3], s[4], action, null));
+      });
+      g.appendChild(sous);
     });
   }
 
@@ -4202,7 +4234,7 @@
 
     // Export, import, reinitialisation
     $("#x-export").addEventListener("click", function () {
-      var entete = "// Base de connaissances : s'installer au Luxembourg.\n" +
+      var entete = "// Base de connaissances : vivre au Luxembourg.\n" +
         "// Export du " + new Date().toISOString().slice(0, 10) + " depuis l'onglet Administration.\n" +
         "// Remplacer app/kb.js par ce fichier pour rendre les modifications permanentes.\n\n";
       var contenu = entete + "window.KB = " + JSON.stringify(window.KB, null, 2) + ";\n";

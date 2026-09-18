@@ -1,6 +1,17 @@
-# S'installer au Luxembourg
+# Vivre au Luxembourg
 
-Le nom dit exactement ce qu'est le site et n'a donc rien à expliquer. Deux tentatives de renommage
+Le site s'est d'abord appelé « S'installer au Luxembourg ». Le nom a changé le 18 septembre 2026
+parce que le contenu a dépassé l'arrivée : le simulateur de salaire net, le comparateur, les
+cartes des communes et les transports servent autant à quelqu'un qui vit ici depuis vingt ans.
+Un nom qui désigne les nouveaux arrivants écartait tous les autres dès l'onglet du navigateur.
+Ce qui concerne vraiment l'arrivée est regroupé dans le menu « Guide d'installation ».
+
+« Vivre au Luxembourg » ne désigne aucun public, et suit le même modèle que le site voisin,
+« Épargne-retraite au Luxembourg ». La deuxième ligne du cartouche ne change pas.
+
+Ce qui suit retrace le choix précédent, et les raisons de garder la forme en cartouche.
+
+L'ancien nom disait exactement ce qu'était le site à ses débuts. Deux tentatives de renommage
 l'ont confirmé par l'absurde. « Moien », le bonjour luxembourgeois, obligeait le hero à consacrer
 une phrase à traduire le mot, et s'adressait dans une langue locale à un public qui par définition
 ne la parle pas encore. « Guide d'installation », censé rattraper le premier, désigne d'abord en

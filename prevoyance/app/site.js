@@ -1441,7 +1441,7 @@
       l.innerHTML = "";
       var li2 = el("li"), g = el("a", "lien-guide");
       g.href = "../";
-      g.appendChild(document.createTextNode("Guide d'installation au Luxembourg"));
+      g.appendChild(document.createTextNode("Vivre au Luxembourg"));
       g.appendChild(icone("fleche"));
       li2.appendChild(g);
       l.appendChild(li2);

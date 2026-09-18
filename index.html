@@ -3,21 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=36">
+<title>Vivre au Luxembourg</title>
+<link rel="stylesheet" href="app/styles.css?v=37">
 </head>
 <body>
 
 <header class="top">
   <div class="top-in">
-    <button class="brand" id="brand" title="S'installer au Luxembourg. Revenir à l'accueil" aria-label="S'installer au Luxembourg, revenir à l'accueil">
+    <button class="brand" id="brand" title="Vivre au Luxembourg. Revenir à l'accueil" aria-label="Vivre au Luxembourg, revenir à l'accueil">
+      <!-- Une boussole : s'orienter, etre guide. La maison disait « s'installer »,
+           et le site parle maintenant de toute la vie ici. Le blason de l'Etat
+           a ete ecarte : l'article 232bis du Code penal en reserve l'usage
+           professionnel ou publicitaire a une autorisation du gouvernement, et
+           il ferait passer le site pour une page officielle. -->
       <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" focusable="false">
-          <path d="M12 2.4 1.9 10.3l1.3 1.7L4.4 11v10.6h15.2V11l1.2 1 1.3-1.7zM9.7 19.4v-5.1a2.3 2.3 0 0 1 4.6 0v5.1z"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" focusable="false">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M15.6 8.4 13.4 13.4 8.4 15.6 10.6 10.6z" fill="currentColor"/>
         </svg>
       </span>
       <span class="brand-lock">
-        <span class="brand-txt">S'installer</span>
+        <span class="brand-txt">Vivre</span>
         <span class="brand-desc">au Luxembourg</span>
       </span>
     </button>
@@ -52,6 +58,12 @@
           <button role="menuitem" id="tab-comparateur" data-panel="comparateur" aria-controls="panel-comparateur">
             <b id="nom-comparateur">Comparateur</b><i>Habitation, auto, mobile et électricité, critère par critère</i>
           </button>
+          <!-- Un lien et non une section : l'epargne et la retraite ont leurs
+               propres pages. data-lien le fait entrer dans la navigation au
+               clavier du menu, comme les sections. -->
+          <a role="menuitem" data-lien href="prevoyance/">
+            <b>Épargne et retraite</b><i>La déduction 111bis et les autres postes, chiffrée sur votre situation</i>
+          </a>
         </div>
       </div>
 
@@ -75,17 +87,6 @@
       </button>
     </nav>
     <div class="top-outils">
-      <!-- L'epargne-retraite concerne aussi bien quelqu'un qui vit ici depuis
-           vingt ans : ce n'est pas une section du guide d'installation. Ce
-           n'est pas non plus un onglet, c'est un lien qui quitte la page, il
-           est donc a cote des outils. -->
-      <a class="lien-site" href="prevoyance/" title="Épargne et retraite au Luxembourg">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
-          <path d="M3 17.5 9 11l4 3.5L21 6"/>
-          <path d="M15.5 6H21v5.5"/>
-        </svg>
-        <span class="lien-site-txt">Épargne et retraite</span>
-      </a>
       <button id="admin-btn" class="outil" data-panel="admin" title="Paramètres" aria-label="Paramètres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
           <circle cx="12" cy="12" r="3.1"/>
@@ -102,8 +103,8 @@
   <section class="panel" role="region" aria-labelledby="tab-accueil" id="panel-accueil">
 
     <div class="ask">
-      <h2 class="ask-titre">Une question sur votre installation&nbsp;?</h2>
-      <p class="ask-sous">Cherchez une fiche ou posez votre question : l'assistant répond depuis le guide, sources à l'appui.</p>
+      <h2 class="ask-titre">Une question sur la vie au Luxembourg&nbsp;?</h2>
+      <p class="ask-sous">Démarches, salaire, logement, transports : cherchez une fiche ou posez votre question. L'assistant répond depuis le guide, sources à l'appui.</p>
       <div class="ask-bar">
         <input type="search" id="q-accueil" placeholder="Cherchez un mot, ou posez votre question puis Entrée" autocomplete="off">
         <button class="btn" id="q-accueil-btn">Demander</button>
@@ -118,18 +119,19 @@
       </div>
       <div class="hero-in">
         <span class="kicker"><span class="pt"></span>Vérifié en août 2026</span>
-        <h1>Arriver au Luxembourg, <em>sans rien oublier</em></h1>
+        <h1>Vivre au Luxembourg, <em>chaque réponse avec sa source</em></h1>
         <p>
-          Des huit jours pour se déclarer à la commune au calcul de votre salaire net,
-          chaque démarche est expliquée, dans le bon ordre, avec sa source officielle.
+          Les démarches, le salaire net, le choix d'une commune, les transports : tout est
+          expliqué ici avec sa source officielle, que vous arriviez ou que vous viviez au
+          Luxembourg depuis longtemps.
         </p>
         <div class="hero-cta">
-          <button class="btn clair" data-go="assistant">Démarrer avec l'assistant</button>
-          <button class="btn contour" data-go="parcours">Voir le parcours complet</button>
+          <button class="btn clair" data-go="assistant">Poser une question</button>
+          <button class="btn contour" data-go="parcours">Je viens d'arriver</button>
         </div>
         <div class="hero-stats">
           <div class="s"><div class="n" id="stat-fiches">—</div><div class="l">fiches pratiques</div></div>
-          <div class="s"><div class="n">8</div><div class="l">jours pour se déclarer</div></div>
+          <div class="s"><div class="n">1 006</div><div class="l">communes comparées</div></div>
           <div class="s"><div class="n">11,55 %</div><div class="l">de cotisations salariales</div></div>
           <div class="s"><div class="n">0 €</div><div class="l">les transports publics</div></div>
         </div>
@@ -138,10 +140,11 @@
 
     <div id="accueil-reprise"></div>
 
-    <h2>Ce que contient le guide</h2>
+    <h2>Ce que contient le site</h2>
     <p class="lead">
-      Huit outils, chacun autonome. Rien n'oblige à les prendre dans l'ordre : la plupart des
-      arrivants commencent par le parcours, puis reviennent au simulateur avant de signer.
+      Trois familles, les mêmes que le menu du haut. La première concerne l'arrivée, les deux
+      autres servent à tout le monde. Chaque outil est autonome et se prend dans n'importe
+      quel ordre.
     </p>
     <div class="grid" id="accueil-sections"></div>
 
@@ -493,12 +496,14 @@
       Le Luxembourg tient dans une heure de route, et pourtant le loyer double d'une
       commune à l'autre, le salaire médian va du simple au double, et la part de
       résidents étrangers passe de 20 à 70 %. Choisissez un indicateur : les communes
-      se colorent, du plus clair au plus foncé. Cliquez-en une pour voir toutes ses
-      valeurs et son rang, et jusqu'à cinq se comparent côte à côte. La Ville de
-      Luxembourg se regarde aussi quartier par quartier, là où les sources descendent
-      à ce grain. Et comme un salarié sur deux habite de l'autre côté, la carte passe
-      la frontière : la France, la Belgique et l'Allemagne se regardent une par une,
-      avec ce qui s'y mesure de la même façon qu'ici.
+      se colorent, du plus clair au plus foncé. Cliquez-en une pour voir sa valeur, son
+      rang et son évolution dans le temps, et jusqu'à cinq se lisent ensemble sur cet
+      indicateur. Pour voir toutes les données de ces communes côte à côte, il y a une
+      vue à part, « Comparer des communes », et une autre pour poser deux cartes l'une
+      à côté de l'autre. La Ville de Luxembourg se regarde aussi quartier par quartier,
+      là où les sources descendent à ce grain. Et comme un salarié sur deux habite de
+      l'autre côté, la carte passe la frontière : la France, la Belgique et l'Allemagne
+      se regardent une par une, avec ce qui s'y mesure de la même façon qu'ici.
     </p>
     <div class="card">
       <div id="ct-choix"></div>
@@ -872,13 +877,13 @@
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
 <script src="app/bareme.js?v=35"></script>
-<script src="app/kb.js?v=35"></script>
+<script src="app/kb.js?v=36"></script>
 <script src="app/simulateur.js?v=35"></script>
 <script src="comparateur/contrats_kb.js?v=35"></script>
 <script src="comparateur/mrh_kb.js?v=35"></script>
 <script src="comparateur/offres_kb.js?v=35"></script>
 <script src="app/chat.js?v=35"></script>
-<script src="app/ui.js?v=35"></script>
+<script src="app/ui.js?v=38"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=5"></script>
 <script src="app/communaute.js?v=35"></script>
