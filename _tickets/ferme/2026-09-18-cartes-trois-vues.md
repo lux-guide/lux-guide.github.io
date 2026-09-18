@@ -36,6 +36,19 @@ homogènes. Et comparer deux cartes, c'est un autre registre. »
 5. Le panier de communes est le même dans les deux vues : on choisit les
    communes une fois, et on change seulement la façon de les regarder.
 
+## Suites, le même jour
+
+1. L'en-tête du tableau reste collé sous la barre du site pendant qu'on
+   descend : à la trentième ligne on ne savait plus quelle colonne était
+   quelle commune. Le garde-fou `html, body { overflow-x: hidden }` faisait
+   du corps de page un conteneur de défilement et annulait tout collage ; il
+   ne porte plus que sur `html`, ce qui protège autant du débordement.
+2. Chaque colonne porte deux flèches pour la déplacer et une croix pour la
+   retirer. La couleur suit la position, sur la carte et dans les puces.
+3. Sur la carte, cliquer une commune déjà retenue la retire.
+4. Les parts de nationalités portent une barre, la plus longue pour la part
+   la plus forte du bloc, les autres à proportion.
+
 ## Fermé
 
 Fait le 2026-09-18, dans ce dépôt directement. Parcours vérifié par capture

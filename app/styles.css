@@ -1437,8 +1437,12 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
   .sin-titre { min-width: 0; }
 }
 
-/* Garde-fou general : aucun element ne pousse la page horizontalement */
-html, body { overflow-x: hidden; }
+/* Garde-fou general : aucun element ne pousse la page horizontalement. Sur
+   html seulement : la regle se propage a la fenetre, et le corps reste un bloc
+   ordinaire. Posee aussi sur body, elle en faisait un conteneur de defilement
+   et annulait tout position: sticky de la page, dont l'en-tete du comparateur
+   de communes. */
+html { overflow-x: hidden; }
 
 /* ---------- Cibles tactiles ---------- */
 /* Au doigt, une case a cocher de 17 px se rate. On agrandit la case et surtout
