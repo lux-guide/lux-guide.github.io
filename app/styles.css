@@ -560,6 +560,36 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 .row > div:not(.check) { display: flex; flex-direction: column; justify-content: flex-end; }
 .row > div:not(.check) > label { margin-top: 0; }
 
+/* Capacite d'emprunt : la rangee des revenus porte trois champs, dont une
+   liste deroulante longue ; celle du pret en porte six, qui se replient par
+   trois puis par deux. */
+.row-revenus { grid-template-columns: minmax(150px, 1fr) minmax(150px, .9fr) minmax(220px, 1.3fr); }
+.row-pret { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+@media (max-width: 900px) {
+  .row-revenus { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+h3.premier { margin-top: 0; }
+.btn.petit { padding: 8px 14px; font-size: 13.5px; border-radius: 9px; }
+.e-reprise { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+table.plan-table tr.hl td { background: var(--accent-soft); font-weight: 600; }
+table.plan-table tr.total td { font-weight: 650; border-top: 2px solid var(--border-fort); }
+details.e-autres { margin-top: 10px; }
+details.e-autres summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 8px 0; }
+.aides { margin-top: 18px; }
+.card.aide { margin: 0; }
+.card.aide h3 { margin-top: 0; font-size: 16px; }
+.card.aide .chiffre { font-family: var(--serif); font-size: 27px; line-height: 1.1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.card.aide .sous { margin: 4px 0 12px; font-size: 13.5px; color: var(--muted); }
+.card.aide p { font-size: 14px; margin: 0 0 10px; }
+.card.aide h4 { margin: 12px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
+.card.aide ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.card.aide li { margin: 3px 0; }
+.card.aide .liens { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 0 0; }
+.card.aide .liens a, .card.aide .liens button { font-size: 13.5px; }
+.card.aide .liens button { background: none; border: 0; padding: 0; margin: 0; color: var(--accent); cursor: pointer; font: inherit; font-size: 13.5px; text-decoration: underline; }
+.dossier { margin-top: 8px; }
+.aides .aides-locatif { grid-column: 1 / -1; margin: 0; }
+
 /* Rangee de saisie du simulateur. Quatre colonnes egales donnaient a « 12 mois »
    la meme largeur qu'a un libelle de soixante caracteres : la premiere flottait
    dans le vide, la derniere se repliait sur trois lignes. Chaque colonne est

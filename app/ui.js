@@ -1260,6 +1260,8 @@
 
   // ---------- Simulateur ----------
 
+  var dernierNetSim = null;
+
   function majSimulateur() {
     var brut = Number($("#s-brut").value) || 0;
     var mois = Number($("#s-mois").value) || 12;
@@ -1271,6 +1273,8 @@
       forfaits: $("#s-forfaits").checked,
       monoparental: $("#s-monoparental") ? $("#s-monoparental").checked : false
     });
+
+    dernierNetSim = { net: r.netMensuel, texte: "le net d'une paie sur " + mois + " mois" };
 
     var k = $("#s-kpis");
     k.innerHTML = "";
@@ -1352,6 +1356,8 @@
           impatrie1: $("#s-impatrie").checked,
           forfaits: $("#s-forfaits").checked
         });
+
+        dernierNetSim = { net: m.netMensuelRetenue, texte: "le net des deux paies réunies, avant régularisation" };
 
         zoneM.appendChild(el("h2", null, "À deux salaires : ce qui est retenu, et ce qui est vraiment dû"));
 
@@ -1435,29 +1441,411 @@
     ct.appendChild(cb);
   }
 
-  function majEmprunt() {
-    var net = Number($("#e-net").value) || 0;
-    var charges = Number($("#e-charges").value) || 0;
-    var taux = (Number($("#e-taux").value) || 0) / 100;
-    var annees = Number($("#e-duree").value) || 25;
+  // ---------- Capacite d'emprunt ----------
+  //
+  // Trois etapes, dans l'ordre ou la banque les fait : la mensualite que le
+  // net supporte, le capital que cette mensualite rembourse, puis le prix
+  // d'achat une fois les frais d'acte payes et la quotite CSSF respectee.
+  // Les aides de l'Etat suivent, avec le montant qui s'applique au cas saisi.
 
+  var EFFORTS = [[0.33, "33 %"], [0.35, "35 %"], [0.40, "40 %"], [0.45, "45 %"]];
+
+  // Plafonds de revenu de la prime d'accession a la propriete, moyenne des
+  // revenus 2024 et 2025, logement.public.lu, page du 5 fevrier 2026.
+  var PRIME_PLAFONDS = { seul: 52233.65, couple: 78345.72, enfants: [99239.18, 120132.64, 141026.10], parEnfantSup: 15665.33 };
+  // Garantie de l'Etat, guichet.lu, page du 17 fevrier 2026, valeurs 2025.
+  var GARANTIE = { seul: 101874.03, plusieurs: 141048.97, plafond: 303862, part: 0.40 };
+
+  // Communes montrees en premier dans la table des surfaces : les plus
+  // peuplees et les chefs-lieux, la ou les nouveaux arrivants cherchent.
+  var COMMUNES_REPERE = ["Luxembourg", "Esch-sur-Alzette", "Differdange", "Dudelange", "Hesperange",
+    "Strassen", "Bertrange", "Mamer", "Mersch", "Ettelbruck", "Diekirch", "Wiltz", "Echternach",
+    "Remich", "Grevenmacher", "Clervaux", "Sandweiler", "Walferdange"];
+
+  function lireEmprunt() {
+    var sit = $("#e-situation").value;
+    var P = window.SIM.params();
+    return {
+      netMensuel: Number($("#e-net").value) || 0,
+      chargesMensuelles: Number($("#e-charges").value) || 0,
+      tauxAnnuel: (Number($("#e-taux").value) || 0) / 100,
+      annees: Number($("#e-duree").value) || 25,
+      effort: Number($("#e-effort").value) || 0.40,
+      apport: Number($("#e-apport").value) || 0,
+      quotite: sit === "locatif" ? P.quotiteLocatif : (sit === "autre" ? P.quotiteAutre : P.quotitePrimo),
+      situation: sit,
+      acquereurs: Number($("#e-acquereurs").value) || 1,
+      sansAkt: sit === "locatif",
+      enfants: Math.max(0, Number($("#e-enfants").value) || 0),
+      jeune: $("#e-jeune").checked
+    };
+  }
+
+  function pct0(x) { return Math.round(x * 100) + " %"; }
+
+  function ligneTab(tb, cells, cls) {
+    var tr = el("tr", cls || null);
+    cells.forEach(function (c, i) { tr.appendChild(el("td", i > 0 ? "num" : null, c)); });
+    tb.appendChild(tr);
+    return tr;
+  }
+
+  function tableau(titre, entetes) {
+    var wrap = el("div", "table-wrap");
+    if (titre) wrap.appendChild(el("h3", null, titre));
+    var tab = el("table", "plan-table");
+    if (entetes) {
+      var th = el("thead"), tr = el("tr");
+      entetes.forEach(function (c, i) { tr.appendChild(el("th", i > 0 ? "num" : null, c)); });
+      th.appendChild(tr); tab.appendChild(th);
+    }
+    var tb = el("tbody");
+    tab.appendChild(tb); wrap.appendChild(tab);
+    return { wrap: wrap, tb: tb };
+  }
+
+  function majEmprunt() {
+    var o = lireEmprunt();
+    var plan = window.SIM.planFinancement(o);
+    var P = window.SIM.params();
+
+    // Les quatre chiffres
     var k = $("#e-kpis");
     k.innerHTML = "";
-    [0.33, 0.40].forEach(function (eff) {
-      var c = window.SIM.capaciteEmprunt({
-        netMensuel: net, chargesMensuelles: charges,
-        tauxAnnuel: taux, annees: annees, effort: eff
-      });
-      var d = el("div", "kpi" + (eff === 0.33 ? " hl" : ""));
-      d.appendChild(el("div", "k", "Effort " + Math.round(eff * 100) + " %"));
-      d.appendChild(el("div", "v", eur(c.capital)));
-      var m = el("div", "k");
-      m.textContent = c.capital > 0
-        ? "mensualité " + eur(c.mensualiteDisponible)
-        : "charges supérieures à la capacité";
-      d.appendChild(m);
+    [["Mensualité maximale", eur(plan.mensualiteMax), false],
+     ["Capital empruntable", eur(plan.capital), false],
+     ["Prix d'achat possible, frais payés", eur(plan.prix), true],
+     ["Reste à vivre après la mensualité", eur(plan.resteAVivre), false]
+    ].forEach(function (x) {
+      var d = el("div", "kpi" + (x[2] ? " hl" : ""));
+      d.appendChild(el("div", "k", x[0]));
+      d.appendChild(el("div", "v", x[1]));
       k.appendChild(d);
     });
+
+    var z = $("#e-plan");
+    z.innerHTML = "";
+    if (plan.mensualiteMax <= 0) {
+      z.appendChild(el("p", "notice small", "Les crédits en cours absorbent déjà toute la part du net qu'une banque accepte. Aucun nouveau prêt n'est possible sans les solder ou sans revenus supplémentaires."));
+      $("#e-surface").innerHTML = "";
+      rendreAides(o, plan);
+      return;
+    }
+
+    // Selon la part du net acceptee
+    var t1 = tableau("Selon la part du net que la banque accepte", ["Part du net", "Mensualité", "Capital", "Prix possible"]);
+    EFFORTS.forEach(function (e) {
+      var p = window.SIM.planFinancement(Object.assign({}, o, { effort: e[0] }));
+      ligneTab(t1.tb, [e[1], eur(p.mensualiteMax), eur(p.capital), eur(p.prix)],
+               Math.abs(e[0] - o.effort) < 0.001 ? "hl" : null);
+    });
+    z.appendChild(t1.wrap);
+    z.appendChild(el("p", "hint", "Aucune de ces parts n'est une règle : le Luxembourg ne plafonne pas le taux d'effort. "
+      + "33 à 35 % est la pratique ancienne et la moyenne relevée par la Banque centrale, 40 % ce que la plupart des banques "
+      + "visent, 45 % ce que certaines acceptent quand le reste à vivre est confortable. La règle qui s'impose à toutes est "
+      + "la quotité, la part du prix que le prêt peut couvrir : " + pct0(P.quotitePrimo) + " pour un premier logement, "
+      + pct0(P.quotiteAutre) + " pour une autre résidence principale, " + pct0(P.quotiteLocatif) + " pour du locatif."));
+
+    // Le plan de financement au prix maximal
+    var f = plan.frais;
+    var t2 = tableau("Le plan de financement, au prix possible", ["", "Montant"]);
+    ligneTab(t2.tb, ["Prix du logement", eur(plan.prix)]);
+    ligneTab(t2.tb, ["Droits d'enregistrement et de transcription, " + pct(P.droitsEnregistrement + P.droitsTranscription), eur(f.droitsBruts)]);
+    ligneTab(t2.tb, ["Crédit d'impôt Bëllegen Akt, " + o.acquereurs + (o.acquereurs > 1 ? " acquéreurs" : " acquéreur"), "- " + eur(f.akt)]);
+    ligneTab(t2.tb, ["Honoraires du notaire sur la vente, barème, hors débours", eur(f.notaireVente)]);
+    ligneTab(t2.tb, ["Acte de prêt et hypothèque, droits et honoraires, estimation", eur(f.actePret)]);
+    ligneTab(t2.tb, ["Coût total de l'opération", eur(plan.prix + f.total)], "total");
+    ligneTab(t2.tb, ["Fonds propres", "- " + eur(plan.apport)]);
+    ligneTab(t2.tb, ["Emprunt, soit " + pct(plan.quotiteReelle) + " du prix", eur(plan.emprunt)], "total");
+    ligneTab(t2.tb, ["Mensualité sur " + plan.annees + " ans à " + pct(plan.taux), eur(plan.mensualite)]);
+    z.appendChild(t2.wrap);
+
+    var lim;
+    if (plan.limite === "quotite") {
+      lim = "Ici, ce n'est pas le salaire qui arrête le calcul mais la quotité : le prêt ne peut couvrir que "
+        + pct0(plan.quotite) + " du prix, et les fonds propres font le reste, frais compris. Le capital que le net "
+        + "supporte, " + eur(plan.capital) + ", n'est pas utilisé en entier. Plus d'apport, plus de logement.";
+    } else if (plan.limite === "apport") {
+      lim = "Sans fonds propres, aucun achat n'est possible dans cette situation : le prêt ne couvre que "
+        + pct0(plan.quotite) + " du prix, et les frais d'acte restent toujours à payer soi-même.";
+    } else {
+      lim = "Ici, c'est le net qui arrête le calcul : la mensualité est au maximum de ce que la banque accepte, "
+        + "et les fonds propres paient les frais d'acte" + (plan.apport > plan.frais.total + 1 ? " puis une part du prix" : "") + ".";
+    }
+    z.appendChild(el("p", "hint", lim));
+
+    var stress = el("p", "hint");
+    stress.textContent = "Avec un taux deux points plus haut, " + pct(plan.taux + 0.02) + ", la même mensualité "
+      + "n'emprunterait plus que " + eur(plan.capitalStress) + ", et le prêt ci-dessus coûterait " + eur(plan.mensualiteStress)
+      + " par mois. Les banques font ce genre de test avant d'accepter un dossier, et un taux fixe protège de ce risque "
+      + "pour toute la durée.";
+    z.appendChild(stress);
+
+    rendreSurfaces(plan);
+    rendreAides(o, plan);
+  }
+
+  // Ce que le prix possible achete, commune par commune, d'apres les prix
+  // annonces de l'Observatoire de l'Habitat deja charges pour l'onglet Communes.
+  function rendreSurfaces(plan) {
+    var z = $("#e-surface");
+    z.innerHTML = "";
+    if (plan.prix <= 0) return;
+    if (!window.COMMUNES) {
+      if (!rendreSurfaces.demande) {
+        rendreSurfaces.demande = true;
+        var n = document.createElement("script");
+        n.src = "cartes/communes_kb.js?v=5";
+        n.onload = function () { majEmprunt(); };
+        document.head.appendChild(n);
+      }
+      return;
+    }
+    var kb = window.COMMUNES;
+    var indics = {};
+    (kb.indicateurs || []).forEach(function (i) { indics[i.id] = i; });
+    var communes = (kb.communes || []).filter(function (c) {
+      return c.i && (c.i.prix_appt_m2 > 0 || c.i.prix_maison_m2 > 0);
+    });
+    if (!communes.length) return;
+
+    z.appendChild(el("h3", null, "Ce que " + eur(plan.prix) + " achète, commune par commune"));
+    z.appendChild(el("p", "hint", "Surface obtenue en divisant le prix possible par le prix au m² annoncé dans les offres de vente, "
+      + (indics.prix_appt_m2 ? indics.prix_appt_m2.source : "Observatoire de l'Habitat") + ". Ce sont des prix demandés, "
+      + "pas des prix signés, et une moyenne par commune : un bien précis s'en écarte. L'onglet Communes donne le détail et l'évolution."));
+
+    var rang = {};
+    COMMUNES_REPERE.forEach(function (n, i) { rang[n] = i; });
+    var reperes = communes.filter(function (c) { return rang[c.nom] !== undefined; })
+      .sort(function (a, b) { return rang[a.nom] - rang[b.nom]; });
+    var autres = communes.filter(function (c) { return rang[c.nom] === undefined; })
+      .sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); });
+
+    function remplir(tb, liste) {
+      liste.forEach(function (c) {
+        var a = c.i.prix_appt_m2 > 0 ? Math.floor(plan.prix / c.i.prix_appt_m2) : null;
+        var m = c.i.prix_maison_m2 > 0 ? Math.floor(plan.prix / c.i.prix_maison_m2) : null;
+        ligneTab(tb, [c.nom + " (" + c.canton + ")",
+          a === null ? "pas de donnée" : a + " m² à " + eur(c.i.prix_appt_m2) + "/m²",
+          m === null ? "pas de donnée" : m + " m² à " + eur(c.i.prix_maison_m2) + "/m²"]);
+      });
+    }
+    var t = tableau(null, ["Commune", "Appartement", "Maison"]);
+    remplir(t.tb, reperes);
+    z.appendChild(t.wrap);
+    if (autres.length) {
+      var det = el("details", "e-autres");
+      det.appendChild(el("summary", null, "Les " + autres.length + " autres communes"));
+      var t2 = tableau(null, ["Commune", "Appartement", "Maison"]);
+      remplir(t2.tb, autres);
+      det.appendChild(t2.wrap);
+      z.appendChild(det);
+    }
+  }
+
+  // Les aides de l'Etat, chacune avec le montant qui s'applique au cas saisi.
+  function carteAide(titre, chiffre, sousChiffre, paras, liens) {
+    var c = el("div", "card aide");
+    c.appendChild(el("h3", null, titre));
+    if (chiffre) c.appendChild(el("div", "chiffre", chiffre));
+    if (sousChiffre) c.appendChild(el("p", "sous", sousChiffre));
+    paras.forEach(function (p) {
+      if (typeof p === "string") { c.appendChild(el("p", null, p)); return; }
+      c.appendChild(el("h4", null, p.h));
+      var ul = el("ul");
+      p.l.forEach(function (x) { ul.appendChild(el("li", null, x)); });
+      c.appendChild(ul);
+    });
+    if (liens && liens.length) {
+      var pl = el("p", "liens");
+      liens.forEach(function (l) {
+        if (l.fiche) {
+          var b = el("button", "lien-fiche-inline", l.t);
+          b.type = "button";
+          b.addEventListener("click", function () { montrerFiche(l.fiche); });
+          pl.appendChild(b);
+        } else {
+          var a = el("a", null, l.t);
+          a.href = l.u; a.target = "_blank"; a.rel = "noopener noreferrer";
+          pl.appendChild(a);
+        }
+      });
+      c.appendChild(pl);
+    }
+    return c;
+  }
+
+  function rendreAides(o, plan) {
+    var z = $("#e-aides");
+    z.innerHTML = "";
+    var P = window.SIM.params();
+    var enf = o.enfants;
+    var locatif = o.situation === "locatif";
+    if (locatif) {
+      var nl = el("p", "notice small aides-locatif");
+      nl.textContent = "Ces aides visent la résidence principale. Pour un achat locatif, il ne reste que la déduction "
+        + "des intérêts et des charges du revenu locatif, et le régime d'amortissement accéléré annoncé le 16 juillet 2026 "
+        + "(6 % par an pendant 6 ans jusqu'à 600 000 € par immeuble), à confirmer par la loi.";
+      z.appendChild(nl);
+    }
+
+    // 1. Bellegen Akt
+    var aktMax = P.bellegenAkt * o.acquereurs;
+    z.appendChild(carteAide("Bëllegen Akt, le crédit d'impôt chez le notaire",
+      locatif ? "0 €" : eur(plan.frais.akt),
+      locatif ? "réservé à l'habitation personnelle, rien pour du locatif"
+              : "sur " + eur(plan.frais.droitsBruts) + " de droits, plafond " + eur(aktMax) + " pour " + o.acquereurs + (o.acquereurs > 1 ? " acquéreurs" : " acquéreur"),
+      ["Les droits d'enregistrement et de transcription font " + pct(P.droitsEnregistrement + P.droitsTranscription)
+        + " du prix. L'État en abandonne jusqu'à " + eur(P.bellegenAkt) + " par acquéreur, une fois dans la vie, et ce qui n'est pas utilisé reste "
+        + "disponible pour un achat suivant. Sans condition de revenu ni de prix.",
+       { h: "Conditions", l: ["Occuper le logement soi-même dans les 2 ans de l'acte, 4 ans pour un terrain à bâtir.",
+                              "Y rester au moins 2 ans de suite. Louer avant, même en partie, oblige à rembourser le crédit.",
+                              "Un minimum de 100 € de droits reste toujours perçu."] },
+       { h: "Démarche", l: ["Rien à demander : le notaire l'inscrit dans l'acte et le déduit du décompte.",
+                            "Le gouvernement a annoncé le 16 juillet 2026 un passage à 45 000 € pour les actes signés depuis cette date. Tant que la loi n'est pas votée, le notaire applique 40 000 € et la différence se demande ensuite en remboursement à l'Administration de l'enregistrement."] }],
+      [{ t: "Guichet.lu, la fiche", u: "https://guichet.public.lu/fr/citoyens/aides/logement-construction/aides-indirectes/credit-impot-actes-notaries.html" },
+       { t: "Administration de l'enregistrement", u: "https://pfi.public.lu/fr/citoyen/enregistrement/credit-impot.html" },
+       { t: "Communiqué du 16 juillet 2026", u: "https://gouvernement.lu/fr/actualites/toutes_actualites/communiques/2026/07-juillet/16-meisch-roth-booster-wunnengsbau2.html" }]));
+
+    // 2. TVA logement
+    z.appendChild(carteAide("TVA logement à 3 %, sur le neuf et les travaux",
+      "jusqu'à " + eur(P.tvaLogementPlafond),
+      "de TVA en moins par logement, soit 14 points sur environ " + eur(P.tvaLogementPlafond / 0.14) + " de travaux hors taxe",
+      ["Le taux normal est de 17 %. Pour créer ou rénover la résidence principale, il descend à 3 % sur les travaux, "
+        + "jusqu'à ce que l'avantage atteigne " + eur(P.tvaLogementPlafond) + " sur la vie du logement. Un appartement acheté sur plan en profite "
+        + "sur sa part construction, un logement ancien sur ses travaux de rénovation.",
+       { h: "Conditions", l: ["Le logement sert d'habitation principale pendant au moins 2 ans, sinon l'avantage se rembourse avec les intérêts légaux.",
+                              "L'habitation principale occupe plus des trois quarts de la surface, sinon l'avantage est proportionnel.",
+                              "Le neuf mis en location n'y a plus droit depuis 2024, la rénovation d'un logement loué si."] },
+       { h: "Démarche et pièces", l: ["Application directe : la demande se dépose avant le début des travaux, signée par l'entreprise et par vous, et la facture arrive à 3 %.",
+                                      "Remboursement : après paiement à 17 %, dans les 5 ans, pour au moins 3 000 € hors taxe et 6 mois de factures.",
+                                      "Formulaires sur Guichet.lu, à envoyer au bureau d'imposition Luxembourg 12 de l'Administration de l'enregistrement. Le solde d'avantage restant sur un logement se consulte sur MyGuichet.",
+                                      "Un doublement du plafond à 100 000 € a été annoncé en juin 2026, sous réserve de l'accord de la Commission européenne : pas encore applicable."] }],
+      [{ t: "Guichet.lu, remboursement ou application directe", u: "https://guichet.public.lu/fr/citoyens/aides/logement-construction/aides-indirectes/remboursement-tva-taux-reduit.html" },
+       { t: "Formulaire d'application directe", u: "https://guichet.public.lu/dam-assets/catalogue-formulaires/logement-aides/application-tva/demande-application-fr.pdf" },
+       { t: "Formulaire de remboursement", u: "https://guichet.public.lu/dam-assets/catalogue-formulaires/logement-aides/remboursement-tva/remboursement-tva-fr.pdf" }]));
+
+    // 3. Prime d'accession
+    var plafondPrime = enf > 0
+      ? (enf <= 3 ? PRIME_PLAFONDS.enfants[enf - 1] : PRIME_PLAFONDS.enfants[2] + (enf - 3) * PRIME_PLAFONDS.parEnfantSup)
+      : (o.acquereurs > 1 ? PRIME_PLAFONDS.couple : PRIME_PLAFONDS.seul);
+    z.appendChild(carteAide("Prime d'accession à la propriété",
+      "500 à 10 000 €",
+      "selon le revenu et la composition du ménage, + 40 % en copropriété ou maison en rangée, + 15 % en jumelée",
+      ["Une aide en capital, versée une fois, pour un ménage qui achète ou construit sa résidence principale avec un prêt hypothécaire "
+        + "et dont le revenu reste sous un plafond. Pour votre ménage, tel que saisi, ce plafond est de " + eur(plafondPrime)
+        + " par an, revenu moyen des deux années précédentes, au sens de la loi sur les aides au logement.",
+       { h: "Conditions", l: ["Résider au Luxembourg depuis plus de 3 mois, être inscrit au registre national.",
+                              "Ne posséder aucun autre logement, même à l'étranger, au-delà d'un tiers en indivision.",
+                              "Habiter le logement au moins 2 ans. Toutes les aides en capital réunies ne dépassent pas 35 000 € par personne."] },
+       { h: "Démarche et pièces", l: ["Demande dans l'année qui suit l'acte notarié, au Guichet unique des aides au logement, 11 rue de Hollerich à Luxembourg, tél. 8002 1010.",
+                                      "Pièce d'identité, déclaration de composition du ménage (formulaire L/A21), déclaration sur l'honneur (A92), certificats de salaire des 2 années, copie de l'acte, certificat de prêt de la banque."] }],
+      [{ t: "Guichet.lu, la fiche et le formulaire", u: "https://guichet.public.lu/fr/citoyens/aides/logement-construction/aides-capital/prime-construction-acquisition.html" },
+       { t: "Logement.lu, les plafonds de revenu", u: "https://logement.public.lu/fr/proprietaire/obtenir-aide-achat-construction/prime-accession-propriete.html" }]));
+
+    // 4. Garantie de l'Etat
+    var garantieMax = Math.min(GARANTIE.plafond, GARANTIE.part * (plan.prix + plan.frais.total));
+    z.appendChild(carteAide("Garantie de l'État, quand l'apport manque",
+      plan.prix > 0 ? "jusqu'à " + eur(garantieMax) : "jusqu'à " + eur(GARANTIE.plafond),
+      "l'État se porte garant de la part du prêt au-delà de 60 % du coût, dans la limite de 40 % et de " + eur(GARANTIE.plafond),
+      ["Elle remplace l'apport que la banque exige d'un ménage qui a épargné régulièrement mais pas assez. Revenu maximal : "
+        + eur(o.acquereurs > 1 ? GARANTIE.plusieurs : GARANTIE.seul) + " par an pour " + (o.acquereurs > 1 ? "plusieurs emprunteurs" : "un emprunteur seul") + ", valeurs 2025.",
+       { h: "Conditions", l: ["Avoir épargné au moins 3 ans sur un compte de la même banque, avec un solde qui a monté d'au moins 1 000 € nets par an.",
+                              "Un prêt hypothécaire qui finance au moins 60 % du coût du projet, pour la résidence principale.",
+                              "Aucun autre logement possédé au-delà d'un tiers en indivision."] },
+       { h: "Pièces", l: ["Historique du compte d'épargne sur 3 ans, compromis ou acte, plan de financement et conditions du prêt, justificatifs de revenus, formulaires L/A21 et A92.",
+                          "Les pièces manquantes se fournissent dans les 3 mois, sinon le dossier est classé."] }],
+      [{ t: "Guichet.lu, la fiche et le formulaire", u: "https://guichet.public.lu/fr/citoyens/aides/logement-construction/aides-capital/garantie-etat.html" }]));
+
+    // 5. Subvention d'interet
+    var plafondSubv = (o.jeune ? P.subvPlafondPretJeune : P.subvPlafondPret) + enf * P.subvMajorationEnfant;
+    var pretRetenu = Math.min(plan.emprunt, plafondSubv);
+    z.appendChild(carteAide("Subvention d'intérêt, chaque année",
+      "0,25 à 3,50 points",
+      "de taux pris en charge par l'État, sur un prêt retenu jusqu'à " + eur(plafondSubv) + " pour votre ménage",
+      ["Une aide qui suit le prêt pendant toute sa durée, versée à la banque ou à vous, selon le revenu et le nombre d'enfants. "
+        + "Sur votre emprunt, la part retenue serait de " + eur(pretRetenu) + " : à 1 point de subvention, cela fait "
+        + eur(pretRetenu * 0.01 / 12) + " par mois en moins. Le plafond de prêt est passé à 250 000 € le 16 juillet 2026, "
+        + "majoré de 30 000 € par enfant, et à 300 000 € quand tous les acquéreurs ont 35 ans ou moins.",
+       { h: "Conditions", l: ["Résidence principale occupée au moins 2 ans après le premier versement, et tant que l'aide court.",
+                              "Revenu du ménage sous le plafond de la loi, revu chaque année. La subvention ne dépasse jamais le taux du prêt."] },
+       { h: "Démarche et pièces", l: ["Demande à tout moment de l'année au Guichet unique des aides au logement, puis renouvelée.",
+                                      "Pièce d'identité, L/A21, A92, acte notarié, certificat de prêt, justificatifs de revenus.",
+                                      "La fiche Guichet.lu du 19 février 2026 affiche encore l'ancien plafond de 200 000 € : le communiqué du gouvernement fait foi pour les demandes depuis le 16 juillet 2026."] }],
+      [{ t: "Guichet.lu, la fiche et le formulaire", u: "https://guichet.public.lu/fr/citoyens/aides/logement-construction/aides-interet/subvention-interet.html" },
+       { t: "Communiqué du 16 juillet 2026", u: "https://gouvernement.lu/fr/actualites/toutes_actualites/communiques/2026/07-juillet/16-meisch-roth-booster-wunnengsbau2.html" }]));
+
+    // 6. Deduction des interets
+    var membres = o.acquereurs + enf;
+    z.appendChild(carteAide("Déduire les intérêts du prêt de l'impôt",
+      plan.interetsAn1 > 0 ? "≈ " + eur(plan.interetsAn1) : "",
+      plan.interetsAn1 > 0 ? "d'intérêts la première année sur cet emprunt, déductibles en entier les deux premières années" : "",
+      ["Ensuite le plafond dépend de l'ancienneté d'occupation et se multiplie par le nombre de membres du ménage : pour "
+        + membres + (membres > 1 ? " personnes" : " personne") + ", " + eur(4000 * membres) + " par an les années 3 à 6, puis "
+        + eur(3000 * membres) + ", puis " + eur(2000 * membres) + ". Cela passe par la déclaration annuelle, pas par la paie.",
+       { h: "À prévoir", l: ["Garder le certificat d'intérêts que la banque envoie chaque début d'année.",
+                             "L'assurance solde restant dû est déductible aussi, et une prime unique l'est avec un plafond majoré : demandez le décompte à l'assureur."] }],
+      [{ t: "La fiche du guide sur la déduction", fiche: "interets" },
+       { t: "Administration des contributions directes", u: "https://impotsdirects.public.lu/fr/az/i/inter_debit.html" }]));
+
+    // 7. Achat sur plan
+    z.appendChild(carteAide("Achat sur plan : les droits sur le terrain seul",
+      "3 ans",
+      "pour les ventes en état futur d'achèvement signées depuis le 16 juillet 2026",
+      ["Quand la construction est achevée à 80 % au plus le jour de l'acte, les droits d'enregistrement et de transcription ne portent que sur la valeur "
+        + "du terrain, plus sur la partie construction. Sur un appartement neuf, la construction fait souvent la plus grande part du prix : "
+        + "l'économie dépasse alors le Bëllegen Akt lui-même, et les deux se cumulent.",
+       { h: "Démarche", l: ["Mesure annoncée par le gouvernement, projet de loi en cours : le notaire perçoit les droits pleins et l'excédent se demande en remboursement une fois la loi publiée.",
+                            "Demander au promoteur la ventilation terrain et construction dans l'acte."] }],
+      [{ t: "Communiqué du 16 juillet 2026", u: "https://gouvernement.lu/fr/actualites/toutes_actualites/communiques/2026/07-juillet/16-meisch-roth-booster-wunnengsbau2.html" }]));
+
+    rendreDossier();
+    rendreSourcesEmprunt();
+  }
+
+  // Les pieces que la banque demande. Liste de Spuerkeess, feuille de rendez-vous
+  // logement de decembre 2025, et FAQ de la BIL ; les autres banques demandent
+  // la meme chose a peu de details pres.
+  function rendreDossier() {
+    var z = $("#e-dossier");
+    if (z.children.length) return;
+    z.appendChild(el("h3", null, "Le dossier pour la banque"));
+    z.appendChild(el("p", "hint", "Un rendez-vous de prêt se prépare avec ces pièces ; les avoir toutes au premier rendez-vous fait gagner deux ou trois semaines. Liste de Spuerkeess, décembre 2025, et de la BIL."));
+    var g = el("div", "grid serre dossier");
+    [["Pour tout le monde", ["Carte d'identité ou passeport, et carte de séjour", "Carte de sécurité sociale",
+        "Les 3 dernières fiches de salaire", "Le contrat de travail",
+        "L'historique du compte courant des 3 derniers mois, si le salaire n'est pas domicilié dans cette banque",
+        "L'encours des prêts dans d'autres banques", "La preuve de l'épargne et des placements ailleurs",
+        "L'extrait de carrière d'assurance pension (CNAP, CGPO ou CPFEC)", "L'assurance incendie"]],
+     ["Pour un achat", ["Le compromis de vente signé", "Photos ou plans du bien", "Le passeport énergétique",
+        "Le plan cadastral", "Le justificatif des fonds propres"]],
+     ["Pour une construction", ["Le contrat de réservation", "Le cahier des charges", "Les plans", "L'autorisation de bâtir",
+        "Le descriptif de l'agence ou du promoteur", "Le passeport énergétique"]],
+     ["Pour des travaux", ["Les devis, qui doivent couvrir l'essentiel du montant emprunté", "L'acte notarié du bien",
+        "Photos ou plans avant travaux", "Le passeport énergétique"]]
+    ].forEach(function (b) {
+      var c = el("div", "card aide");
+      c.appendChild(el("h3", null, b[0]));
+      var ul = el("ul");
+      b[1].forEach(function (x) { ul.appendChild(el("li", null, x)); });
+      c.appendChild(ul);
+      g.appendChild(c);
+    });
+    z.appendChild(g);
+  }
+
+  function rendreSourcesEmprunt() {
+    var z = $("#e-sources");
+    if (z.children.length) return;
+    z.appendChild(el("strong", null, "D'où viennent ces chiffres, vérifiés le 18 septembre 2026. "));
+    z.appendChild(document.createTextNode(
+      "Taux d'effort de 33 à 45 % : pratiques bancaires rapportées par myLIFE (BIL), mortgage.lu, carmoimmo.lu et switchr.lu, aucune "
+      + "n'ayant valeur de règle. Quotités : règlement CSSF 20-08 du 3 décembre 2020. Droits de 6 % et 1 %, Bëllegen Akt de 40 000 € : "
+      + "Administration de l'enregistrement, loi du 3 juillet 2025. Honoraires du notaire : barème par tranches des notaires, "
+      + "tarif des ventes de gré à gré, hors débours, que seul le décompte du notaire remplace. Aides : fiches Guichet.lu de février 2026 "
+      + "et communiqué du gouvernement du 16 juillet 2026. Taux par défaut de 3,9 % : entre les taux fixes affichés en septembre 2026 "
+      + "par la BIL (3,77 %), Spuerkeess (3,86 %), Raiffeisen (4,00 %) et BGL (4,16 %), relevés par switchr.lu. Pièces du dossier : "
+      + "Spuerkeess et BIL. Rien ici ne remplace l'offre de la banque ni le décompte du notaire."));
   }
 
   // ---------- Quelle classe d'impot ----------
@@ -1717,7 +2105,8 @@
   var STORAGE_SIM = "luxguide.simulateur.v1";
   var CHAMPS_SIM = ["s-brut", "s-brut2", "s-classe", "s-mois", "s-impatrie",
                     "s-forfaits", "s-monoparental", "e-net", "e-charges",
-                    "e-taux", "e-duree"];
+                    "e-taux", "e-duree", "e-effort", "e-apport", "e-situation",
+                    "e-acquereurs", "e-enfants", "e-jeune"];
 
   function sauverSimulateur() {
     var etat = {};
@@ -1761,8 +2150,18 @@
       $(s).addEventListener("input", function () { majSimulateur(); sauverSimulateur(); });
       $(s).addEventListener("change", function () { majSimulateur(); sauverSimulateur(); });
     });
-    ["#e-net", "#e-charges", "#e-taux", "#e-duree"].forEach(function (s) {
+    ["#e-net", "#e-charges", "#e-taux", "#e-duree", "#e-effort", "#e-apport",
+     "#e-situation", "#e-acquereurs", "#e-enfants", "#e-jeune"].forEach(function (s) {
       $(s).addEventListener("input", function () { majEmprunt(); sauverSimulateur(); });
+      $(s).addEventListener("change", function () { majEmprunt(); sauverSimulateur(); });
+    });
+    // Le net calcule sur l'autre sous-onglet se reporte d'un clic : c'est le
+    // meme chiffre que la banque demande, et personne ne devrait le retaper.
+    $("#e-reprendre").addEventListener("click", function () {
+      if (!dernierNetSim) return;
+      $("#e-net").value = Math.round(dernierNetSim.net);
+      $("#e-reprendre-info").textContent = "Repris : " + eur(dernierNetSim.net) + ", " + dernierNetSim.texte + ".";
+      majEmprunt(); sauverSimulateur();
     });
     majSimulateur();
     majEmprunt();
@@ -4205,7 +4604,17 @@
       cissmBas: "Crédit SSM, brut mensuel minimum",
       cissmHaut: "Crédit SSM, plus rien à partir de",
       cimPlein: "Crédit monoparental, montant plein",
-      cimMin: "Crédit monoparental, plancher"
+      cimMin: "Crédit monoparental, plancher",
+      bellegenAkt: "Bëllegen Akt, par acquéreur",
+      droitsEnregistrement: "Droits d'enregistrement",
+      droitsTranscription: "Droits de transcription",
+      quotitePrimo: "Quotité, premier logement",
+      quotiteAutre: "Quotité, autre résidence principale",
+      quotiteLocatif: "Quotité, locatif",
+      subvPlafondPret: "Subvention d'intérêt, prêt retenu",
+      subvPlafondPretJeune: "Subvention d'intérêt, prêt retenu, 35 ans ou moins",
+      subvMajorationEnfant: "Subvention d'intérêt, majoration par enfant",
+      tvaLogementPlafond: "TVA logement, avantage maximal"
     };
     var cont = $("#a-params");
     cont.innerHTML = "";

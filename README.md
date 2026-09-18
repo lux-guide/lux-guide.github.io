@@ -60,7 +60,7 @@ l'assistant restent des entrées directes, ce sont les deux que l'on prend sans 
 | Le guide | Fiches | Fiches thématiques illustrées, recherche plein texte, filtrage selon le profil |
 | Le guide | Parcours | Frise chronologique personnalisée, étapes cochables (avancement conservé dans le navigateur) |
 | Le guide | Questions et réponses | Toutes les questions recensées, chaque réponse adossée à une fiche |
-| Budget | Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, capacité d'emprunt, arbre de décision de la classe, et onze simulateurs officiels |
+| Budget | Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, plan de financement du net au prix d'achat avec les aides de l'État, arbre de décision de la classe, et onze simulateurs officiels |
 | Budget | Comparateur | Habitation sur documents réels, auto, mobile et électricité en démonstration |
 | Où habiter | Comparer des logements | Distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
 | Où habiter | Bus, tram et train | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet. « Une ligne » tout court ne disait pas de quoi il s'agissait |
@@ -218,6 +218,23 @@ Chaîne de calcul :
    un salaire modeste. Le barème 2025 reste celui de 2026 : l'administration n'en a pas
    publié d'autre. La cotisation pension est passée à 8,5 % au 1er janvier 2026, loi du
    18 décembre 2025.
+
+**Capacité d'emprunt.** Le sous-onglet ne s'arrête plus au capital : il va du net mensuel au
+prix d'achat, frais compris. La chaîne : mensualité acceptée (33, 35, 40 ou 45 % du net, sans
+règle légale, la quotité CSSF 20-08 étant la seule limite réglementaire : 100 % du prix pour un
+premier logement, 90 % pour une autre résidence principale, 80 % en locatif), capital par la
+formule d'annuité, puis prix maximal trouvé par dichotomie sous la double contrainte
+`emprunt ≤ quotité × prix` et `emprunt + apport ≥ prix + frais(prix, emprunt)`. Les frais
+sont les droits d'enregistrement et de transcription (7 %) moins le Bëllegen Akt (40 000 € par
+acquéreur, loi du 3 juillet 2025 ; 45 000 € annoncés le 16 juillet 2026, loi à voter), les
+honoraires du notaire au barème par tranches, et l'acte de prêt (droit d'obligation 0,24 %,
+inscription 0,05 %, honoraires). Le net se reprend d'un clic depuis le simulateur de salaire.
+Le prix possible se traduit en m² par commune avec les prix annoncés de `cartes/communes_kb.js`,
+chargé à la demande. Sept cartes d'aides suivent (Bëllegen Akt, TVA logement 3 %, prime
+d'accession, garantie de l'État, subvention d'intérêt, déduction des intérêts, droits sur le
+terrain seul en VEFA), chacune avec le montant du cas saisi, les conditions, les pièces et le
+lien Guichet.lu, puis la liste des pièces pour la banque (Spuerkeess, BIL). Les paramètres
+(droits, Bëllegen Akt, quotités, plafonds de la subvention) sont modifiables dans Administration.
 
 **Limite à connaître.** Le résultat correspond à la retenue sur un seul salaire. En classe 2, la déclaration retient un taux moyen mondial qui intègre les revenus étrangers exonérés : le net réel peut être inférieur. Le simulateur donne donc un plafond, pas un net définitif, et l'interface le dit (encadré « un ordre de grandeur, pas un chiffre à l'euro près »). Aucune marge chiffrée n'est affichée : aucune source n'en donne, et l'écart dépend de la situation.
 

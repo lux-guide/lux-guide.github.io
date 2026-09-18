@@ -49,8 +49,36 @@ window.SIM = (function () {
     cimSeuil1: 60000,
     cimSeuil2: 105000,         // au-dela : 750 par an
     cimTaux: 0.0612,           // entre les deux : 3 504 - (revenu - 60 000) x 0,0612
-    cimMin: 750
+    cimMin: 750,
+
+    // Achat d'un logement. Sources : pfi.public.lu (droits d'enregistrement
+    // 6 % et de transcription 1 %, credit d'impot Bellegen Akt de 40 000 EUR
+    // par acquereur, loi du 3 juillet 2025), bareme des honoraires des
+    // notaires (tarif 7, vente de gre a gre), reglement CSSF 20-08 (quotites),
+    // guichet.lu (subvention d'interet, TVA logement), communique du
+    // gouvernement du 16 juillet 2026 (plafonds de la subvention d'interet).
+    droitsEnregistrement: 0.06,
+    droitsTranscription: 0.01,
+    bellegenAkt: 40000,        // par acquereur ; 45 000 annonces pour les actes depuis le 16.07.2026, loi a voter
+    droitsMinimum: 100,        // percu meme quand le credit couvre tout
+    hypoObligation: 0.0024,    // droit d'obligation sur le capital emprunte
+    hypoInscription: 0.0005,   // inscription hypothecaire
+    tvaHonoraires: 0.17,
+    quotitePrimo: 1.00,        // CSSF 20-08 : primo-accedant, residence principale
+    quotiteAutre: 0.90,        // autre residence principale
+    quotiteLocatif: 0.80,      // investissement locatif
+    subvPlafondPret: 250000,   // subvention d'interet : pret pris en compte
+    subvPlafondPretJeune: 300000, // acquereurs de 35 ans ou moins
+    subvMajorationEnfant: 30000,
+    tvaLogementPlafond: 50000  // faveur fiscale maximale par logement
   };
+
+  // Honoraires du notaire, bareme par tranches, hors debours, TVA comprise.
+  var BAREME_NOTAIRE = [
+    [3718.40, 0.04], [7436.80, 0.02], [17352.54, 0.015], [24789.35, 0.008],
+    [74368.05, 0.006], [148736.11, 0.005], [247893.52, 0.003],
+    [1239467.62, 0.001], [Infinity, 0.0005]
+  ];
 
   function params() { return P; }
   function setParams(patch) { Object.assign(P, patch); }
@@ -261,6 +289,87 @@ window.SIM = (function () {
     return out;
   }
 
+  function honorairesNotaire(montant) {
+    var h = 0, bas = 0;
+    for (var i = 0; i < BAREME_NOTAIRE.length && montant > bas; i++) {
+      var haut = BAREME_NOTAIRE[i][0];
+      h += (Math.min(montant, haut) - bas) * BAREME_NOTAIRE[i][1];
+      bas = haut;
+    }
+    return Math.max(h, 99.16) * (1 + P.tvaHonoraires);
+  }
+
+  // Frais d'acquisition : droits, credit d'impot, notaire, acte de pret.
+  // opts : { prix, emprunt, acquereurs, sansAkt }
+  function fraisAcquisition(opts) {
+    var prix = Math.max(0, Number(opts.prix) || 0);
+    var emprunt = Math.max(0, Number(opts.emprunt) || 0);
+    var n = Math.max(1, Number(opts.acquereurs) || 1);
+    var droitsBruts = prix * (P.droitsEnregistrement + P.droitsTranscription);
+    // Le credit d'impot ne vaut que pour l'habitation personnelle.
+    var akt = opts.sansAkt ? 0 : Math.min(droitsBruts, P.bellegenAkt * n);
+    var droits = prix > 0 ? Math.max(droitsBruts - akt, P.droitsMinimum) : 0;
+    var notaireVente = prix > 0 ? honorairesNotaire(prix) : 0;
+    var hypotheque = emprunt * (P.hypoObligation + P.hypoInscription);
+    var notairePret = emprunt > 0 ? honorairesNotaire(emprunt) : 0;
+    return {
+      droitsBruts: droitsBruts, akt: akt, droits: droits,
+      notaireVente: notaireVente, hypotheque: hypotheque, notairePret: notairePret,
+      actePret: hypotheque + notairePret,
+      total: droits + notaireVente + hypotheque + notairePret
+    };
+  }
+
+  // Plan de financement : du net mensuel au prix d'achat maximal, frais
+  // compris, sous la double contrainte de l'effort et de la quotite.
+  // opts : { netMensuel, chargesMensuelles, tauxAnnuel, annees, effort,
+  //          apport, quotite, acquereurs }
+  function planFinancement(opts) {
+    var net = Math.max(0, Number(opts.netMensuel) || 0);
+    var charges = Math.max(0, Number(opts.chargesMensuelles) || 0);
+    var taux = Number(opts.tauxAnnuel) || 0;
+    var annees = Number(opts.annees) || 25;
+    var effort = Number(opts.effort) || 0.40;
+    var apport = Math.max(0, Number(opts.apport) || 0);
+    var quotite = Number(opts.quotite) || 1;
+    var n = Math.max(1, Number(opts.acquereurs) || 1);
+    var sansAkt = !!opts.sansAkt;
+
+    var cap = capaciteEmprunt({ netMensuel: net, chargesMensuelles: charges,
+                                tauxAnnuel: taux, annees: annees, effort: effort });
+    var capital = Math.max(0, cap.capital || 0);
+
+    function possible(prix) {
+      var e = Math.min(capital, quotite * prix);
+      return e + apport >= prix + fraisAcquisition({ prix: prix, emprunt: e, acquereurs: n, sansAkt: sansAkt }).total;
+    }
+    var bas = 0, haut = capital + apport + 1;
+    for (var i = 0; i < 60; i++) {
+      var mid = (bas + haut) / 2;
+      if (possible(mid)) bas = mid; else haut = mid;
+    }
+    var prix = bas < 1000 ? 0 : bas;
+    var frais = fraisAcquisition({ prix: prix, emprunt: Math.min(capital, quotite * prix), acquereurs: n, sansAkt: sansAkt });
+    var emprunt = Math.max(0, Math.min(capital, quotite * prix, prix + frais.total - apport));
+    frais = fraisAcquisition({ prix: prix, emprunt: emprunt, acquereurs: n, sansAkt: sansAkt });
+
+    var limite = "effort";
+    if (prix > 0 && emprunt < capital - 1) limite = apport > 0 ? "quotite" : "apport";
+    var mens = emprunt > 0 ? mensualite(emprunt, taux, annees) : 0;
+    var mensStress = emprunt > 0 ? mensualite(emprunt, taux + 0.02, annees) : 0;
+    var capitalStress = capaciteEmprunt({ netMensuel: net, chargesMensuelles: charges,
+                                          tauxAnnuel: taux + 0.02, annees: annees, effort: effort }).capital || 0;
+    return {
+      mensualiteMax: Math.max(0, cap.mensualiteDisponible || 0),
+      capital: capital, prix: prix, frais: frais, emprunt: emprunt, apport: apport,
+      quotite: quotite, quotiteReelle: prix > 0 ? emprunt / prix : 0,
+      mensualite: mens, resteAVivre: net - charges - mens,
+      mensualiteStress: mensStress, capitalStress: capitalStress,
+      interetsAn1: emprunt * taux, limite: limite,
+      effort: effort, taux: taux, annees: annees, net: net, charges: charges
+    };
+  }
+
   // Capacite d'emprunt indicative.
   // opts : { netMensuel, chargesMensuelles, tauxAnnuel, annees, effort }
   function capaciteEmprunt(opts) {
@@ -295,6 +404,9 @@ window.SIM = (function () {
     creditSSM: creditSSM,
     creditMonoparental: creditMonoparental,
     capaciteEmprunt: capaciteEmprunt,
+    honorairesNotaire: honorairesNotaire,
+    fraisAcquisition: fraisAcquisition,
+    planFinancement: planFinancement,
     mensualite: mensualite,
     params: params,
     setParams: setParams

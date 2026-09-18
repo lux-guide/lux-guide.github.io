@@ -284,42 +284,94 @@
     </div>
 
     <div id="sim-emprunt" hidden>
-    <h2 style="margin-top:0">Capacité d'emprunt indicative</h2>
+    <h2 style="margin-top:0">Du salaire net au prix d'achat</h2>
     <p class="lead small">
-      Les banques raisonnent en taux d'effort : la somme des mensualités rapportée aux revenus nets.
-      Les crédits en cours viennent en déduction.
+      La banque raisonne sur le net qui arrive sur le compte, après cotisations et retenue
+      d'impôt, jamais sur le brut. Elle en accepte 33 à 45 % en mensualités selon l'établissement,
+      le reste à vivre et la solidité du dossier, puis vérifie que le prêt ne dépasse pas la part du
+      prix que la CSSF autorise. Ce plan enchaîne les trois étapes : la mensualité, le capital,
+      puis le prix d'achat une fois les frais d'acte payés.
     </p>
     <div class="card">
-      <div class="row">
+      <h3 class="premier">Ce que le ménage gagne</h3>
+      <div class="row row-revenus">
         <div>
-          <label for="e-net">Revenus nets du ménage (EUR/mois)</label>
+          <label for="e-net">Revenus nets du ménage, par mois</label>
           <input type="number" id="e-net" value="5000" min="0" step="100">
         </div>
         <div>
-          <label for="e-charges">Crédits en cours (EUR/mois)</label>
+          <label for="e-charges">Crédits en cours, par mois</label>
           <input type="number" id="e-charges" value="0" min="0" step="50">
         </div>
         <div>
+          <label for="e-effort">Part du net que la banque accepte</label>
+          <select id="e-effort">
+            <option value="0.33">33 %, la plus prudente</option>
+            <option value="0.35">35 %, la moyenne observée</option>
+            <option value="0.40" selected>40 %, la plus courante</option>
+            <option value="0.45">45 %, le plus haut pratiqué</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint e-reprise">
+        <button type="button" class="btn ghost petit" id="e-reprendre">Reprendre le net du simulateur de salaire</button>
+        <span id="e-reprendre-info"></span>
+      </p>
+    </div>
+    <div class="card">
+      <h3 class="premier">Le prêt et l'achat</h3>
+      <div class="row row-pret">
+        <div>
           <label for="e-taux">Taux annuel (%)</label>
-          <input type="number" id="e-taux" value="4.3" min="0" step="0.1">
+          <input type="number" id="e-taux" value="3.9" min="0" step="0.1">
         </div>
         <div>
           <label for="e-duree">Durée (années)</label>
           <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
         </div>
+        <div>
+          <label for="e-apport">Fonds propres (EUR)</label>
+          <input type="number" id="e-apport" value="50000" min="0" step="5000">
+        </div>
+        <div>
+          <label for="e-situation">Ce que vous achetez</label>
+          <select id="e-situation">
+            <option value="primo" selected>Premier logement, résidence principale</option>
+            <option value="autre">Résidence principale, déjà propriétaire</option>
+            <option value="locatif">Investissement locatif</option>
+          </select>
+        </div>
+        <div>
+          <label for="e-acquereurs">Acquéreurs sur l'acte</label>
+          <select id="e-acquereurs">
+            <option value="1" selected>Une personne</option>
+            <option value="2">Deux personnes</option>
+          </select>
+        </div>
+        <div>
+          <label for="e-enfants">Enfants à charge</label>
+          <input type="number" id="e-enfants" value="0" min="0" max="10" step="1">
+        </div>
+      </div>
+      <div class="check" style="margin-top:14px">
+        <input type="checkbox" id="e-jeune">
+        <label for="e-jeune">Tous les acquéreurs ont 35 ans ou moins</label>
       </div>
     </div>
     <div class="kpis" id="e-kpis"></div>
-    <p class="hint">
-      Les seuils de 33 % et 40 % sont des pratiques bancaires, pas un plafond légal : la limite
-      réglementaire fixée au Luxembourg porte sur la quotité, la part du prix financée, et non sur
-      le taux d'effort. Chaque banque décide selon les revenus et le reste à vivre.
+    <div id="e-plan"></div>
+    <div id="e-surface"></div>
+
+    <h2 id="e-titre-aides">Les aides de l'État, et les papiers à préparer</h2>
+    <p class="lead small">
+      Six dispositifs existent pour l'achat d'une résidence principale. Deux se règlent chez le
+      notaire ou avec l'entreprise, les autres se demandent au Guichet unique des aides au logement,
+      sous conditions de revenu. Chaque carte donne le montant, les conditions, les pièces, et le
+      lien officiel où déposer la demande.
     </p>
-    <p class="hint">
-      Quotités maximales au Luxembourg : 100 % du prix pour un primo-accédant en résidence principale,
-      90 % pour une autre résidence principale, 80 % pour un investissement locatif. Les frais d'acte
-      restent à financer sur fonds propres.
-    </p>
+    <div id="e-aides" class="grid serre aides"></div>
+    <div id="e-dossier"></div>
+    <div class="notice small" id="e-sources"></div>
     </div>
 
     <!-- Quelle classe d'impot : un arbre de decision, pas un calcul -->
@@ -876,17 +928,17 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=35"></script>
+<script src="app/bareme.js?v=36"></script>
 <script src="app/kb.js?v=36"></script>
-<script src="app/simulateur.js?v=35"></script>
-<script src="comparateur/contrats_kb.js?v=35"></script>
-<script src="comparateur/mrh_kb.js?v=35"></script>
-<script src="comparateur/offres_kb.js?v=35"></script>
-<script src="app/chat.js?v=35"></script>
+<script src="app/simulateur.js?v=36"></script>
+<script src="comparateur/contrats_kb.js?v=36"></script>
+<script src="comparateur/mrh_kb.js?v=36"></script>
+<script src="comparateur/offres_kb.js?v=36"></script>
+<script src="app/chat.js?v=36"></script>
 <script src="app/ui.js?v=38"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=6"></script>
-<script src="app/communaute.js?v=35"></script>
+<script src="app/communaute.js?v=36"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>
