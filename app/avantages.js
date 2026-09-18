@@ -82,7 +82,7 @@
       savoir: "L'employeur doit déclarer les heures supplémentaires à part du salaire brut, avec leur nombre. Vérifiez qu'elles apparaissent sur une ligne distincte de la fiche de paie.",
       sources: [{ t: "Guichet.lu, demander le paiement des heures supplémentaires", u: "https://guichet.public.lu/fr/citoyens/travail/conditions-travail/duree-travail/paiement-heures-supplementaires.html" }],
       verifie: "18 septembre 2026",
-      lien: { fiche: "conges", texte: "Fiche « Congés et jours fériés »" }
+      lien: { fiche: "cout_vie", texte: "Fiche « Salaire, coût de la vie et indexation »" }
     },
     {
       id: "cheques-repas", moment: "salaire", mode: "employeur",
@@ -333,7 +333,7 @@
       chiffre: "0 €", sous: "bus, tram et train en seconde classe, pour tous",
       texte: "Depuis le 29 février 2020, les transports publics sont gratuits sur tout le territoire, bus, trams et trains en seconde classe, sans titre de transport. La gratuité vaut pour les résidents comme pour les frontaliers, sur la partie luxembourgeoise du trajet.",
       savoir: "L'économie dépend de la desserte réelle de la commune, à vérifier aux heures qui vous concernent avant de choisir où habiter.",
-      sources: [{ t: "Ministère de la Mobilité et des Travaux publics, mobiliteit.lu", u: "https://www.mobiliteit.lu/" }],
+      sources: [{ t: "Communauté des transports, mobiliteit.lu", u: "https://www.mobiliteit.lu/" }],
       verifie: "18 septembre 2026",
       lien: { panneau: "lignes", texte: "Voir les arrêts d'où l'on rejoint le travail" }
     },
@@ -343,7 +343,10 @@
       chiffre: "2,5 %", sous: "de hausse des prix déclenchent une tranche indiciaire",
       texte: "Dès que l'indice des prix à la consommation progresse de 2,5 %, une tranche indiciaire est déclenchée et l'ensemble des salaires, pensions et minima sociaux est revalorisé d'autant. Le mécanisme s'applique à tous les salariés, sans négociation, et il explique pourquoi les montants publiés changent en cours d'année.",
       savoir: "Les allocations familiales et l'indemnité de congé parental suivent le même indice depuis 2021.",
-      sources: [{ t: "STATEC, statistiques officielles", u: "https://statistiques.public.lu/fr.html" }],
+      sources: [
+        { t: "STATEC, statistiques officielles", u: "https://statistiques.public.lu/fr.html" },
+        { t: "Caisse pour l'avenir des enfants, montants de l'allocation", u: "https://cae.public.lu/fr/allocations/allocation-pour-lavenir-des-enfants/montants.html" }
+      ],
       verifie: "18 septembre 2026",
       lien: { fiche: "cout_vie", texte: "Fiche « Salaire, coût de la vie et indexation »" }
     },
