@@ -1305,16 +1305,21 @@
     var det = $("#s-detail");
     det.innerHTML = "";
     var wrap = el("div", "table-wrap"), tab = el("table");
+    // L'ordre est celui d'une fiche de paie : les cotisations deductibles,
+    // l'impot sur ce qui reste, puis la contribution dependance, qui n'est
+    // pas deductible et se retranche apres l'impot.
     var lignes = [
       ["Brut annuel", eur(r.brut)],
       ["Cotisations sociales (" + pct(r.tauxCotisations) + ", plafonnées)", "- " + eur(r.cotisations)],
-      ["Contribution dépendance", "- " + eur(r.dependance)],
-      ["Net avant impôt", eur(r.netAvantImpot)]
+      ["Semi-net, base de l'impôt", eur(r.semiNet)]
     ];
     if (r.exoneration > 0) lignes.push(["Exonération impatriés", "- " + eur(r.exoneration)]);
     lignes.push(["Revenu imposable retenu", eur(r.imposable)]);
     lignes.push(["Impôt sur le revenu", "- " + eur(r.impot)]);
-    lignes.push(["Fonds pour l'emploi (" + pct(r.tauxFondsEmploi) + ")", "- " + eur(r.fondsEmploi)]);
+    lignes.push(["Fonds pour l'emploi (" + (r.fondsMajore
+      ? "7 %, et 9 % sur la tranche au-delà du seuil"
+      : pct(r.tauxFondsEmploi)) + ")", "- " + eur(r.fondsEmploi)]);
+    lignes.push(["Contribution dépendance, non déductible", "- " + eur(r.dependance)]);
     // Les credits portes sur la fiche de paie, un par ligne quand il joue.
     if (r.cis > 0) lignes.push(["Crédit d'impôt pour salariés", "+ " + eur(r.cis)]);
     if (r.cico2 > 0) lignes.push(["Crédit d'impôt CO2", "+ " + eur(r.cico2)]);

@@ -96,6 +96,24 @@ window.SIM = (function () {
     return Math.max(0, last[2] * R - last[3]);
   }
 
+  // Contribution au fonds pour l'emploi : 7 % de l'impot, et 9 % pour la
+  // seule tranche de revenu qui depasse 150 000 EUR (classes 1 et 1a) ou
+  // 300 000 EUR (classe 2). Le 9 % ne s'applique donc pas a tout l'impot :
+  // la contribution vaut 7 % de l'impot du au seuil, plus 9 % de l'impot
+  // au-dela. C'est la formule du recueil officiel des baremes (0,09 x I
+  // moins une constante egale a 2 % de l'impot au seuil). Elle etait
+  // appliquee a tout l'impot, soit environ 80 EUR par mois de trop pour
+  // un salaire au-dessus du seuil. Verifie contre le simulateur BDO.
+  function fondsEmploi(impot, imposable, classe) {
+    var seuil = (classe === "classe2") ? P.seuilFondsClasse2 : P.seuilFondsClasse1;
+    if (imposable <= seuil) {
+      return { montant: impot * P.fondsEmploi, taux: P.fondsEmploi, majore: false };
+    }
+    var impotSeuil = impotBareme(seuil, classe);
+    var montant = impotSeuil * P.fondsEmploi + (impot - impotSeuil) * P.fondsEmploiTaux2;
+    return { montant: montant, taux: impot > 0 ? montant / impot : P.fondsEmploi, majore: true };
+  }
+
   // ---------- Credits d'impot ----------
 
   // Credit d'impot pour salaries, sur le salaire brut annuel.
@@ -150,7 +168,14 @@ window.SIM = (function () {
     var abattementDep = P.ssmAnnuel / 4;
     var dependance = P.tauxDependance * Math.max(0, brut - abattementDep);
 
-    var netAvantImpot = brut - cotisations - dependance;
+    // La contribution dependance n'est pas deductible : l'impot se calcule sur
+    // le brut moins les seules cotisations maladie et pension (le semi-net),
+    // et la dependance se retranche ensuite du net, comme sur une fiche de
+    // paie. Elle etait deduite avant l'impot, ce qui gonflait le net de
+    // 20 a 60 EUR par mois selon le salaire. Source : ACD, calcul d'une
+    // remuneration mensuelle nette ; verifie contre le simulateur BDO.
+    var semiNet = brut - cotisations;
+    var netAvantImpot = semiNet - dependance;
 
     // Exoneration impatrie : 50 % du brut, dans la limite de la remuneration eligible.
     var exoneration = 0;
@@ -158,14 +183,13 @@ window.SIM = (function () {
       exoneration = P.impatrieTaux * Math.min(brut, P.impatriePlafond);
     }
 
-    var imposable = netAvantImpot - exoneration;
+    var imposable = semiNet - exoneration;
     if (forfaits) imposable -= (P.fraisObtention + P.depensesSpeciales);
     imposable = Math.max(0, imposable);
 
     var impot = impotBareme(imposable, classe);
-    var seuil = (classe === "classe2") ? P.seuilFondsClasse2 : P.seuilFondsClasse1;
-    var tauxFonds = imposable > seuil ? P.fondsEmploiTaux2 : P.fondsEmploi;
-    var fonds = impot * tauxFonds;
+    var fondsRes = fondsEmploi(impot, imposable, classe);
+    var fonds = fondsRes.montant;
     var impotTotal = impot + fonds;
 
     // Les credits s'imputent sur l'impot, fonds pour l'emploi compris, et le
@@ -185,12 +209,14 @@ window.SIM = (function () {
       cotisations: cotisations,
       tauxCotisations: tauxCotis,
       dependance: dependance,
+      semiNet: semiNet,
       netAvantImpot: netAvantImpot,
       exoneration: exoneration,
       imposable: imposable,
       impot: impot,
       fondsEmploi: fonds,
-      tauxFondsEmploi: tauxFonds,
+      tauxFondsEmploi: fondsRes.taux,
+      fondsMajore: fondsRes.majore,
       impotTotal: impotTotal,
       cis: cis,
       cico2: cico2,
@@ -232,7 +258,8 @@ window.SIM = (function () {
     // Le second salaire subit les cotisations, puis un taux fixe, sans barème.
     var rS = calcul({ brut: secondaire, classe: classe, mois: mois, forfaits: false });
     var tauxFixe = TAUX_FICHE_ADDITIONNELLE[classe] || 0.15;
-    var impotSecondaire = rS.netAvantImpot * tauxFixe;
+    // Le taux fixe s'applique au semi-net, la dependance n'est pas deductible.
+    var impotSecondaire = rS.semiNet * tauxFixe;
 
     var retenueTotale = rP.impotTotal + impotSecondaire;
     var netAvantImpotMenage = rP.netAvantImpot + rS.netAvantImpot;
@@ -243,11 +270,9 @@ window.SIM = (function () {
     var netSecondaire = rS.netAvantImpot - impotSecondaire + rS.credits;
 
     // Régularisation annuelle : barème appliqué au revenu imposable cumulé.
-    var imposableCumule = Math.max(0, rP.imposable + rS.netAvantImpot - (forfaits ? (P.fraisObtention + P.depensesSpeciales) : 0));
+    var imposableCumule = Math.max(0, rP.imposable + rS.semiNet - (forfaits ? (P.fraisObtention + P.depensesSpeciales) : 0));
     var impotAssiette = impotBareme(imposableCumule, classe);
-    var seuil = (classe === "classe2") ? P.seuilFondsClasse2 : P.seuilFondsClasse1;
-    var tauxFonds = imposableCumule > seuil ? P.fondsEmploiTaux2 : P.fondsEmploi;
-    var impotAssietteTotal = impotAssiette * (1 + tauxFonds);
+    var impotAssietteTotal = impotAssiette + fondsEmploi(impotAssiette, imposableCumule, classe).montant;
     var netReel = netAvantImpotMenage - impotAssietteTotal + creditsMenage;
 
     return {

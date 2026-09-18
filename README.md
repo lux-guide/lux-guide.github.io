@@ -205,11 +205,16 @@ Il applique le **barème officiel de l'Administration des contributions directes
 
 Chaîne de calcul :
 
-1. Cotisations sociales sur le brut plafonné à cinq fois le salaire social minimum.
-2. Contribution dépendance, sans plafond, après abattement d'un quart de salaire social minimum.
-3. Exonération de 50 % au titre du régime des impatriés, si l'option est cochée.
-4. Forfaits de frais d'obtention et de dépenses spéciales, optionnels.
-5. Impôt selon le barème, puis contribution au fonds pour l'emploi.
+1. Cotisations sociales sur le brut plafonné à cinq fois le salaire social minimum. Ce qui
+   reste est le semi-net, base de l'impôt.
+2. Exonération de 50 % au titre du régime des impatriés, si l'option est cochée.
+3. Forfaits de frais d'obtention et de dépenses spéciales, optionnels.
+4. Impôt selon le barème, puis contribution au fonds pour l'emploi : 7 % de l'impôt, et 9 %
+   pour la seule tranche de revenu qui dépasse 150 000 € (classes 1 et 1a) ou 300 000 €
+   (classe 2), formule du recueil officiel des barèmes.
+5. Contribution dépendance, 1,4 % du brut après abattement d'un quart de salaire social
+   minimum, sans plafond. Elle n'est pas déductible : elle se retranche du net après l'impôt,
+   comme sur une fiche de paie, et non du revenu imposable.
 6. Crédits d'impôt portés sur la fiche de paie, tous restituables : crédit pour salariés
    (jusqu'à 600 € par an, nul à partir de 80 000 € de brut), crédit CO2 (216 € jusqu'à
    40 000 €, dégressif ensuite), crédit salaire social minimum (81 € par mois entre 1 800 et
@@ -219,6 +224,24 @@ Chaîne de calcul :
    un salaire modeste. Le barème 2025 reste celui de 2026 : l'administration n'en a pas
    publié d'autre. La cotisation pension est passée à 8,5 % au 1er janvier 2026, loi du
    18 décembre 2025.
+
+**Vérification du 18 septembre 2026.** Le simulateur a été passé sur vingt cas (dix salaires
+de 2 771,33 à 20 000 € par mois, trois classes) contre le simulateur de salaire de BDO
+Luxembourg, un cabinet qui fait des fiches de paie, et contre l'exemple officiel de calcul
+d'une rémunération mensuelle nette de l'Administration des contributions directes. Deux
+erreurs sont sorties, et sont corrigées :
+
+1. La contribution dépendance était déduite du revenu imposable. Elle n'est pas déductible.
+   Le net affiché était trop haut de 20 à 60 € par mois selon le salaire.
+2. Le 9 % du fonds pour l'emploi était appliqué à tout l'impôt dès que le revenu dépassait le
+   seuil, au lieu de la seule tranche au-delà. Le net était trop bas de 75 à 80 € par mois
+   pour un salaire au-dessus de 150 000 € par an en classe 1 ou 1a.
+
+Après correction, l'écart avec BDO est d'au plus 2,15 € par mois sur les vingt cas, hors crédits
+d'impôt que BDO n'ajoute pas (il renvoie à la fiche de retenue). Ce qui reste vient de
+l'arrondi des barèmes mensuels. BDO n'est pas une source : les chiffres du simulateur viennent
+des pages officielles, BDO a servi de contre-épreuve, et c'est le recueil des barèmes qui a
+tranché la formule du fonds pour l'emploi.
 
 **Organisation du panneau.** Les quatre outils se choisissent par des cartes, et
 chacun a son adresse (`#simulateur`, `#simulateur/emprunt`, `#simulateur/classe`,
