@@ -181,6 +181,29 @@ body { padding-top: var(--h-top); }
 .outil svg { width: 17px; height: 17px; display: block; }
 .outil:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .outil[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+/* Lien vers le site voisin. Meme bordure que les outils, pour se lire comme
+   une commande de l'en-tete et non comme une section de plus : une section
+   reste sur la page, ce lien en change. */
+.lien-site {
+  display: inline-flex; align-items: center; gap: 7px; flex: none;
+  height: 34px; padding: 0 12px;
+  border: 1px solid var(--border-fort); border-radius: 10px;
+  background: var(--surface); color: var(--text-2);
+  font-size: 13px; font-weight: 550; line-height: 1;
+  text-decoration: none; white-space: nowrap;
+  transition: color .16s, border-color .16s, background .16s;
+}
+.lien-site:hover, .lien-site:focus-visible { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.lien-site svg { width: 16px; height: 16px; flex: none; display: block; }
+/* Le libelle part des que la barre se resserre. Il prend 131 px, et sur un
+   telephone il ecrasait la navigation jusqu'a zero : ce sont les sections du
+   guide qui portent la navigation, le signe et l'infobulle suffisent a
+   retrouver le lien. */
+@media (max-width: 1099px) {
+  .lien-site { width: 34px; padding: 0; justify-content: center; }
+  .lien-site-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
 nav.tabs {
   display: flex; gap: 2px; flex-wrap: nowrap; margin-left: auto;
   flex: 0 1 auto; min-width: 0; align-self: stretch; align-items: center;

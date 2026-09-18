@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S'installer au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=35">
+<link rel="stylesheet" href="app/styles.css?v=36">
 </head>
 <body>
 
@@ -29,7 +29,7 @@
       <button id="tab-accueil" data-panel="accueil" aria-controls="panel-accueil">Accueil</button>
 
       <div class="grp">
-        <button class="grp-btn" id="grp-guide" aria-haspopup="true" aria-expanded="false" aria-controls="menu-guide">Le guide<span class="chev" aria-hidden="true"></span></button>
+        <button class="grp-btn" id="grp-guide" aria-haspopup="true" aria-expanded="false" aria-controls="menu-guide">Guide d'installation<span class="chev" aria-hidden="true"></span></button>
         <div class="menu" id="menu-guide" role="menu" aria-labelledby="grp-guide" hidden>
           <button role="menuitem" id="tab-fiches" data-panel="fiches" aria-controls="panel-fiches">
             <b id="nom-fiches">Fiches pratiques</b><i>Chaque fiche est autonome, avec ses sources officielles</i>
@@ -75,6 +75,17 @@
       </button>
     </nav>
     <div class="top-outils">
+      <!-- L'epargne-retraite concerne aussi bien quelqu'un qui vit ici depuis
+           vingt ans : ce n'est pas une section du guide d'installation. Ce
+           n'est pas non plus un onglet, c'est un lien qui quitte la page, il
+           est donc a cote des outils. -->
+      <a class="lien-site" href="prevoyance/" title="Épargne et retraite au Luxembourg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
+          <path d="M3 17.5 9 11l4 3.5L21 6"/>
+          <path d="M15.5 6H21v5.5"/>
+        </svg>
+        <span class="lien-site-txt">Épargne et retraite</span>
+      </a>
       <button id="admin-btn" class="outil" data-panel="admin" title="Paramètres" aria-label="Paramètres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
           <circle cx="12" cy="12" r="3.1"/>
