@@ -147,6 +147,15 @@
       "  color:var(--muted,#6a7583);font-weight:600;margin-right:4px;min-width:5.5em}",
       ".ct-couches .chip{font-weight:600}",
       ".ct-couches .chip[disabled]{opacity:.45;cursor:not-allowed;transform:none}",
+      // La liste des pays voisins prend l'habit d'une puce, avec un chevron
+      // pour dire qu'elle s'ouvre. Le chevron est en image de fond, il reste
+      // quand la puce devient active.
+      ".ct-couches select.ct-pays{appearance:none;-webkit-appearance:none;padding-right:30px;cursor:pointer;",
+      // Un select prend toute la largeur par defaut dans la feuille du site :
+      // ici il a la taille de son texte, comme les puces a cote.
+      "  width:auto;flex:0 0 auto;",
+      "  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236a7583%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>');background-repeat:no-repeat;",
+      "  background-position:right 11px center;background-size:12px}",
       // Le panier de communes, et la pastille de couleur qui suit chaque
       // commune de la carte au tableau.
       ".ct-panier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}",
@@ -1880,20 +1889,27 @@
     var dispo = listeIndic();
     var h = "";
     var fronti = estFrontalier();
-    // Première rangée, le territoire : cinq choix de même nature, les cent
-    // communes du pays, la capitale par quartier, et la zone frontalière de
-    // chacun des trois voisins. Avant, les pays étaient sur une rangée à part
-    // et « comparer deux cartes » se trouvait parmi les territoires.
+    // Première rangée, le territoire : les cent communes du pays, la capitale
+    // par quartier, et la zone frontalière d'un voisin, choisi dans une liste.
+    // Les trois pays étaient trois boutons : on n'en regarde jamais qu'un à
+    // la fois, et trois noms de pays sur la rangée la faisaient lire comme
+    // une liste de pays plutôt que comme le choix d'un territoire.
     function terr(code, nom) {
       return '<button class="chip' + (couche_nom === code ? " actif" : "") +
         '" data-couche="' + code + '">' + esc(nom) + "</button>";
     }
+    var paysActif = PAYS_COUCHE[couche_nom] ? couche_nom : "";
+    var selPays = '<select class="chip ct-pays' + (paysActif ? " actif" : "") +
+      '" data-pays aria-label="Zone frontalière : choisir le pays voisin">' +
+      '<option value=""' + (paysActif ? "" : " selected") + ">Zone frontalière d'un voisin…</option>" +
+      [["fr", "France"], ["be", "Belgique"], ["de", "Allemagne"]].map(function (p) {
+        return '<option value="' + p[0] + '"' + (paysActif === p[0] ? " selected" : "") + ">" +
+          p[1] + ", zone frontalière</option>";
+      }).join("") + "</select>";
     h += '<div class="ct-tete"><div class="ct-couches"><span>Territoire</span>' +
       terr("communes", "Luxembourg, les cent communes") +
       (kb.quartiers ? terr("quartiers", kb.quartiers.titre) : "") +
-      terr("fr", "France, zone frontalière") +
-      terr("be", "Belgique, zone frontalière") +
-      terr("de", "Allemagne, zone frontalière") + "</div>";
+      selPays + "</div>";
     // Les régions du pays affiché. Une carte de cinq cents communes qu'on ne
     // connaît pas se lit mieux ramenée à un département.
     var v = coucheVoisine();
@@ -2101,6 +2117,10 @@
   function brancherCouches(k) {
     k.querySelectorAll("button[data-couche]").forEach(function (b) {
       b.addEventListener("click", function () { changerCouche(b.dataset.couche); });
+    });
+    // La liste des pays : revenir au premier choix ramène aux cent communes.
+    k.querySelectorAll("select[data-pays]").forEach(function (s) {
+      s.addEventListener("change", function () { changerCouche(s.value || "communes"); });
     });
     k.querySelectorAll("button[data-region]").forEach(function (b) {
       b.addEventListener("click", function () {

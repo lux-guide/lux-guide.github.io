@@ -434,9 +434,11 @@ Ce que la base contient aujourd'hui :
    courbe, meilleure valeur marquée. Avant, ce tableau s'ouvrait dès le premier clic alors
    qu'on venait de choisir un seul indicateur, et les deux registres se mélangeaient.
 5. **Le territoire est une seule rangée de choix homogènes** : les cent communes, la
-   capitale par quartier, et la zone frontalière de chacun des trois voisins. Les pays
-   étaient d'abord sur une rangée séparée, et « comparer deux cartes » se trouvait parmi
-   les territoires, ce qui n'est pas le même registre.
+   capitale par quartier, et la zone frontalière d'un voisin. Les pays étaient d'abord sur
+   une rangée séparée, et « comparer deux cartes » se trouvait parmi les territoires, ce
+   qui n'est pas le même registre. Le voisin se choisit dans une liste déroulante, un
+   pays à la fois : on n'en regarde jamais qu'un, et trois boutons de pays faisaient lire
+   la rangée comme une liste de pays plutôt que comme le choix d'un territoire.
 6. **Le choix d'un indicateur passe par sa famille** : une rangée de dix familles, puis
    les indicateurs de la famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient
    plus. En vue « comparer des communes », il n'y a pas d'indicateur à choisir, le tableau
