@@ -424,7 +424,7 @@ Ce que la base contient aujourd'hui :
    la commune, la densité de la couleur dit ce qu'elles pèsent ensemble.
 4. **Trois vues, trois registres**, choisies sur une rangée à part du territoire. « Une
    carte » : un indicateur peint, et une commune cliquée montre sa valeur, son rang, sa
-   position et sa courbe sur cet indicateur, jusqu'à cinq communes sur le même graphique.
+   position et sa courbe sur cet indicateur, une commune à la fois, le clic remplace.
    « Deux cartes côte à côte », même cadrage et même survol, chacune son indicateur : ce
    qui change d'une carte à l'autre vient de l'indicateur et non du dessin. « Comparer des
    communes » : la carte ne mesure plus rien, elle sert à choisir, chaque commune retenue

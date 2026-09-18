@@ -176,7 +176,11 @@
       ".ct-fitbl td{padding:8px 10px;border-top:1px solid var(--border,#e6eaef);vertical-align:middle}",
       ".ct-fitbl td.n{text-align:right;white-space:nowrap}",
       ".ct-fitbl td small{display:block;color:var(--muted,#6a7583);font-size:12px;margin-left:19px}",
-      ".ct-fi-actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}",
+      ".ct-fitbl td.jg{width:120px}",
+      // Sur un téléphone, la ligne valeur, rang, jauge ne tient pas en un
+      // seul rang : le rang passe à la ligne et la jauge se raccourcit.
+      "@media(max-width:600px){.ct-fitbl td.n{white-space:normal}.ct-fitbl td.jg{width:56px}",
+      "  .ct-fitbl .ct-jauge{min-width:0}}",
       // Le survol d'un graphe : la bulle est un élément HTML posé sur le SVG,
       // plus simple à mettre en forme qu'un texte SVG.
       ".ct-gwrap{position:relative;max-width:720px}",
@@ -996,7 +1000,9 @@
     // même geste ajoute et enlève, comme une case qu'on coche et décoche.
     if (mode === "communes" && panierCommunes.indexOf(nom) >= 0) { retirerCommune(nom); return; }
     if (selection && selection !== nom) surligner(selection, false);
-    ajouterCommune(nom);
+    // Le panier n'existe qu'en vue « comparer » : en vue « une carte », le
+    // clic remplace la commune regardée, il n'en accumule pas.
+    if (mode === "communes") ajouterCommune(nom);
     selection = nom;
     surligner(nom, true);
     var c = zones().filter(function (x) { return x.nom === nom; })[0];
@@ -1265,27 +1271,28 @@
     // par un clic dans le tableau.
   }
 
-  // La fiche de la vue « une carte » : l'indicateur affiché, et pour chaque
-  // commune retenue sa valeur, son rang, sa position dans l'étendue, puis la
-  // courbe de toutes les communes retenues quand la série existe. Rien
-  // d'autre : on a choisi un indicateur, on lit cet indicateur.
+  // La fiche de la vue « une carte » : l'indicateur affiché, et pour la
+  // commune cliquée sa valeur, son rang, sa position dans l'étendue, puis sa
+  // courbe quand la série existe. Rien d'autre : on a choisi un indicateur,
+  // on lit cet indicateur. Comparer des communes est une autre vue.
   function ficheIndicateur() {
     var k = document.getElementById("ct-fiche");
-    var liste = communesComparees();
+    var c = selection ? communeDe(selection) : null;
     var ind = indic();
-    if (!liste.length || !ind) { k.innerHTML = ""; return; }
+    if (!c || !ind) { k.innerHTML = ""; return; }
+    var liste = [c];
     var champ = ind.id;
     var h = '<div class="card ct-fi"><div class="tete">' +
-      '<h3 style="margin:0 8px 0 0">' + esc(ind.nom) +
-      (ind.unite ? ' <span class="muted" style="font-weight:400;font-size:14px">en ' + esc(ind.unite) + "</span>" : "") +
-      "</h3>" + puces(liste, true) + selectAjout(liste) + "</div>";
+      '<h3 style="margin:0 8px 0 0">' + esc(c.nom) +
+      ' <span class="muted" style="font-weight:400;font-size:14px">' + esc(situation(c)) + "</span></h3></div>";
     h += '<table class="ct-fitbl"><tbody>';
     liste.forEach(function (c, j) {
       var v = c.i[champ], rg = v === undefined ? null : rang(champ, c.nom), p = position(champ, v);
-      h += '<tr><td><i class="pt" style="background:' + CAT[j] + '"></i>' + esc(c.nom) +
-        "<small>" + esc(situation(c)) + '</small></td><td class="n"><b>' + nf(v, ind.fmt) + "</b></td>" +
-        '<td class="n muted">' + (rg ? rg[0] + "e sur " + rg[1] : "") + "</td>" +
-        '<td style="width:120px"><div class="ct-jauge"><i style="width:' +
+      h += '<tr><td><i class="pt" style="background:' + CAT[j] + '"></i>' + esc(ind.nom) +
+        (ind.unite ? "<small>en " + esc(ind.unite) + "</small>" : "") +
+        '</td><td class="n"><b>' + nf(v, ind.fmt) + "</b></td>" +
+        '<td class="n muted">' + (rg ? rg[0] + "e sur " + rg[1] + " " + motZone(true) : "") + "</td>" +
+        '<td class="jg" title="Position entre la plus basse et la plus haute valeur"><div class="ct-jauge"><i style="width:' +
         (p === null ? 0 : Math.max(2, 100 * p)).toFixed(1) + "%;background:" + CAT[j] + '"></i></div></td></tr>';
     });
     h += "</tbody></table>";
@@ -1310,15 +1317,10 @@
       h += '<p class="hint" style="margin-top:12px">La base ne porte pas de série annuelle pour ' +
         "cet indicateur, seulement la dernière valeur publiée.</p>";
     }
-    if (couche_nom === "communes" && (champ === "nation" || champ === "natcmp")) h += listeNations(liste[0]);
-
-    h += '<div class="ct-fi-actions"><button class="chip" data-tout="1">' +
-      (liste.length > 1 ? "Toutes leurs données côte à côte" : "Toutes les données de " + esc(liste[0].nom)) +
-      "</button></div></div>";
+    if (couche_nom === "communes" && (champ === "nation" || champ === "natcmp")) h += listeNations(c);
+    h += "</div>";
     k.innerHTML = h;
-    brancherPanier(k);
     brancherGraphes(k);
-    k.querySelector("button[data-tout]").addEventListener("click", function () { changerMode("communes"); });
     k.querySelectorAll("li[data-nat]").forEach(function (li) {
       li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
       li.style.cursor = "pointer";
@@ -1332,6 +1334,9 @@
     if (m === mode) return;
     mode = m;
     comparer = mode === "deux";
+    // On entre dans la comparaison avec la commune qu'on regardait : elle
+    // rejoint le panier s'il reste de la place, sinon on repart du panier.
+    if (mode === "communes" && selection && panierCommunes.indexOf(selection) < 0) ajouterCommune(selection);
     if (mode !== "carte") {
       // Le tableau et les deux cartes lisent la dernière valeur : si le
       // curseur du temps avait posé une autre année, on la retire d'abord.

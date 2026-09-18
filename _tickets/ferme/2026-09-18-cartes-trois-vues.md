@@ -25,8 +25,11 @@ homogènes. Et comparer deux cartes, c'est un autre registre. »
 3. En vue « une carte », la fiche d'une commune cliquée ne montre plus que
    l'indicateur affiché : valeur, rang, position dans l'étendue, et la courbe
    annuelle quand la série existe, avec l'année du curseur marquée d'un trait.
-   Jusqu'à cinq communes se lisent sur le même graphique, une couleur chacune.
-   Un bouton mène à toutes leurs données.
+   Une commune à la fois : le clic remplace, il n'accumule pas. Le panier de
+   communes n'existe qu'en vue « comparer », et la commune qu'on regardait y
+   entre quand on y passe. Une première version accumulait les communes en
+   vue « une carte » et proposait un bouton vers la comparaison : les deux
+   registres se mélangeaient encore.
 4. En vue « comparer des communes », la rangée des familles et des indicateurs
    disparaît. La carte devient un sélecteur : communes grises, celles du
    panier colorées. La colonne de droite devient une liste alphabétique avec
