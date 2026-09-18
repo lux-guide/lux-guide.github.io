@@ -350,15 +350,25 @@ Ce que la base contient aujourd'hui :
    trimestre publié. Une nationalité seule se lit en part ou en nombre. Jusqu'à six
    nationalités se comparent sur une seule carte : la couleur nomme la plus présente dans
    la commune, la densité de la couleur dit ce qu'elles pèsent ensemble.
-4. **Deux cartes côte à côte**, même cadrage et même survol, chacune son indicateur. Ce
-   qui change d'une carte à l'autre vient donc de l'indicateur et non du dessin.
-5. **Un comparateur de communes**, jusqu'à cinq côte à côte, sur le modèle du
-   comparateur de territoires de l'INSEE : une colonne par commune, les indicateurs en
-   lignes par famille, la valeur, le rang sur cent, la courbe quand la série existe, et
-   la meilleure valeur de chaque ligne marquée. Cliquer une commune sur la carte l'ajoute.
+4. **Trois vues, trois registres**, choisies sur une rangée à part du territoire. « Une
+   carte » : un indicateur peint, et une commune cliquée montre sa valeur, son rang, sa
+   position et sa courbe sur cet indicateur, jusqu'à cinq communes sur le même graphique.
+   « Deux cartes côte à côte », même cadrage et même survol, chacune son indicateur : ce
+   qui change d'une carte à l'autre vient de l'indicateur et non du dessin. « Comparer des
+   communes » : la carte ne mesure plus rien, elle sert à choisir, chaque commune retenue
+   prend une couleur, la colonne de droite devient une liste alphabétique avec recherche,
+   et le tableau complet se lit dessous, sur le modèle du comparateur de territoires de
+   l'INSEE, une colonne par commune, les indicateurs en lignes par famille, valeur, rang,
+   courbe, meilleure valeur marquée. Avant, ce tableau s'ouvrait dès le premier clic alors
+   qu'on venait de choisir un seul indicateur, et les deux registres se mélangeaient.
+5. **Le territoire est une seule rangée de choix homogènes** : les cent communes, la
+   capitale par quartier, et la zone frontalière de chacun des trois voisins. Les pays
+   étaient d'abord sur une rangée séparée, et « comparer deux cartes » se trouvait parmi
+   les territoires, ce qui n'est pas le même registre.
 6. **Le choix d'un indicateur passe par sa famille** : une rangée de dix familles, puis
    les indicateurs de la famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient
-   plus.
+   plus. En vue « comparer des communes », il n'y a pas d'indicateur à choisir, le tableau
+   les montre tous, et la rangée disparaît.
 
 Trois garde-fous dans le script, parce qu'une base de données muette se trompe en silence :
 
