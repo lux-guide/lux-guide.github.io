@@ -247,7 +247,7 @@
 
   // ---------- Navigation ----------
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "carte", "lignes", "cartes", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "avantages", "carte", "lignes", "cartes", "assistant", "admin"];
 
   var pagePrecedente = null;
 
@@ -527,7 +527,8 @@
     "Quotidien": "assets/quotidien.jpg",
     // La tuile de l'epargne partageait le visuel du comparateur, deux fois la
     // meme photo cote a cote dans la meme rangee.
-    "Epargne": "assets/nature.jpg"
+    "Epargne": "assets/nature.jpg",
+    "Avantages": "assets/quotidien.jpg"
   };
   function visuel(cat) { return VISUELS[cat] || "assets/hero.jpg"; }
 
@@ -658,7 +659,7 @@
     // les outils de tous les jours ensuite. Chaque famille porte son intitule.
     var FAMILLES = [
       ["Guide d'installation", "Pour qui vient d'arriver", ["parcours", "fiches", "faq"]],
-      ["Budget", "Pour tout le monde", ["simulateur", "comparateur", "epargne"]],
+      ["Budget", "Pour tout le monde", ["simulateur", "comparateur", "avantages", "epargne"]],
       ["Où habiter", "Pour tout le monde", ["carte", "lignes", "cartes"]]
     ];
     var TUILES = {};
@@ -687,6 +688,10 @@
       ["cartes", "Les communes, chiffre par chiffre", "Sante",
        "Loyers, prix, salaires, écoles, nationalités et population, commune par commune, sur la carte et dans le temps. Jusqu'à cinq communes se comparent côte à côte, et la carte passe de l'autre côté de la frontière.",
        "48 indicateurs · 1 006 communes"],
+      // Le compte vient du module app/avantages.js, charge avant ui.js.
+      ["avantages", "Économies et avantages fiscaux", "Avantages",
+       "Crédits d'impôt, primes exemptées, aides au logement, allocations : chaque avantage avec son montant, sa source officielle, et s'il vient tout seul ou s'il faut le demander.",
+       (window.AVANTAGES ? window.AVANTAGES.liste.length + " avantages" : "par moment de vie")],
       // L'epargne et la retraite ont leur propre site : la tuile y mene au
       // lieu d'ouvrir une section.
       ["epargne", "Épargne et retraite", "Epargne",

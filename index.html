@@ -58,6 +58,9 @@
           <button role="menuitem" id="tab-comparateur" data-panel="comparateur" aria-controls="panel-comparateur">
             <b id="nom-comparateur">Comparateur</b><i>Habitation, auto, mobile et électricité, critère par critère</i>
           </button>
+          <button role="menuitem" id="tab-avantages" data-panel="avantages" aria-controls="panel-avantages">
+            <b id="nom-avantages">Économies et avantages fiscaux</b><i>Ce que l'État rend ou ne prélève pas, et s'il faut le demander</i>
+          </button>
           <!-- Un lien et non une section : l'epargne et la retraite ont leurs
                propres pages. data-lien le fait entrer dans la navigation au
                clavier du menu, comme les sections. -->
@@ -200,6 +203,27 @@
       Votre question n'y est pas ? L'assistant cherche aussi dans le corps des fiches,
       et dit quand il ne sait pas.
       <button class="chip" id="faq-assistant">Poser la question à l'assistant</button>
+    </div>
+  </section>
+
+  <!-- Economies et avantages fiscaux. Le contenu est rendu par
+       app/avantages.js, module autonome comme les lignes et les cartes. -->
+  <section class="panel" role="region" aria-labelledby="nom-avantages" id="panel-avantages" hidden>
+    <h1>Économies et avantages fiscaux</h1>
+    <p class="lead">
+      Ce que l'État rend, ou ne prélève pas, moment de vie par moment de vie. Chaque carte donne
+      le montant, à qui il s'adresse et, surtout, si l'avantage vient tout seul ou s'il faut le
+      demander. Quelqu'un qui arrive d'un autre pays ne demande pas ce qu'il ne sait pas exister.
+      <span class="badge" id="avantages-compte"></span>
+    </p>
+    <div class="av-modes" id="avantages-modes"></div>
+    <div class="chips av-chips" id="avantages-chips"></div>
+    <div class="av-grille" id="avantages-grille"></div>
+    <div class="notice small" style="margin-top:26px">
+      <strong>Les montants sont ceux des pages officielles</strong> à la date de lecture écrite sous
+      chaque carte. Les plafonds changent, souvent au 1er janvier : la page officielle fait foi
+      avant toute démarche. Le site voisin <a href="prevoyance/">Épargne et retraite</a> chiffre
+      les déductions d'épargne sur votre situation.
     </div>
   </section>
 
@@ -1037,7 +1061,8 @@
 <script src="comparateur/mrh_kb.js?v=36"></script>
 <script src="comparateur/offres_kb.js?v=36"></script>
 <script src="app/chat.js?v=36"></script>
-<script src="app/ui.js?v=38"></script>
+<script src="app/avantages.js?v=1"></script>
+<script src="app/ui.js?v=39"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=7"></script>
 <script src="app/communaute.js?v=36"></script>

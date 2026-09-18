@@ -62,6 +62,7 @@ l'assistant restent des entrées directes, ce sont les deux que l'on prend sans 
 | Le guide | Questions et réponses | Toutes les questions recensées, chaque réponse adossée à une fiche |
 | Budget | Simulateur | Quatre sous-onglets : salaire net par classe d'impôt, plan de financement du net au prix d'achat avec les aides de l'État, arbre de décision de la classe, et onze simulateurs officiels |
 | Budget | Comparateur | Habitation sur documents réels, auto, mobile et électricité en démonstration |
+| Budget | Économies et avantages fiscaux | Vingt-huit avantages en cinq moments de vie, chacun avec son montant, sa source officielle et son mode : automatique, à la déclaration, à demander, par l'employeur |
 | Où habiter | Comparer des logements | Distances au lieu de travail, écoles, crèches, transports, commerces, santé (OpenStreetMap) |
 | Où habiter | Bus, tram et train | Tous les arrêts d'où l'on rejoint une adresse sans changement, colorés par temps de trajet. « Une ligne » tout court ne disait pas de quoi il s'agissait |
 | Où habiter | Les cent communes | Quarante-huit indicateurs par commune, douze séries annuelles, cent quatre-vingt-neuf nationalités, et les neuf cent six communes frontalières de France, de Belgique et d'Allemagne |
@@ -299,6 +300,36 @@ Le guide ne calcule que le salaire net et la capacité d'emprunt, parce que ce s
 Le **tableau de comparaison** du simulateur affichait le régime des impatriés pour la seule classe 2. Or le profil le plus fréquent à l'arrivée est un célibataire en classe 1, qui ne voyait donc pas ce que le régime lui apporterait : c'est pourtant là qu'il change le plus le net, plus de mille euros par mois sur un brut de 80 000 euros, contre moins de cinq cents en classe 2. Les trois classes sont maintenant affichées avec et sans le régime, et le gain mensuel en regard.
 
 **Simulateurs officiels** rassemble onze calculateurs publics plutôt que d'en produire ici des copies qui vieillissent : la calculatrice fiscale du ministère des Finances, les barèmes et la simulation d'imposition collective de l'Administration des contributions directes, les simulateurs de garantie locative et de subvention de loyer de Guichet.lu, le simulateur des loyers de l'Observatoire de l'habitat, le calculateur de revenu de congé parental de la Caisse pour l'avenir des enfants, celui de l'allocation de vie chère du Fonds national de solidarité, le calendrier scolaire et les paramètres sociaux. Les onze liens ont été testés le 23 août 2026 et répondaient tous.
+
+## Économies et avantages fiscaux
+
+Les fiches Impôts expliquent un sujet. Cette rubrique répond à une autre question, celle que
+se pose quelqu'un qui vit ici sans venir d'ici : à quoi ai-je droit, et est-ce que cela vient
+tout seul ? Quelqu'un qui arrive d'un autre pays ne demande pas ce qu'il ne sait pas exister,
+et c'est ainsi qu'un crédit d'impôt sur un acte notarié ou une subvention de loyer se perdent.
+
+Vingt-huit avantages, rangés par moment de la vie : salaire et travail, logement, famille et
+études, épargne et déclaration, quotidien et revenus modestes. Chaque carte porte quatre
+choses :
+
+1. Le chiffre qui se retient, tel que la page officielle l'écrit, et ce qu'il désigne.
+2. Le mécanisme en quelques phrases, sans exemple sur une personne inventée : les outils du
+   site font le calcul sur la situation du lecteur.
+3. Le mode, qui est l'information la plus souvent absente et la plus coûteuse quand elle
+   manque : automatique (déjà dans la retenue ou le versement), à la déclaration (à porter
+   dans la déclaration annuelle, sinon perdu), à demander (un formulaire, un guichet, souvent
+   un délai), par l'employeur (il se négocie à l'embauche). Une couleur par mode, la même sur
+   la légende et sur la carte.
+4. La source, uniquement des sites de l'État (guichet.lu, impotsdirects.lu, gouvernement.lu,
+   cae.lu, mengstudien.lu), avec la date à laquelle la page a été lue. Un chiffre qu'aucune de
+   ces pages ne donne n'est pas écrit : la page Guichet.lu du contrat de prévoyance-vieillesse
+   annonce encore 3 200 euros, c'est la page de l'Administration des contributions directes
+   et l'article des nouveautés 2026 du gouvernement qui portent les 4 500 euros.
+
+Le module `app/avantages.js` est autonome, comme les lignes et les cartes : style injecté,
+rendu dans son panneau, et il ouvre le reste du site par les ancres de l'adresse
+(`#fiche/interets`, `#simulateur`), que `ui.js` écoute déjà. Il se charge avant `ui.js`, pour
+que la tuile de l'accueil lise le nombre d'avantages.
 
 ## Le comparateur de contrats
 
