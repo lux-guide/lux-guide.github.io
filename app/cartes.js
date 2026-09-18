@@ -168,6 +168,19 @@
       ".ct-fitbl td.n{text-align:right;white-space:nowrap}",
       ".ct-fitbl td small{display:block;color:var(--muted,#6a7583);font-size:12px;margin-left:19px}",
       ".ct-fi-actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}",
+      // Le survol d'un graphe : la bulle est un élément HTML posé sur le SVG,
+      // plus simple à mettre en forme qu'un texte SVG.
+      ".ct-gwrap{position:relative;max-width:720px}",
+      ".ct-gwrap svg{display:block;width:100%;height:auto;touch-action:pan-y}",
+      ".ct-gtip{position:absolute;top:6px;pointer-events:none;background:var(--surface,#fff);",
+      "  border:1px solid var(--border,#e6eaef);border-radius:9px;padding:7px 10px;font-size:12.5px;",
+      "  box-shadow:0 2px 10px rgba(11,15,22,.14);white-space:nowrap;z-index:3;display:grid;gap:3px;",
+      "  font-variant-numeric:tabular-nums}",
+      ".ct-gtip[hidden]{display:none}",
+      ".ct-gtip b{font-size:13px}",
+      ".ct-gtip span{display:flex;align-items:center;gap:6px}",
+      ".ct-gtip i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:none}",
+      ".ct-tbl tbody tr.hov{background:var(--surface-2,#f4f6f9)}",
       ".ct-groupe{margin-top:14px}",
       ".ct-groupe > span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
       "  color:var(--muted,#6a7583);font-weight:600;margin-bottom:6px}",
@@ -872,6 +885,7 @@
     lignes.forEach(function (tr) {
       tr.addEventListener("click", function () { choisir(tr.dataset.nom); });
     });
+    brancherSurvol(cote);
     function filtrer() {
       var q = normaliser(filtreTxt.trim());
       lignes.forEach(function (tr) { tr.hidden = !!q && tr.dataset.cle.indexOf(q) === -1; });
@@ -918,6 +932,55 @@
       p.setStyle({ color: on ? "#0b0f16" : "#ffffff", weight: on ? 2.5 : 1 });
       if (on) p.bringToFront();
     });
+  }
+
+  // Survol croisé : une ligne de la liste éclaire sa commune sur la carte, et
+  // une commune sur la carte éclaire sa ligne. La question « où est
+  // celle-là » se pose dans les deux sens.
+  function estRetenue(nom) {
+    return nom === selection || (mode === "communes" && panierCommunes.indexOf(nom) >= 0);
+  }
+  function survolDepuisListe(nom, on) {
+    if (!estRetenue(nom)) surligner(nom, on);
+  }
+  function survolDepuisCarte(nom, on) {
+    var k = document.getElementById("ct-rangs");
+    if (!k) return;
+    k.querySelectorAll("tr[data-nom]").forEach(function (tr) {
+      tr.classList.toggle("hov", on && tr.dataset.nom === nom);
+    });
+  }
+  function brancherSurvol(cote) {
+    cote.querySelectorAll("tr[data-nom]").forEach(function (tr) {
+      tr.addEventListener("mouseenter", function () { survolDepuisListe(tr.dataset.nom, true); });
+      tr.addEventListener("mouseleave", function () { survolDepuisListe(tr.dataset.nom, false); });
+    });
+  }
+
+  // Pose les polygones des zones affichées dans la couche et cadre la carte
+  // dessus. Trois moments y passent : la création de la carte, le changement
+  // de territoire, le filtrage par région.
+  function poserFormes() {
+    Object.keys(formes).forEach(function (n) {
+      formes[n].forEach(function (p) { couche.removeLayer(p); });
+    });
+    formes = {};
+    var tous = [];
+    zones().forEach(function (c) {
+      formes[c.nom] = c.g.map(function (enc) {
+        var pts = decoder(enc);
+        tous = tous.concat(pts);
+        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
+        poly.on("click", function () { choisir(c.nom); });
+        poly.on("mouseover", function () { survolDepuisCarte(c.nom, true); });
+        poly.on("mouseout", function () { survolDepuisCarte(c.nom, false); });
+        return poly;
+      });
+    });
+    if (tous.length) {
+      cadreTotal = L.latLngBounds(tous);
+      map.fitBounds(cadreTotal, { padding: [8, 8] });
+    }
   }
 
   function choisir(nom) {
@@ -989,8 +1052,16 @@
                (H - 2 - (v[i] - mini) / ec * (H - 4)).toFixed(1));
     }
     var last = pts[pts.length - 1].split(",");
+    // Une mini-courbe de 64 pixels ne se survole pas point par point : au
+    // survol elle dit au moins ses deux bornes, la première et la dernière.
+    var prem = 0, dern = v.length - 1;
+    while (prem < dern && (v[prem] === null || v[prem] === undefined)) prem++;
+    while (dern > prem && (v[dern] === null || v[dern] === undefined)) dern--;
+    var fmt = (listeIndic().filter(function (x) { return x.id === id; })[0] || {}).fmt;
+    var titre = "de " + nf(v[prem], fmt) + " en " + s.annees[prem] + " à " + nf(v[dern], fmt) + " en " + s.annees[dern];
     return '<svg width="' + L_ + '" height="' + H + '" viewBox="0 0 ' + L_ + " " + H +
-      '" aria-hidden="true"><polyline fill="none" stroke="var(--accent,#2563eb)" ' +
+      '" role="img" aria-label="' + esc(titre) + '"><title>' + esc(titre) + "</title>" +
+      '<polyline fill="none" stroke="var(--accent,#2563eb)" ' +
       'stroke-width="1.4" stroke-linejoin="round" points="' + pts.join(" ") + '"></polyline>' +
       '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.1" fill="var(--accent,#2563eb)"></circle></svg>';
   }
@@ -1241,12 +1312,16 @@
       var lignes = [];
       liste.forEach(function (c, j) {
         var v = (c.s || {})[champ];
-        if (v) lignes.push({ vals: v, couleur: CAT[j] });
+        if (v) lignes.push({ vals: v, couleur: CAT[j], nom: c.nom });
       });
       if (lignes.length) {
+        var pilote = serieCourante() && serieCourante() === s;
         h += "<h4>De " + s.annees[0] + " à " + s.annees[s.annees.length - 1] +
-          (annee !== null ? ', l\'année affichée sur la carte marquée' : "") + "</h4>" +
-          graphe(s.annees, lignes, ind.fmt, annee);
+          ' <span class="muted" style="font-weight:400">' +
+          (annee !== null ? "· l'année affichée sur la carte est marquée · " : "· ") +
+          "survolez pour lire une année" + (pilote ? ", cliquez pour la poser sur la carte" : "") +
+          "</span></h4>" +
+          graphe(s.annees, lignes, ind.fmt, annee, pilote ? function (a) { arreterLecture(); allerA(a); } : null);
       }
     } else if (couche_nom === "communes" && champ !== "nation" && champ !== "natcmp") {
       h += '<p class="hint" style="margin-top:12px">La base ne porte pas de série annuelle pour ' +
@@ -1259,6 +1334,7 @@
       "</button></div></div>";
     k.innerHTML = h;
     brancherPanier(k);
+    brancherGraphes(k);
     k.querySelector("button[data-tout]").addEventListener("click", function () { changerMode("communes"); });
     k.querySelectorAll("li[data-nat]").forEach(function (li) {
       li.addEventListener("click", function () { choisirNation(li.dataset.nat); });
@@ -1417,6 +1493,7 @@
       tr.addEventListener("click", function () { choisir(tr.dataset.nom); });
       if (selection) tr.classList.toggle("on", tr.dataset.nom === selection);
     });
+    brancherSurvol(cote);
   }
 
   // ---------- inégalités ----------
@@ -1432,7 +1509,19 @@
 
   // Une ou plusieurs courbes sur les mêmes années, chacune sa couleur, et
   // l'année marquée par un trait vertical quand la carte en affiche une.
-  function graphe(annees, lignes, fmt, marque) {
+  //
+  // Le graphe se lit au survol : un trait suit l'année la plus proche du
+  // pointeur, un point se pose sur chaque courbe et une bulle donne la valeur
+  // de chacune. Une courbe sans ses chiffres oblige à estimer à l'oeil, et
+  // c'est justement le chiffre qu'on est venu chercher. Un clic pose l'année
+  // sur la carte quand elle en affiche une (surClic).
+  //
+  // Le SVG est une chaîne insérée par innerHTML : les données de chaque
+  // graphe attendent dans un registre le temps que brancherGraphes les
+  // accroche à l'élément, puis le registre les lâche.
+  var graphes = {}, nGraphes = 0;
+
+  function graphe(annees, lignes, fmt, marque, surClic) {
     var L_ = 460, H = 170, mg = 34, i;
     var vals = [];
     lignes.forEach(function (l) {
@@ -1443,7 +1532,11 @@
     var bas = mini - (maxi - mini) * .25, haut = maxi + (maxi - mini) * .2;
     var x = function (j) { return mg + j * (L_ - mg - 8) / (annees.length - 1); };
     var y = function (v) { return 12 + (haut - v) / (haut - bas || 1) * (H - 34); };
-    var g = '<svg viewBox="0 0 ' + L_ + " " + H + '" width="100%" height="' + H +
+    var id = "g" + (++nGraphes);
+    graphes[id] = { annees: annees, lignes: lignes, fmt: fmt, x: x, y: y, L: L_, mg: mg, clic: surClic };
+    // Pas de hauteur fixée : elle suit la largeur, sinon le dessin se réduit
+    // au centre et la souris ne tombe plus sur les bonnes années.
+    var g = '<svg class="ct-graphe" data-g="' + id + '" viewBox="0 0 ' + L_ + " " + H +
       '" role="img" aria-label="Courbe de ' + annees[0] + " à " + annees[annees.length - 1] + '">';
     // Deux repères horizontaux seulement : une grille dense ferait un tableau.
     [maxi, mini].forEach(function (v) {
@@ -1475,7 +1568,64 @@
       annees[0] + "</text>";
     g += '<text x="' + (L_ - 8) + '" y="' + (H - 4) + '" font-size="11" text-anchor="end" ' +
       'fill="var(--muted,#6a7583)">' + annees[annees.length - 1] + "</text>";
-    return g + "</svg>";
+    // Le trait et les points du survol, cachés tant que rien n'est survolé.
+    g += '<g class="hov" style="display:none"><line x1="0" x2="0" y1="8" y2="' + (H - 20) +
+      '" stroke="var(--text,#0b0f16)" stroke-width="1" stroke-opacity=".55"></line>';
+    lignes.forEach(function (l) {
+      g += '<circle cx="0" cy="0" r="4" fill="' + l.couleur + '" stroke="#fff" stroke-width="1.5"></circle>';
+    });
+    g += "</g></svg>";
+    return '<div class="ct-gwrap">' + g + '<div class="ct-gtip" hidden></div></div>';
+  }
+
+  function brancherGraphes(k) {
+    k.querySelectorAll("svg.ct-graphe").forEach(function (svg) {
+      var d = graphes[svg.dataset.g];
+      if (!d) return;
+      delete graphes[svg.dataset.g];
+      var tip = svg.parentNode.querySelector(".ct-gtip");
+      var hov = svg.querySelector("g.hov");
+      var trait = hov.querySelector("line"), points = hov.querySelectorAll("circle");
+      var pas = (d.L - d.mg - 8) / (d.annees.length - 1);
+
+      function indexDe(e) {
+        var r = svg.getBoundingClientRect();
+        var xv = (e.clientX - r.left) * d.L / r.width;
+        var j = Math.round((xv - d.mg) / pas);
+        return Math.max(0, Math.min(d.annees.length - 1, j));
+      }
+      function montrer(j) {
+        var xj = d.x(j).toFixed(1);
+        trait.setAttribute("x1", xj);
+        trait.setAttribute("x2", xj);
+        var h = "<b>" + d.annees[j] + "</b>";
+        d.lignes.forEach(function (l, i) {
+          var v = l.vals[j], c = points[i];
+          if (v === null || v === undefined) c.style.display = "none";
+          else {
+            c.style.display = "";
+            c.setAttribute("cx", xj);
+            c.setAttribute("cy", d.y(v).toFixed(1));
+          }
+          h += '<span><i style="background:' + l.couleur + '"></i>' + esc(l.nom || "") +
+            (l.nom ? " " : "") + nf(v, d.fmt) + "</span>";
+        });
+        hov.style.display = "";
+        tip.innerHTML = h;
+        tip.hidden = false;
+        // La bulle se pose à droite du trait, et passe à gauche sur le
+        // dernier tiers pour ne pas sortir du cadre.
+        var r = svg.getBoundingClientRect(), px = d.x(j) * r.width / d.L;
+        if (px > r.width * .62) { tip.style.left = "auto"; tip.style.right = (r.width - px + 10) + "px"; }
+        else { tip.style.right = "auto"; tip.style.left = (px + 10) + "px"; }
+      }
+      svg.addEventListener("pointermove", function (e) { montrer(indexDe(e)); });
+      svg.addEventListener("pointerleave", function () { hov.style.display = "none"; tip.hidden = true; });
+      if (d.clic) {
+        svg.style.cursor = "pointer";
+        svg.addEventListener("click", function (e) { d.clic(d.annees[indexDe(e)]); });
+      }
+    });
   }
 
   function panneauInegalites() {
@@ -1492,7 +1642,7 @@
       '<p class="hint" style="margin-top:2px">' +
       "Coefficient de Gini des revenus disponibles, enquête SILC. Zéro voudrait dire que " +
       "tout le monde a le même revenu, un que tout revient à une seule personne." +
-      "</p>" + graphe(n.annees, [{ vals: n.gini, couleur: "var(--accent,#2563eb)" }], "dec") +
+      "</p>" + graphe(n.annees, [{ vals: n.gini, couleur: "var(--accent,#2563eb)", nom: "Gini" }], "dec") +
       "</div><div>" +
       '<div class="chiffres">' +
       '<div class="c"><b>' + nf(n.gini[d], "dec") + "</b><span>Gini du pays en " +
@@ -1510,6 +1660,7 @@
       "dans une commune peut donc coexister avec un revenu après redistribution beaucoup " +
       "plus resserré. Il n'y a pas de Gini par commune au Luxembourg, et ce guide n'en " +
       "fabrique pas.</p></div>";
+    brancherGraphes(k);
   }
 
   // ---------- la Grande Région ----------
@@ -1993,26 +2144,9 @@
   // couche comme au filtrage par région : dans les deux cas, l'ensemble des
   // zones à dessiner change.
   function redessinerCouche() {
-    Object.keys(formes).forEach(function (n) {
-      formes[n].forEach(function (p) { couche.removeLayer(p); });
-    });
-    formes = {};
     selection = null;
     panierCommunes = [];
-    var tous = [];
-    zones().forEach(function (c) {
-      formes[c.nom] = c.g.map(function (enc) {
-        var pts = decoder(enc);
-        tous = tous.concat(pts);
-        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
-        poly.on("click", function () { choisir(c.nom); });
-        return poly;
-      });
-    });
-    if (tous.length) {
-      cadreTotal = L.latLngBounds(tous);
-      map.fitBounds(cadreTotal, { padding: [8, 8] });
-    }
+    poserFormes();
     boutons();
     dessiner();
     fiche();
@@ -2044,22 +2178,7 @@
     // Les nationalités ne sont publiées que pour les communes luxembourgeoises.
     if (nom !== "communes") { nation = null; indNation = null; natSel = []; }
     if (!dispo.some(function (i) { return i.id === courant; })) courant = dispo[0].id;
-    Object.keys(formes).forEach(function (n) {
-      formes[n].forEach(function (p) { couche.removeLayer(p); });
-    });
-    formes = {};
-    var tous = [];
-    zones().forEach(function (c) {
-      formes[c.nom] = c.g.map(function (enc) {
-        var pts = decoder(enc);
-        tous = tous.concat(pts);
-        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
-        poly.on("click", function () { choisir(c.nom); });
-        return poly;
-      });
-    });
-    cadreTotal = L.latLngBounds(tous);
-    map.fitBounds(cadreTotal, { padding: [8, 8] });
+    poserFormes();
     // Les quartiers n'ont pas de séries : la barre du temps se retire d'elle-même.
     arreterLecture();
     annee = null;
@@ -2120,19 +2239,8 @@
     poserFond(map, true);
 
     couche = L.layerGroup().addTo(map);
-    var tous = [];
     cadreTotal = null;
-    zones().forEach(function (c) {
-      formes[c.nom] = c.g.map(function (enc) {
-        var pts = decoder(enc);
-        tous = tous.concat(pts);
-        var poly = L.polygon(pts, { color: "#fff", weight: 1, fillOpacity: .68 }).addTo(couche);
-        poly.on("click", function () { choisir(c.nom); });
-        return poly;
-      });
-    });
-    cadreTotal = L.latLngBounds(tous);
-    map.fitBounds(cadreTotal, { padding: [8, 8] });
+    poserFormes();
   }
 
   function init() {

@@ -48,6 +48,13 @@ homogènes. Et comparer deux cartes, c'est un autre registre. »
 3. Sur la carte, cliquer une commune déjà retenue la retire.
 4. Les parts de nationalités portent une barre, la plus longue pour la part
    la plus forte du bloc, les autres à proportion.
+5. Le graphe d'évolution se lit au survol : un trait suit l'année la plus
+   proche, un point se pose sur chaque courbe, une bulle donne la valeur de
+   chaque commune. Un clic pose l'année sur la carte. La courbe du Gini du
+   pays reçoit le même survol, et les mini-courbes du tableau disent leurs
+   deux bornes au survol.
+6. Survol croisé entre la liste et la carte : une ligne survolée éclaire sa
+   commune, une commune survolée éclaire sa ligne.
 
 ## Fermé
 
