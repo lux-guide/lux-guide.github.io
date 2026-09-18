@@ -1285,7 +1285,8 @@
       monoparental: $("#s-monoparental") ? $("#s-monoparental").checked : false
     });
 
-    dernierNetSim = { net1: r.netMensuel, net2: 0, texte: eur(r.netMensuel) + " par mois, le net d'une paie sur " + mois + " mois" };
+    dernierNetSim = { net1: r.netMensuel, net2: 0, texte: "le net d'une paie sur " + mois + " mois" };
+    majBoutonReprendre();
 
     var k = $("#s-kpis");
     k.innerHTML = "";
@@ -1377,7 +1378,8 @@
         });
 
         dernierNetSim = { net1: m.netMensuelPrincipal, net2: m.netMensuelSecondaire,
-          texte: eur(m.netMensuelPrincipal) + " et " + eur(m.netMensuelSecondaire) + " par mois, les deux paies telles qu'elles sont retenues" };
+          texte: "les deux paies telles qu'elles sont retenues" };
+        majBoutonReprendre();
 
         zoneM.appendChild(el("h2", null, "À deux salaires : ce qui est retenu, et ce qui est vraiment dû"));
 
@@ -1535,15 +1537,58 @@
     "Strassen", "Bertrange", "Mamer", "Mersch", "Ettelbruck", "Diekirch", "Wiltz", "Echternach",
     "Remich", "Grevenmacher", "Clervaux", "Sandweiler", "Walferdange"];
 
+  // Le bouton dit ce qu'il copie : sans le montant, personne ne devinait a
+  // quoi il servait.
+  function majBoutonReprendre() {
+    var b = $("#e-reprendre");
+    if (!b || !dernierNetSim) return;
+    b.textContent = "Remplir avec le net de l'onglet Salaire net : " + eur(dernierNetSim.net1)
+      + (dernierNetSim.net2 > 0 ? " et " + eur(dernierNetSim.net2) : "");
+  }
+
+  // Un emprunteur paye hors du Luxembourg : ce qui change, en quatre points.
+  function majEtranger(o) {
+    var z = $("#e-etranger");
+    if (!z) return;
+    var p1 = $("#e-pays1").value, p2 = o.acquereurs > 1 || o.netConjoint > 0 ? $("#e-pays2").value : "lu";
+    var hors = [p1, p2].filter(function (p) { return p !== "lu"; });
+    z.hidden = !hors.length;
+    if (!hors.length) return;
+    z.innerHTML = "";
+    z.appendChild(el("strong", null, "Un salaire versé hors du Luxembourg change quatre choses."));
+    var ol = el("ol");
+    [
+      "La banque le compte, sur les fiches de paie et le dernier avis d'imposition du pays d'emploi. Saisissez le net après l'impôt "
+        + "de ce pays : en France, en Belgique et en Allemagne, il est retenu à la source comme ici.",
+      "Versé dans une autre monnaie, il subit une décote pour le risque de change, de 10 à 30 % selon les banques : le calcul en retient "
+        + "80 %. En euros, aucune décote n'est de règle.",
+      "Si vous résidez au Luxembourg et êtes imposés ensemble, ce salaire n'est pas imposé ici, mais il relève le taux appliqué au "
+        + "salaire luxembourgeois. Le net luxembourgeois après la déclaration est donc plus bas que sur la fiche de paie, et l'écart se "
+        + "paie l'année suivante. C'est ce net-là qu'il faut saisir.",
+      "Les aides au logement comptent les revenus de tout le ménage, même ceux qui ne sont pas imposés au Luxembourg : Guichet.lu le "
+        + "précise pour la garantie de l'État. Le bouton de remplissage ne touche pas au net d'un emprunteur payé ailleurs."
+    ].forEach(function (t) { ol.appendChild(el("li", null, t)); });
+    z.appendChild(ol);
+    var a = el("a", null, "Administration des contributions directes, revenus étrangers des résidents");
+    a.href = "https://impotsdirects.public.lu/fr/support/foire-aux-questions/faq-fr/residents.html";
+    a.target = "_blank"; a.rel = "noopener noreferrer";
+    var p = el("p"); p.appendChild(a); z.appendChild(p);
+  }
+
   function lireEmprunt() {
     var sit = $("#e-situation").value;
     var P = window.SIM.params();
     var acq = Number($("#e-acquereurs").value) || 1;
     var v = function (id) { return Math.max(0, Number($(id).value) || 0); };
     var part = Number($("#e-part").value) || 0.8;
+    var decote = function (n) { return $("#e-pays" + n).value === "devise" ? 0.8 : 1; };
+    var nom = function (n, base) {
+      var p = $("#e-pays" + n).value;
+      return base + (p === "devise" ? ", hors zone euro" : (p === "euro" ? ", employeur étranger" : ""));
+    };
     var lignes = [
-      { l: "Votre net", brut: v("#e-net1"), part: Number($("#e-statut1").value) || 1 },
-      { l: "Net du conjoint", brut: v("#e-net2"), part: Number($("#e-statut2").value) || 1 },
+      { l: nom(1, "Votre net"), brut: v("#e-net1"), part: (Number($("#e-statut1").value) || 1) * decote(1) },
+      { l: nom(2, "Net du conjoint"), brut: v("#e-net2"), part: (Number($("#e-statut2").value) || 1) * decote(2) },
       { l: "Loyers perçus", brut: v("#e-loyers"), part: part },
       { l: "Primes et bonus", brut: v("#e-variables"), part: part },
       { l: "Allocations, pension reçue, autres", brut: v("#e-autres"), part: 1 }
@@ -1552,13 +1597,14 @@
     var revenusReels = lignes.reduce(function (a, x) { return a + x.brut; }, 0);
     var revenusRetenus = lignes.reduce(function (a, x) { return a + x.retenu; }, 0);
     var charges = [
-      { l: "Crédits en cours", m: v("#e-charges") },
+      { l: "Crédits en cours" + (v("#e-reste") > 0 ? ", encore " + v("#e-reste") + " mois" : ""), m: v("#e-charges"), credit: true },
       { l: "Pension versée, leasing, autres charges fixes", m: v("#e-charges2") }
     ].filter(function (x) { return x.m > 0; });
     var age1 = v("#e-age1") || 35, age2 = v("#e-age2") || 35;
     var ageMax = acq > 1 ? Math.max(age1, age2) : age1;
     return {
       lignes: lignes, chargesDetail: charges,
+      credit: v("#e-charges"), resteMois: v("#e-reste"), netConjoint: v("#e-net2"),
       revenusReels: revenusReels,
       netMensuel: revenusRetenus,
       chargesMensuelles: charges.reduce(function (a, x) { return a + x.m; }, 0),
@@ -1609,6 +1655,7 @@
   function majEmprunt() {
     var o = lireEmprunt();
     var plan = window.SIM.planFinancement(o);
+    majEtranger(o);
     var P = window.SIM.params();
 
     // Les quatre chiffres
@@ -1651,6 +1698,32 @@
     z.appendChild(el("p", "hint", "Un salaire en CDI compte en entier. Les loyers, les primes et les revenus d'un indépendant ou d'un CDD "
       + "ne sont retenus qu'en partie, le plus souvent 80 %, parce qu'ils peuvent baisser. Les allocations familiales et une pension "
       + "reçue comptent, une pension versée ou un leasing se déduisent comme un crédit."));
+
+    // Un credit en cours : ce que la fin prochaine ou un remboursement anticipe changent
+    if (o.credit > 0) {
+      var sans = window.SIM.planFinancement(Object.assign({}, o, { chargesMensuelles: o.chargesMensuelles - o.credit }));
+      var gain = sans.capital - plan.capital;
+      var crd = o.resteMois > 0 ? o.credit * o.resteMois : 0;
+      var pc = el("div", "notice small");
+      pc.appendChild(el("strong", null, "Le crédit en cours coûte " + eur(gain) + " de capital empruntable. "));
+      var t;
+      if (o.resteMois > 0 && o.resteMois < 12) {
+        t = "Il se termine dans " + o.resteMois + " mois : beaucoup de banques ne comptent plus un crédit qui finit dans l'année, "
+          + "demandez-le. Sans lui, le prix possible passe à " + eur(sans.prix) + ".";
+      } else {
+        t = (o.resteMois > 0 ? "Avec " + o.resteMois + " mois restants, la banque le compte en entier. " : "Tant qu'il court, la banque le compte en entier. ")
+          + "Le solder avant l'achat porterait le capital à " + eur(sans.capital) + ", mais le capital restant dû sortirait des fonds propres"
+          + (crd > 0 ? " : au plus " + eur(crd) + ", un peu moins en pratique puisque chaque mensualité contient des intérêts" : "")
+          + ". Le relevé de la banque prêteuse donne le montant exact et les éventuelles indemnités de remboursement anticipé.";
+        if (crd > 0) {
+          var apres = window.SIM.planFinancement(Object.assign({}, o, {
+            chargesMensuelles: o.chargesMensuelles - o.credit, apport: Math.max(0, o.apport - crd) }));
+          t += " Avec ces fonds propres en moins, le prix possible serait de " + eur(apres.prix) + ", contre " + eur(plan.prix) + " aujourd'hui.";
+        }
+      }
+      pc.appendChild(document.createTextNode(t));
+      z.appendChild(pc);
+    }
 
     // Selon la part du net acceptee
     var t1 = tableau("Selon la part des revenus que la banque accepte", ["Part retenue", "Mensualité", "Capital", "Prix possible"]);
@@ -2232,9 +2305,10 @@
   var STORAGE_SIM = "luxguide.simulateur.v1";
   var CHAMPS_SIM = ["s-brut", "s-brut2", "s-classe", "s-mois", "s-impatrie",
                     "s-forfaits", "s-monoparental",
-                    "e-net1", "e-statut1", "e-age1", "e-net2", "e-statut2", "e-age2",
+                    "e-net1", "e-statut1", "e-pays1", "e-age1",
+                    "e-net2", "e-statut2", "e-pays2", "e-age2",
                     "e-loyers", "e-variables", "e-autres", "e-part",
-                    "e-charges", "e-charges2", "e-effort",
+                    "e-charges", "e-reste", "e-charges2", "e-effort",
                     "e-taux", "e-duree", "e-apport", "e-situation",
                     "e-acquereurs", "e-enfants"];
 
@@ -2275,8 +2349,8 @@
       $(s).addEventListener("input", function () { majSimulateur(); sauverSimulateur(); });
       $(s).addEventListener("change", function () { majSimulateur(); sauverSimulateur(); });
     });
-    ["#e-net1", "#e-statut1", "#e-age1", "#e-net2", "#e-statut2", "#e-age2",
-     "#e-loyers", "#e-variables", "#e-autres", "#e-part", "#e-charges", "#e-charges2",
+    ["#e-net1", "#e-statut1", "#e-pays1", "#e-age1", "#e-net2", "#e-statut2", "#e-pays2", "#e-age2",
+     "#e-loyers", "#e-variables", "#e-autres", "#e-part", "#e-charges", "#e-reste", "#e-charges2",
      "#e-effort", "#e-taux", "#e-duree", "#e-apport", "#e-situation", "#e-acquereurs",
      "#e-enfants"].forEach(function (s) {
       $(s).addEventListener("input", function () { majEmprunt(); sauverSimulateur(); });
@@ -2286,12 +2360,21 @@
     // meme chiffre que la banque demande, et personne ne devrait le retaper.
     $("#e-reprendre").addEventListener("click", function () {
       if (!dernierNetSim) return;
-      $("#e-net1").value = Math.round(dernierNetSim.net1);
-      $("#e-net2").value = Math.round(dernierNetSim.net2 || 0);
-      if (dernierNetSim.net2 > 0) $("#e-acquereurs").value = "2";
-      $("#e-reprendre-info").textContent = "Repris : " + dernierNetSim.texte + ".";
+      // Le simulateur ne calcule que des salaires luxembourgeois : le net d'un
+      // emprunteur paye ailleurs n'est pas remplace.
+      var copie = [];
+      if ($("#e-pays1").value === "lu") { $("#e-net1").value = Math.round(dernierNetSim.net1); copie.push(eur(dernierNetSim.net1)); }
+      if (dernierNetSim.net2 > 0 && $("#e-pays2").value === "lu") {
+        $("#e-net2").value = Math.round(dernierNetSim.net2);
+        $("#e-acquereurs").value = "2";
+        copie.push(eur(dernierNetSim.net2));
+      }
+      $("#e-reprendre-info").textContent = copie.length
+        ? "Copié : " + copie.join(" et ") + " par mois, " + dernierNetSim.texte + "."
+        : "Rien à copier : le simulateur de salaire ne calcule que des salaires versés au Luxembourg.";
       majEmprunt(); sauverSimulateur();
     });
+    majBoutonReprendre();
     majSimulateur();
     majEmprunt();
   }

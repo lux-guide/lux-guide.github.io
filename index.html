@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=37">
+<link rel="stylesheet" href="app/styles.css?v=38">
 </head>
 <body>
 
@@ -344,62 +344,90 @@
       <div class="e-personnes">
         <div class="e-personne">
           <h4>Vous</h4>
-          <div class="row row-personne">
-            <div>
-              <label for="e-net1">Net mensuel, après retenue</label>
-              <input type="number" id="e-net1" value="5000" min="0" step="100">
-            </div>
-            <div>
-              <label for="e-statut1">Contrat</label>
-              <select id="e-statut1">
-                <option value="1" selected>CDI, fonctionnaire</option>
-                <option value="0.8">CDD, indépendant, variable</option>
-              </select>
-            </div>
-            <div>
-              <label for="e-age1">Âge</label>
-              <input type="number" id="e-age1" value="35" min="18" max="90" step="1">
-            </div>
+          <div class="row row-personne avec-aides">
+        <div>
+          <label for="e-net1">Net mensuel, après retenue</label>
+          <input type="number" id="e-net1" value="5000" min="0" step="100">
+          <p class="aide-champ">Le « net à payer » de la fiche de paie. Avec un 13e mois : le net annuel divisé par 12.</p>
+        </div>
+        <div>
+          <label for="e-statut1">Contrat</label>
+          <select id="e-statut1">
+            <option value="1" selected>CDI, fonctionnaire</option>
+            <option value="0.8">CDD, indépendant, variable</option>
+          </select>
+          <p class="aide-champ">Hors CDI, la banque demande plus de preuves et retient souvent 80 %.</p>
+        </div>
+        <div>
+          <label for="e-pays1">Employeur</label>
+          <select id="e-pays1">
+            <option value="lu" selected>Au Luxembourg</option>
+            <option value="euro">Dans un autre pays de l'euro</option>
+            <option value="devise">Hors zone euro (Suisse…)</option>
+          </select>
+          <p class="aide-champ">Payé hors du Luxembourg : l'encadré ci-dessous dit ce qui change.</p>
+        </div>
+        <div>
+          <label for="e-age1">Âge</label>
+          <input type="number" id="e-age1" value="35" min="18" max="90" step="1">
+          <p class="aide-champ">Pour l'âge en fin de prêt et les aides aux 35 ans ou moins.</p>
+        </div>
           </div>
         </div>
         <div class="e-personne">
           <h4>Votre conjoint, s'il emprunte avec vous</h4>
-          <div class="row row-personne">
-            <div>
-              <label for="e-net2">Net mensuel, après retenue</label>
-              <input type="number" id="e-net2" value="0" min="0" step="100" placeholder="0 si seul">
-            </div>
-            <div>
-              <label for="e-statut2">Contrat</label>
-              <select id="e-statut2">
-                <option value="1" selected>CDI, fonctionnaire</option>
-                <option value="0.8">CDD, indépendant, variable</option>
-              </select>
-            </div>
-            <div>
-              <label for="e-age2">Âge</label>
-              <input type="number" id="e-age2" value="35" min="18" max="90" step="1">
-            </div>
+          <div class="row row-personne avec-aides">
+        <div>
+          <label for="e-net2">Net mensuel, après retenue</label>
+          <input type="number" id="e-net2" value="0" min="0" step="100" placeholder="0 si seul">
+          <p class="aide-champ">Le « net à payer » de la fiche de paie. Avec un 13e mois : le net annuel divisé par 12.</p>
+        </div>
+        <div>
+          <label for="e-statut2">Contrat</label>
+          <select id="e-statut2">
+            <option value="1" selected>CDI, fonctionnaire</option>
+            <option value="0.8">CDD, indépendant, variable</option>
+          </select>
+          <p class="aide-champ">Hors CDI, la banque demande plus de preuves et retient souvent 80 %.</p>
+        </div>
+        <div>
+          <label for="e-pays2">Employeur</label>
+          <select id="e-pays2">
+            <option value="lu" selected>Au Luxembourg</option>
+            <option value="euro">Dans un autre pays de l'euro</option>
+            <option value="devise">Hors zone euro (Suisse…)</option>
+          </select>
+          <p class="aide-champ">Payé hors du Luxembourg : l'encadré ci-dessous dit ce qui change.</p>
+        </div>
+        <div>
+          <label for="e-age2">Âge</label>
+          <input type="number" id="e-age2" value="35" min="18" max="90" step="1">
+          <p class="aide-champ">Pour l'âge en fin de prêt et les aides aux 35 ans ou moins.</p>
+        </div>
           </div>
         </div>
       </div>
-      <p class="hint e-reprise">
-        <button type="button" class="btn ghost petit" id="e-reprendre">Reprendre les nets du simulateur de salaire</button>
-        <span id="e-reprendre-info"></span>
+      <div class="notice small" id="e-etranger" hidden></div>
+      <p class="e-reprise">
+        <button type="button" class="btn ghost petit" id="e-reprendre">Remplir avec le net calculé</button>
+        <span class="aide-champ" id="e-reprendre-info">Copie ici le net de l'onglet Salaire net, pour ne pas le retaper.</span>
       </p>
       <h4 class="e-sous">Les autres revenus du ménage, par mois</h4>
-      <div class="row row-autres">
+      <div class="row row-autres avec-aides">
         <div>
           <label for="e-loyers">Loyers perçus</label>
           <input type="number" id="e-loyers" value="0" min="0" step="50">
+          <p class="aide-champ">Hors charges : les charges que paie le locataire ne sont pas un revenu. Le crédit de ce logement va dans les crédits en cours.</p>
         </div>
         <div>
           <label for="e-variables">Primes et bonus, moyenne mensuelle</label>
           <input type="number" id="e-variables" value="0" min="0" step="50">
+          <p class="aide-champ">La moyenne annuelle des dernières années, divisée par 12. La banque regarde s'ils reviennent chaque année.</p>
         </div>
         <div>
-          <label for="e-autres">Allocations familiales, pension reçue, autres revenus réguliers</label>
+          <label for="e-autres">Allocations et autres revenus réguliers</label>
           <input type="number" id="e-autres" value="0" min="0" step="50">
+          <p class="aide-champ">Allocations familiales, pension alimentaire reçue, rente. Pas les chèques-repas ni les remboursements de frais.</p>
         </div>
         <div>
           <label for="e-part">Part des loyers et des primes que la banque retient</label>
@@ -408,17 +436,25 @@
             <option value="0.8" selected>80 %, le plus courant</option>
             <option value="0.7">70 %, prudent</option>
           </select>
+          <p class="aide-champ">Ils peuvent baisser : un locataire part, une prime saute. 70 % est l'usage le plus cité pour les loyers.</p>
         </div>
       </div>
       <h4 class="e-sous">Ce que le ménage rembourse déjà, par mois</h4>
-      <div class="row row-charges">
+      <div class="row row-charges avec-aides">
         <div>
-          <label for="e-charges">Crédits en cours : auto, consommation, autre logement</label>
+          <label for="e-charges">Crédits en cours</label>
           <input type="number" id="e-charges" value="0" min="0" step="50">
+          <p class="aide-champ">Les mensualités, pas le capital : voiture, consommation, un autre logement. Un crédit soldé à l'achat ne compte pas.</p>
+        </div>
+        <div>
+          <label for="e-reste">Il leur reste, en mois</label>
+          <input type="number" id="e-reste" value="0" min="0" step="1" placeholder="ex. 36">
+          <p class="aide-champ">Moins de 12 mois : beaucoup de banques ne le comptent plus. Le plan chiffre aussi un remboursement anticipé.</p>
         </div>
         <div>
           <label for="e-charges2">Pension versée, leasing, autres charges fixes</label>
           <input type="number" id="e-charges2" value="0" min="0" step="50">
+          <p class="aide-champ">Pension alimentaire versée, leasing auto, loyer d'un logement conservé. Pas les dépenses courantes.</p>
         </div>
         <div>
           <label for="e-effort">Part des revenus que la banque accepte</label>
@@ -428,23 +464,27 @@
             <option value="0.40" selected>40 %, la plus courante</option>
             <option value="0.45">45 %, le plus haut pratiqué</option>
           </select>
+          <p class="aide-champ">Aucune règle légale : chaque banque décide selon le reste à vivre.</p>
         </div>
       </div>
     </div>
     <div class="card">
       <h3 class="premier">Le prêt et l'achat</h3>
-      <div class="row row-pret">
+      <div class="row row-pret avec-aides">
         <div>
           <label for="e-taux">Taux annuel (%)</label>
           <input type="number" id="e-taux" value="3.9" min="0" step="0.1">
+          <p class="aide-champ">Taux fixes affichés en septembre 2026 : 3,77 à 4,16 %.</p>
         </div>
         <div>
           <label for="e-duree">Durée (années)</label>
           <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
+          <p class="aide-champ">35 ans au plus chez Spuerkeess et la BIL, 30 chez BGL et Raiffeisen.</p>
         </div>
         <div>
           <label for="e-apport">Fonds propres (EUR)</label>
           <input type="number" id="e-apport" value="50000" min="0" step="5000">
+          <p class="aide-champ">Épargne, donation, vente d'un bien. Les frais d'acte se paient avec, jamais avec le prêt.</p>
         </div>
         <div>
           <label for="e-situation">Ce que vous achetez</label>
@@ -453,6 +493,7 @@
             <option value="autre">Résidence principale, déjà propriétaire</option>
             <option value="locatif">Investissement locatif</option>
           </select>
+          <p class="aide-champ">Fixe la part du prix que le prêt peut couvrir : 100, 90 ou 80 %.</p>
         </div>
         <div>
           <label for="e-acquereurs">Acquéreurs sur l'acte</label>
@@ -460,10 +501,12 @@
             <option value="1" selected>Une personne</option>
             <option value="2">Deux personnes</option>
           </select>
+          <p class="aide-champ">Le Bëllegen Akt se compte par personne inscrite sur l'acte.</p>
         </div>
         <div>
           <label for="e-enfants">Enfants à charge</label>
           <input type="number" id="e-enfants" value="0" min="0" max="10" step="1">
+          <p class="aide-champ">Ils relèvent les plafonds de la prime et de la subvention d'intérêt.</p>
         </div>
       </div>
     </div>
@@ -1053,18 +1096,18 @@
 </div>
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
-<script src="app/bareme.js?v=37"></script>
-<script src="app/kb.js?v=37"></script>
-<script src="app/simulateur.js?v=37"></script>
-<script src="comparateur/contrats_kb.js?v=37"></script>
-<script src="comparateur/mrh_kb.js?v=37"></script>
-<script src="comparateur/offres_kb.js?v=37"></script>
-<script src="app/chat.js?v=37"></script>
+<script src="app/bareme.js?v=38"></script>
+<script src="app/kb.js?v=38"></script>
+<script src="app/simulateur.js?v=38"></script>
+<script src="comparateur/contrats_kb.js?v=38"></script>
+<script src="comparateur/mrh_kb.js?v=38"></script>
+<script src="comparateur/offres_kb.js?v=38"></script>
+<script src="app/chat.js?v=38"></script>
 <script src="app/avantages.js?v=1"></script>
 <script src="app/ui.js?v=39"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=8"></script>
-<script src="app/communaute.js?v=37"></script>
+<script src="app/communaute.js?v=38"></script>
 <script src="app/communaute.js"></script>
 </body>
 </html>

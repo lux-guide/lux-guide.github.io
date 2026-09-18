@@ -563,20 +563,33 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 /* Capacite d'emprunt : la rangee des revenus porte trois champs, dont une
    liste deroulante longue ; celle du pret en porte six, qui se replient par
    trois puis par deux. */
-.e-personnes { display: grid; gap: 18px; grid-template-columns: 1fr 1fr; }
+.e-personnes { display: grid; gap: 14px; grid-template-columns: 1fr; }
 .e-personne { padding: 14px 16px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
 .e-personne h4, .e-sous { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
 .e-sous { margin-top: 22px; }
-.row-personne { gap: 12px; grid-template-columns: minmax(120px, 1.3fr) minmax(150px, 1.4fr) minmax(64px, .5fr); }
-.row-autres { grid-template-columns: minmax(130px, .8fr) minmax(150px, 1fr) minmax(200px, 1.4fr) minmax(190px, 1.2fr); }
-.row-charges { grid-template-columns: minmax(200px, 1.3fr) minmax(190px, 1.2fr) minmax(190px, 1.1fr); }
+.row-personne { gap: 14px; grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.1fr) minmax(210px, 1.2fr) minmax(90px, .55fr); }
+.row-autres { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
+.row-charges { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
+
+/* Une aide sous chaque champ. Les rangees passent en sous-grille : les
+   etiquettes, les champs et les aides s'alignent chacun sur leur ligne, quelle
+   que soit la longueur du texte des voisins. */
+.row.avec-aides { row-gap: 18px; }
+.row.avec-aides > div:not(.check) {
+  display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0;
+}
+.row.avec-aides > div > label { align-self: end; }
+.aide-champ { margin: 7px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+#e-etranger ol { margin: 8px 0 6px; padding-left: 20px; }
+#e-etranger li { margin: 4px 0; }
+#e-etranger p { margin: 6px 0 0; }
 .row-pret { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 @media (max-width: 1000px) {
   .e-personnes { grid-template-columns: 1fr; }
-  .row-autres, .row-charges { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .row-autres, .row-charges, .row-personne { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 }
 @media (max-width: 520px) {
-  .row-personne { grid-template-columns: 1fr 1fr; }
+  .row-personne, .row-autres, .row-charges { grid-template-columns: 1fr; }
 }
 h3.premier { margin-top: 0; }
 .btn.petit { padding: 8px 14px; font-size: 13.5px; border-radius: 9px; }

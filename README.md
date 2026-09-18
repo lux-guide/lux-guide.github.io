@@ -244,7 +244,13 @@ de contrat, âge), les loyers perçus, les primes, les allocations et pensions r
 crédits en cours et les autres charges fixes. La banque ne retient qu'une part des loyers, des
 primes et des revenus d'un CDD ou d'un indépendant (80 % par défaut, réglable), et le plan
 l'affiche ligne par ligne. L'âge sert à la subvention d'intérêt (35 ans ou moins) et à l'âge en
-fin de prêt. Les deux nets se reprennent d'un clic depuis le simulateur de salaire.
+fin de prêt. Chaque champ porte une aide courte (loyer hors charges, 13e mois divisé par 12,
+mensualités et non capital). Le pays de l'employeur de chaque emprunteur ouvre un encadré sur ce
+qui change pour un salaire versé hors du Luxembourg (pièces, décote de change de 80 % hors zone
+euro, taux global à la déclaration commune, revenus comptés par les aides), et le bouton de
+remplissage ne copie que les nets luxembourgeois. Un crédit en cours se saisit avec ses mois
+restants : le plan chiffre le capital qu'il coûte, la pratique des banques pour un crédit qui
+finit dans l'année, et l'effet d'un remboursement anticipé payé sur les fonds propres. Les deux nets se reprennent d'un clic depuis le simulateur de salaire.
 Le prix possible se traduit en m² par commune avec les prix annoncés de `cartes/communes_kb.js`,
 chargé à la demande. Sept cartes d'aides suivent (Bëllegen Akt, TVA logement 3 %, prime
 d'accession, garantie de l'État, subvention d'intérêt, déduction des intérêts, droits sur le
