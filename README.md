@@ -325,7 +325,9 @@ choses :
    manque : automatique (déjà dans la retenue ou le versement), à la déclaration (à porter
    dans la déclaration annuelle, sinon perdu), à demander (un formulaire, un guichet, souvent
    un délai), par l'employeur (il se négocie à l'embauche). Une couleur par mode, la même sur
-   la légende et sur la carte.
+   la légende et sur la carte. Les quatre blocs de la légende sont des boutons : « À demander »
+   ne garde que ce qui se perd si l'on ne fait rien, et se combine avec le moment de vie choisi.
+   Un second clic rend tout.
 4. La source, uniquement des sites de l'État (guichet.lu, impotsdirects.lu, gouvernement.lu,
    cae.lu, mengstudien.lu), avec la date à laquelle la page a été lue. Un chiffre qu'aucune de
    ces pages ne donne n'est pas écrit : la page Guichet.lu du contrat de prévoyance-vieillesse

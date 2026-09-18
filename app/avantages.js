@@ -366,9 +366,13 @@
 
   var CSS = "\
 #panel-avantages .av-modes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 0 0 26px; }\
-#panel-avantages .av-mode { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-s); padding: 13px 15px; box-shadow: var(--ombre-s); }\
-#panel-avantages .av-mode b { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }\
+#panel-avantages .av-mode { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-s); padding: 13px 15px; box-shadow: var(--ombre-s); text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color .16s, box-shadow .16s, transform .16s; }\
+#panel-avantages .av-mode:hover { border-color: var(--mode-c); transform: translateY(-2px); box-shadow: var(--ombre-m); }\
+#panel-avantages .av-mode[aria-pressed=true] { border-color: var(--mode-c); box-shadow: inset 0 0 0 1px var(--mode-c); background: color-mix(in srgb, var(--mode-c) 7%, var(--surface)); }\
+#panel-avantages .av-mode b { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; color: var(--mode-c); }\
 #panel-avantages .av-mode span { font-size: 13.5px; color: var(--muted); line-height: 1.5; }\
+#panel-avantages .av-mode i { display: block; margin-top: 8px; font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--mode-c); }\
+#panel-avantages .av-mode[aria-pressed=true] i::after { content: ' · afficher tout'; font-weight: 500; color: var(--muted); }\
 #panel-avantages .av-chips { margin: 0 0 8px; }\
 #panel-avantages .av-grille { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }\
 #panel-avantages .av-tete { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; margin: 30px 0 2px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }\
@@ -459,7 +463,13 @@
     return c;
   }
 
+  // Deux filtres qui se combinent : le moment de la vie (les puces) et le
+  // mode (les quatre blocs de la légende). « À demander » seul montre tout ce
+  // qui se perd si l'on ne fait rien.
   var filtreMoment = "tous";
+  var filtreMode = null;
+
+  function pluriel(n) { return n + (n > 1 ? " avantages" : " avantage"); }
 
   function rendreGrille() {
     var g = document.getElementById("avantages-grille");
@@ -468,17 +478,23 @@
     var n = 0;
     MOMENTS.forEach(function (m) {
       if (filtreMoment !== "tous" && filtreMoment !== m[0]) return;
-      var lot = AVANTAGES.filter(function (a) { return a.moment === m[0]; });
+      var lot = AVANTAGES.filter(function (a) {
+        return a.moment === m[0] && (!filtreMode || a.mode === filtreMode);
+      });
       if (!lot.length) return;
       var tete = el("div", "av-tete");
       tete.appendChild(el("h2", null, m[1]));
-      tete.appendChild(el("span", null, lot.length + (lot.length > 1 ? " avantages" : " avantage")));
+      tete.appendChild(el("span", null, pluriel(lot.length)));
       g.appendChild(tete);
       lot.forEach(function (a) { g.appendChild(carte(a)); n++; });
     });
-    if (!n) g.appendChild(el("p", "av-vide", "Rien dans cette catégorie."));
+    if (!n) g.appendChild(el("p", "av-vide", "Aucun avantage de ce mode dans ce moment de la vie."));
     var compte = document.getElementById("avantages-compte");
-    if (compte) compte.textContent = AVANTAGES.length + " avantages, " + MOMENTS.length + " moments de la vie";
+    if (compte) {
+      compte.textContent = filtreMode
+        ? pluriel(n) + " " + MODES[filtreMode][0].toLowerCase()
+        : AVANTAGES.length + " avantages, " + MOMENTS.length + " moments de la vie";
+    }
   }
 
   function rendreChips() {
@@ -503,11 +519,21 @@
     if (!z) return;
     z.innerHTML = "";
     Object.keys(MODES).forEach(function (k) {
-      var d = el("div", "av-mode");
+      // Un bouton, pas une simple légende : cliquer un mode ne garde que ses
+      // avantages, recliquer rend tout. aria-pressed porte l'état.
+      var d = el("button", "av-mode");
+      d.type = "button";
       d.style.setProperty("--mode-c", { automatique: "#0c6b3e", declaration: "#96570a", demande: "#0a4fa8", employeur: "#6b4df6" }[k]);
-      var b = el("b", null, MODES[k][0]); b.style.color = "var(--mode-c)";
-      d.appendChild(b);
+      d.setAttribute("aria-pressed", String(filtreMode === k));
+      d.appendChild(el("b", null, MODES[k][0]));
       d.appendChild(el("span", null, MODES[k][1]));
+      var total = AVANTAGES.filter(function (a) { return a.mode === k; }).length;
+      d.appendChild(el("i", null, "Voir les " + total));
+      d.addEventListener("click", function () {
+        filtreMode = filtreMode === k ? null : k;
+        rendreModes();
+        rendreGrille();
+      });
       z.appendChild(d);
     });
   }
