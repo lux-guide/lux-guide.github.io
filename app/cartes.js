@@ -1520,6 +1520,29 @@
     return lau ? (window.ECOLES.communes || {})[lau] || null : null;
   }
 
+  // Un campus ne se lit pas toujours dans le nom de l'école. Le ministère
+  // inscrit une seule « École de Bertrange » là où la commune a deux campus,
+  // l'Atert et le Gemeng ; mais l'adresse d'une maison relais voisine dit
+  // « 4, Campus Atert », parce que la rue elle-même porte ce nom. Le mot est
+  // donc cherché dans les noms et dans les adresses de tous les
+  // établissements de la commune, et ce qui est trouvé est cité tel quel.
+  function campusDe(lau) {
+    var vus = {}, out = [];
+    ((window.ECOLES || {}).points || []).forEach(function (p) {
+      if (p.k !== lau) return;
+      var n = p.n || "", a = p.a || "";
+      var ou = /campus/i.test(n) ? n : (/campus/i.test(a) ? a : "");
+      if (!ou) return;
+      // « 4, Campus Atert, Bertrange » : le nom du campus suffit, le numéro
+      // et la localité n'apprennent rien.
+      var m = ou.match(/(?:^|[,\s])((?:Schoul|Kanner)?\s*[Cc]ampus[^,]*)/);
+      var t = (m ? m[1] : ou).trim();
+      var k = t.toLowerCase();
+      if (!vus[k]) { vus[k] = 1; out.push(t); }
+    });
+    return out;
+  }
+
   function listeEtab(titre, items, rendu) {
     if (!items.length) return "";
     return "<h5>" + esc(titre) + "</h5><ul>" + items.map(rendu).join("") + "</ul>";
@@ -1539,10 +1562,16 @@
     if (ly.length) resume.push(ly.length + (ly.length > 1 ? " lycées" : " lycée"));
     if (sea.tot) resume.push(sea.tot + (sea.tot > 1 ? " structures d'accueil" : " structure d'accueil"));
 
+    var campus = campusDe(c.lau || (couche_nom === "quartiers" ? "0304" : ""));
     var h = '<div class="ct-ecole"><h4>' + esc(titreVille || c.nom);
-    if ((n.campus || []).length) h += '<span class="eti">campus scolaire</span>';
+    if (campus.length) h += '<span class="eti">campus scolaire</span>';
     h += "</h4>";
     h += '<p class="resume">' + esc(resume.join(", ")) + ".</p>";
+    if (campus.length) {
+      h += '<p class="rien">Le mot campus apparaît ici : ' + esc(campus.join(", ")) +
+        ". Le ministère n'inscrit qu'une école par commune scolaire, même quand les classes " +
+        "sont réparties sur deux sites : le nombre ci-dessus compte des écoles, pas des bâtiments.</p>";
+    }
 
     h += listeEtab("Écoles fondamentales", ef, function (e) {
       return "<li>" + esc(e.n) + (e.l && e.l !== c.nom ? ' <span class="off">' + esc(e.l) + "</span>" : "") + "</li>";
@@ -1596,7 +1625,7 @@
     Object.keys(com).forEach(function (lau) {
       var d = com[lau], nom = noms[lau] || "";
       if (!nom) return;
-      if ((d.campus || []).length) campus.push(nom);
+      if (campusDe(lau).length) campus.push(nom);
       if ((d.ly || []).length) avecLycee.push(nom);
       (d.ly || []).forEach(function (e) {
         if (e.o && /européen/i.test(e.o) && e.g !== false) europeennes.push(nom + " (" + e.n + ")");
@@ -1606,9 +1635,10 @@
     var h = '<details class="ct-ecoles-pays"><summary>Et dans les autres communes ?</summary>';
     h += "<p><b>Un lycée sur le territoire :</b> " + tri(avecLycee).join(", ") + ". Les " +
       ((kb.communes || []).length - avecLycee.length) + " autres communes n'en ont pas.</p>";
-    h += "<p><b>Une école qui porte le nom de campus :</b> " + tri(campus).join(", ") +
-      ". Ailleurs, les écoles gardent le nom de leur localité, ce qui ne dit rien de leur taille : " +
-      "plusieurs communes ont regroupé leurs classes sur un seul site sans l'appeler campus.</p>";
+    h += "<p><b>Le mot campus apparaît dans " + campus.length + " communes :</b> " + tri(campus).join(", ") +
+      ". C'est un indice, pas un inventaire : le mot est cherché dans les noms d'établissements et dans " +
+      "leurs adresses, et une commune qui a regroupé ses classes sans employer ce mot n'apparaît pas ici. " +
+      "Le ministère, lui, n'inscrit qu'une école par commune scolaire, même quand elle occupe deux sites.</p>";
     h += "<p><b>Une école européenne publique et gratuite :</b> " + tri(europeennes).join(" · ") +
       ". Elles accueillent les élèves de tout le pays, pas seulement ceux de la commune.</p>";
     h += "</details>";

@@ -480,8 +480,11 @@ Ce que la base contient aujourd'hui :
    noms : les 168 écoles fondamentales et leur localité, les 51 lycées avec leur offre
    internationale et un lien vers la source, les 703 crèches et maisons relais avec la part
    conventionnée. Un bloc dépliable répond à la question d'après, « et ailleurs » : les 18
-   communes qui ont un lycée, les 7 qui ont une école appelée campus, les 6 écoles
-   européennes publiques et gratuites. Les quartiers de la capitale reçoivent la note de la
+   communes qui ont un lycée, les 8 où le mot campus apparaît, les 6 écoles européennes
+   publiques et gratuites. Ce dernier repère s'est d'abord fié au seul nom de l'école, et il
+   était faux : Bertrange a le campus Atert, mais le ministère n'y inscrit qu'une « École de
+   Bertrange ». Le mot est donc cherché aussi dans les adresses, où il ressort dès qu'une rue
+   porte le nom du campus, et la note le présente comme un indice, pas comme un inventaire. Les quartiers de la capitale reçoivent la note de la
    ville entière, ce que la note dit, et les cartes des pays voisins n'en reçoivent aucune.
 
 8. **Les quartiers de la capitale ne se limitent plus au logement.** La Ville publie son
