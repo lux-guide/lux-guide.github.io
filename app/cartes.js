@@ -570,6 +570,12 @@
 
   function nations() { return (kb && kb.nations) || []; }
 
+  // La liste des nationalités est nationale, les comptages sont locaux : un
+  // quartier porte les siens comme une commune porte les siens.
+  function natPossible() { return !estFrontalier() && nations().length && zones().some(function (c) { return c.n; }); }
+  function natSource() { return sources().nat_source || kb.nat_source; }
+  function natAide() { return sources().nat_aide || kb.nat_aide; }
+
   // Windows ne dessine pas les emoji de drapeau : il affiche les deux lettres du
   // pays dans un cadre. Là où le HTML le permet on met donc une image, et l'emoji
   // reste en texte de remplacement. Dans une liste déroulante, où seule du texte
@@ -593,7 +599,7 @@
 
   function majNatCmp() {
     if (natSel.length < 2) { indNation = null; return; }
-    kb.communes.forEach(function (c) {
+    zones().forEach(function (c) {
       var t = c.i.nat_tot;
       delete c.i.natcmp;
       delete c.i.natcmp_dom;
@@ -617,11 +623,11 @@
       unite: "% des inscrits, cumulé",
       fmt: "pct",
       sens: 0,
-      source: kb.nat_source,
-      aide: kb.nat_aide + " La couleur dit laquelle des nationalités choisies est la plus " +
-        "nombreuse dans la commune, et la densité de la couleur dit ce qu'elles pèsent " +
-        "ensemble. Une commune pâle peut donc être dominée par une nationalité qui n'y " +
-        "compte que quelques dizaines de personnes."
+      source: natSource(),
+      aide: natAide() + " La couleur dit laquelle des nationalités choisies est la plus " +
+        "nombreuse dans la " + motZone(false) + ", et la densité de la couleur dit ce qu'elles " +
+        "pèsent ensemble. Une " + motZone(false) + " pâle peut donc être dominée par une " +
+        "nationalité qui n'y compte que quelques dizaines de personnes."
     };
   }
 
@@ -667,7 +673,7 @@
   function majNation() {
     var n = infoNation(nation);
     if (!n) { indNation = null; return; }
-    kb.communes.forEach(function (c) {
+    zones().forEach(function (c) {
       var t = c.i.nat_tot;
       delete c.i.nation;
       if (!t) return;
@@ -684,8 +690,8 @@
       unite: natMode === "pct" ? "% des inscrits" : "personnes",
       fmt: natMode === "pct" ? "pct" : "ent",
       sens: 0,
-      source: kb.nat_source,
-      aide: kb.nat_aide + " Au total " + n.t.toLocaleString("fr-FR") +
+      source: natSource(),
+      aide: natAide() + " Au total " + n.t.toLocaleString("fr-FR") +
         " personnes de cette nationalité dans le pays."
     };
   }
@@ -749,11 +755,20 @@
   // pendant la lecture : une commune deviendrait foncée en perdant des
   // habitants, simplement parce que les autres en perdent davantage.
 
-  function serieDe(id) { return (kb && kb.series && kb.series[id]) || null; }
-
-  function serieCourante() {
-    return couche_nom === "quartiers" ? null : serieDe(courant);
+  // Chaque territoire a ses séries : celles du pays pour les communes, celles
+  // de la Ville pour ses quartiers, aucune de l'autre côté de la frontière.
+  function sources() {
+    if (couche_nom === "quartiers") return kb.quartiers || {};
+    if (estFrontalier()) return {};
+    return kb || {};
   }
+
+  function serieDe(id) {
+    var s = sources().series;
+    return (s && s[id]) || null;
+  }
+
+  function serieCourante() { return serieDe(courant); }
 
   function calerEchelle() {
     var s = serieCourante();
@@ -1642,11 +1657,11 @@
           "</span></h4>" +
           graphe(s.annees, lignes, ind.fmt, annee, pilote ? function (a) { arreterLecture(); allerA(a); } : null);
       }
-    } else if (couche_nom === "communes" && champ !== "nation" && champ !== "natcmp") {
+    } else if (!estFrontalier() && champ !== "nation" && champ !== "natcmp") {
       h += '<p class="hint" style="margin-top:12px">La base ne porte pas de série annuelle pour ' +
         "cet indicateur, seulement la dernière valeur publiée.</p>";
     }
-    if (couche_nom === "communes" && (champ === "nation" || champ === "natcmp")) h += listeNations(c);
+    if (natPossible() && (champ === "nation" || champ === "natcmp")) h += listeNations(c);
     h += "</div>";
     if (!estFrontalier()) h += notes(liste);
     k.innerHTML = h;
@@ -2215,7 +2230,9 @@
   }
   var GROUPES_QUARTIERS = [
     ["Louer", ["loyer_appt", "loyer_appt_m2"]],
-    ["Acheter", ["prix_appt_m2", "prix_appt", "prix_maison_m2", "prix_maison"]]
+    ["Acheter", ["prix_appt_m2", "prix_appt", "prix_maison_m2", "prix_maison"]],
+    ["Population", ["pop", "age_median", "part_moins15", "part_65plus", "part_femmes"]],
+    ["Nationalités", ["pct_lux", "pct_etr", "pct_eu", "pct_noneu", "nb_nations"]]
   ];
 
   function boutons() {
@@ -2340,7 +2357,7 @@
     }).filter(function (g) { return g[1].length; });
     // Les nationalités du recensement et celles du registre forment une seule
     // famille : deux entrées « Nationalités » côte à côte n'auraient pas de sens.
-    var natFam = !quart && !fronti && nations().length;
+    var natFam = natPossible();
     var iNat = -1;
     if (natFam) {
       fams.forEach(function (g, j) { if (g[0] === "Nationalités") iNat = j; });

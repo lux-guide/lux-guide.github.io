@@ -457,10 +457,12 @@ Ce que la base contient aujourd'hui :
    courbe, meilleure valeur marquée. Avant, ce tableau s'ouvrait dès le premier clic alors
    qu'on venait de choisir un seul indicateur, et les deux registres se mélangeaient.
 5. **Le territoire est une seule rangée de choix homogènes** : les cent communes, la
-   capitale par quartier, et la zone frontalière d'un voisin. Les trois vues valent pour
+   capitale par quartier, et la zone frontalière d'un voisin. Le pays voisin se choisit sur
+   une rangée à lui, qui n'apparaît qu'une fois la frontière franchie, comme la rangée des
+   régions juste en dessous : une liste déroulante a longtemps tenu ce rôle, mais elle ne
+   montrait pas ses choix et détonnait au milieu des puces. Les trois vues valent pour
    chaque territoire : les 24 quartiers de la capitale se comparent donc côte à côte comme
-   les communes, sur les six indicateurs de prix et de loyers que l'Observatoire publie à
-   cette échelle. Comme personne ne pense à changer de territoire pour cela, la vue
+   les communes, sur seize indicateurs. Comme personne ne pense à changer de territoire pour cela, la vue
    « comparer » le dit en une ligne sous le panier. Les pays étaient d'abord sur
    une rangée séparée, et « comparer deux cartes » se trouvait parmi les territoires, ce
    qui n'est pas le même registre. Le voisin se choisit dans une liste déroulante, un
@@ -481,6 +483,23 @@ Ce que la base contient aujourd'hui :
    communes qui ont un lycée, les 7 qui ont une école appelée campus, les 6 écoles
    européennes publiques et gratuites. Les quartiers de la capitale reçoivent la note de la
    ville entière, ce que la note dit, et les cartes des pays voisins n'en reçoivent aucune.
+
+8. **Les quartiers de la capitale ne se limitent plus au logement.** La Ville publie son
+   état de la population en données brutes, une ligne par habitant inscrit, avec l'âge, le
+   sexe, la ou les nationalités et le quartier, chaque année depuis 2010. Le script en tire
+   dix indicateurs par quartier (habitants, âge médian, part des moins de 15 ans et des
+   65 ans et plus, part de femmes, parts de Luxembourgeois, d'étrangers, de ressortissants
+   de l'Union et hors Union, nombre de nationalités présentes), le comptage complet des
+   nationalités, et seize années de série. Les totaux reconstruits tombent sur ceux que la
+   Ville publie : 137 696 habitants, dont 42 020 Luxembourgeois, et Bonnevoie-Sud en tête
+   avec 13 428 habitants. Une personne à deux nationalités compte une fois, sous la première
+   écrite par la Ville, qui place la luxembourgeoise en tête ; une poignée de codes absents
+   de la table de correspondance, environ trois cents personnes, est regroupée plutôt
+   qu'oubliée, pour que la somme des parts fasse cent. Côté écran, le rendu ne demande plus
+   « sommes-nous sur les communes ? » mais « la donnée existe-t-elle ? » : la famille
+   Nationalités, la liste des 189 nationalités, le mode nombre ou part, la comparaison de
+   plusieurs nationalités et la barre du temps marchent donc à l'identique sur les deux
+   territoires. Le revenu et l'emploi, eux, restent publiés à la commune seulement.
 
    Sources : le ministère de l'Éducation nationale publie les adresses des bâtiments
    scolaires sur data.public.lu, mais par localité et non par commune ; le rattachement

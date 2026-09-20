@@ -405,6 +405,172 @@ def lire_prix(path):
 
 # ---------- programme ----------
 
+# Population de la Ville de Luxembourg : une ligne par habitant, avec l'age, le
+# sexe, la ou les nationalites et le quartier. Publie chaque annee depuis 2013.
+VDL_POP_DATASET = "https://data.public.lu/api/1/datasets/citoyens-et-residents-donnees-brutes-etat-de-la-population/"
+VDL_NAT_ISO3 = "https://opendata.vdl.lu/citoyens_et_residents/Nationalites_ISO3_Nom.csv"
+
+# Les 27 Etats membres, en code ISO3, pour partager les habitants entre Union
+# et hors Union comme le fait le STATEC pour les communes. La liste est courte
+# et stable : la porter ici evite une source de plus pour vingt-sept lignes.
+UE27 = set("""AUT BEL BGR HRV CYP CZE DNK EST FIN FRA DEU GRC HUN IRL ITA LVA LTU
+LUX MLT NLD POL PRT ROU SVK SVN ESP SWE""".split())
+
+
+def population_quartiers():
+    """Habitants, age et nationalites par quartier, chaque annee publiee.
+
+    Rend (dernier, series, annees, situation) : le detail de la derniere annee
+    par quartier, les series annuelles des principaux indicateurs, la liste des
+    annees, et l'annee de situation.
+    """
+    import json as _json
+    req = urllib.request.Request(VDL_POP_DATASET, headers={"User-Agent": "lux_guide build_cartes"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        meta = _json.loads(r.read().decode("utf-8"))
+    fichiers = {}
+    for res in meta.get("resources", []):
+        if res.get("format") != "csv":
+            continue
+        m = re.search(r"(20\d\d)", res.get("title") or "")
+        if m:
+            fichiers[int(m.group(1))] = res["url"]
+    if not fichiers:
+        print("   population des quartiers indisponible")
+        return None, None, None, None, None
+
+    # Le code de nationalite de la Ville est celui des plaques (L, F, D, B),
+    # pas l'ISO3 du registre national : sans cette table, les nationalites des
+    # quartiers ne se rapprocheraient pas de celles des communes.
+    iso3 = {}
+    t = telecharger(VDL_NAT_ISO3, "vdl_nat_iso3.csv")
+    brut = io.open(t, "rb").read()
+    for enc in ("utf-8-sig", "cp1252"):
+        try:
+            texte = brut.decode(enc)
+            break
+        except UnicodeDecodeError:
+            continue
+    for r in csv.DictReader(io.StringIO(texte), delimiter=";"):
+        code = (r.get("NATIONALITE_CODEPAYS") or "").strip()
+        i3 = (r.get("NATIONALITE_ISO3") or "").strip()
+        if code and i3:
+            iso3[code] = i3
+
+    RACCORDS_POP = {"muehlenbach": "muhlenbach", "pulvermuehl": "pulvermuhl"}
+    annees = sorted(fichiers)
+    par_annee, inconnus = {}, collections.Counter()
+    for an in annees:
+        p = telecharger(fichiers[an], "vdl_pop_%d.csv" % an)
+        try:
+            lignes = list(csv.DictReader(io.open(p, encoding="utf-8-sig"), delimiter=";"))
+        except UnicodeDecodeError:
+            lignes = list(csv.DictReader(io.open(p, encoding="cp1252"), delimiter=";"))
+        if not lignes:
+            continue
+        col_q = next((c for c in lignes[0] if c and "artier" in c), None)
+        col_n = next((c for c in lignes[0] if c and "ationalit" in c), None)
+        col_a = next((c for c in lignes[0] if c and c.strip().lower().startswith("age")), None)
+        col_s = next((c for c in lignes[0] if c and c.strip().lower().startswith("sexe")), None)
+        if not (col_q and col_n and col_a):
+            print("   population VdL %d : colonnes inattendues, annee ignoree" % an)
+            continue
+        q = collections.defaultdict(lambda: {"n": 0, "lux": 0, "ue": 0, "hors": 0, "f": 0,
+                                             "ages": [], "nat": collections.Counter()})
+        for l in lignes:
+            k = cle(l[col_q] or "")
+            k = RACCORDS_POP.get(k, k)
+            if not k:
+                continue
+            d = q[k]
+            d["n"] += 1
+            codes = [x.strip() for x in (l[col_n] or "").split(",") if x.strip()]
+            # Une personne compte une fois. Sa nationalite est la premiere
+            # ecrite, et la Ville ecrit toujours la luxembourgeoise en tete :
+            # son total de Luxembourgeois se retrouve ainsi a l'unite pres.
+            principal = codes[0] if codes else ""
+            i3 = iso3.get(principal)
+            if not i3:
+                # Une poignee de codes ne figure pas dans la table de la Ville
+                # (environ trois cents personnes sur cent trente-sept mille).
+                # Ils sont ranges ensemble plutot qu'oublies : sinon la somme
+                # des parts ne ferait plus cent.
+                inconnus[principal] += 1
+                i3 = "XXX"
+            d["nat"][i3] += 1
+            if i3 == "LUX":
+                d["lux"] += 1
+            elif i3 in UE27:
+                d["ue"] += 1
+            else:
+                d["hors"] += 1
+            try:
+                d["ages"].append(int(l[col_a]))
+            except (TypeError, ValueError):
+                pass
+            if col_s and (l[col_s] or "").strip().upper().startswith("F"):
+                d["f"] += 1
+        par_annee[an] = q
+
+    if not par_annee:
+        return None, None, None, None, None
+    if inconnus:
+        print("   codes de nationalite hors table : %s" % dict(inconnus.most_common(5)))
+
+    def med(v):
+        v = sorted(v)
+        if not v:
+            return None
+        m = len(v) // 2
+        return float(v[m]) if len(v) % 2 else (v[m - 1] + v[m]) / 2.0
+
+    def pc(x, n):
+        return round(100.0 * x / n, 1) if n else None
+
+    def chiffres(d):
+        n = d["n"]
+        if not n:
+            return {}
+        ages = d["ages"]
+        return {
+            "pop": n,
+            "pct_lux": pc(d["lux"], n),
+            "pct_etr": pc(n - d["lux"], n),
+            "pct_eu": pc(d["ue"], n),
+            "pct_noneu": pc(d["hors"], n),
+            "part_femmes": pc(d["f"], n),
+            "age_median": med(ages),
+            "part_moins15": pc(sum(1 for a in ages if a < 15), n),
+            "part_65plus": pc(sum(1 for a in ages if a >= 65), n),
+            "nb_nations": len(d["nat"]),
+        }
+
+    annees = sorted(par_annee)
+    dernier = {k: chiffres(d) for k, d in par_annee[annees[-1]].items()}
+    nat_dernier = {k: dict(d["nat"]) for k, d in par_annee[annees[-1]].items()}
+    for k, v in dernier.items():
+        v["nat_tot"] = par_annee[annees[-1]][k]["n"]
+
+    # Même forme que les séries des communes : le fichier porte la liste des
+    # années une fois, et chaque zone porte ses valeurs dans l'ordre de cette
+    # liste. Une année sans donnée vaut null, le rendu la saute.
+    CHAMPS_SERIE = (("pop", "Habitants"), ("pct_lux", "Part de Luxembourgeois"),
+                    ("pct_etr", "Part d'étrangers"), ("age_median", "Âge médian"),
+                    ("part_65plus", "Part des 65 ans et plus"),
+                    ("nb_nations", "Nationalités présentes"))
+    calcul = {an: {k: chiffres(d) for k, d in par_annee[an].items()} for an in annees}
+    series = {champ: {"nom": nom, "annees": list(annees)} for champ, nom in CHAMPS_SERIE}
+    par_zone = {}
+    for k in calcul[annees[-1]]:
+        par_zone[k] = {}
+        for champ, _ in CHAMPS_SERIE:
+            par_zone[k][champ] = [calcul[an].get(k, {}).get(champ) for an in annees]
+
+    print("   quartiers : %d habitants en %d, %d années de série"
+          % (sum(v["pop"] for v in dernier.values()), annees[-1], len(annees)))
+    return dernier, nat_dernier, series, par_zone, annees[-1]
+
+
 def construire_quartiers():
     """Les 24 quartiers de la Ville de Luxembourg : géométrie de la VDL, prix et
     loyers annoncés de l'Observatoire de l'Habitat. Les deux sources ne découpent
@@ -417,6 +583,7 @@ def construire_quartiers():
         print("   géométrie des quartiers indisponible, couche ignorée")
         return None
 
+    pop, nat, series_pop, series_zone, an_pop = population_quartiers()
     va_m2, va_tot, f_va = lire_prix(telecharger(VDL_VENTE_APPT, "vdl_vente_appt.xlsx"))
     vm_m2, vm_tot, f_vm = lire_prix(telecharger(VDL_VENTE_MAISON, "vdl_vente_maison.xlsx"))
     la_m2, la_tot, f_la = lire_prix(telecharger(VDL_LOYER_APPT, "vdl_loyer_appt.xlsx"))
@@ -449,10 +616,17 @@ def construire_quartiers():
             v = src.get(k)
             if v is not None:
                 ind[champ] = round(v, arr)
-        zones.append({"nom": nom, "canton": "Luxembourg", "lau": "",
-                      "c": centroide(rings),
-                      "g": [encode_polyline(r) for r in rings],
-                      "i": ind})
+        z = {"nom": nom, "canton": "Luxembourg", "lau": "",
+             "c": centroide(rings),
+             "g": [encode_polyline(r) for r in rings],
+             "i": ind}
+        kp = cle(nom)
+        if pop and kp in pop:
+            ind.update({a: b for a, b in pop[kp].items() if b is not None})
+            z["n"] = nat.get(kp, {})
+            if series_zone and kp in series_zone:
+                z["s"] = series_zone[kp]
+        zones.append(z)
     zones.sort(key=lambda z: z["nom"])
 
     AIDE_M2 = ("Les deux colonnes de la source sont moyennées séparément : le prix au m² "
@@ -473,16 +647,55 @@ def construire_quartiers():
         {"id": "prix_maison", "nom": "Prix d'une maison, total", "unite": "€", "sens": -1,
          "fmt": "eur", "source": "Observatoire de l'Habitat, " + f_vm, "aide": ""},
     ]
-    return {
+    if pop:
+        src_pop = "Ville de Luxembourg, état de la population au 31 décembre %d, données brutes, data.public.lu" % an_pop
+        aide_pop = ("Comptage nominatif de la Ville : une ligne par habitant inscrit au registre, avec son "
+                    "âge, son sexe, sa ou ses nationalités et son quartier. Les totaux correspondent à ceux "
+                    "que la Ville publie dans son état de la population.")
+        INDS.extend([
+            {"id": "pop", "nom": "Habitants", "unite": "habitants", "sens": 0, "fmt": "ent",
+             "source": src_pop, "aide": aide_pop},
+            {"id": "pct_lux", "nom": "Part de Luxembourgeois", "unite": "%", "sens": 0, "fmt": "pct",
+             "source": src_pop, "aide": aide_pop + " Une personne qui a deux nationalités est comptée "
+             "une seule fois, sous la première écrite par la Ville, qui met la luxembourgeoise en tête."},
+            {"id": "pct_etr", "nom": "Part d'étrangers", "unite": "%", "sens": 0, "fmt": "pct",
+             "source": src_pop, "aide": aide_pop},
+            {"id": "pct_eu", "nom": "Part de ressortissants de l'Union", "unite": "%", "sens": 0,
+             "fmt": "pct", "source": src_pop, "aide": aide_pop + " Les 27 États membres, Luxembourg exclu."},
+            {"id": "pct_noneu", "nom": "Part hors Union européenne", "unite": "%", "sens": 0,
+             "fmt": "pct", "source": src_pop, "aide": aide_pop},
+            {"id": "nb_nations", "nom": "Nationalités présentes", "unite": "nationalités", "sens": 0,
+             "fmt": "ent", "source": src_pop, "aide": aide_pop},
+            {"id": "age_median", "nom": "Âge médian", "unite": "ans", "sens": 0, "fmt": "dec",
+             "source": src_pop, "aide": aide_pop},
+            {"id": "part_moins15", "nom": "Part des moins de 15 ans", "unite": "%", "sens": 0,
+             "fmt": "pct", "source": src_pop, "aide": aide_pop},
+            {"id": "part_65plus", "nom": "Part des 65 ans et plus", "unite": "%", "sens": 0,
+             "fmt": "pct", "source": src_pop, "aide": aide_pop},
+            {"id": "part_femmes", "nom": "Part de femmes", "unite": "%", "sens": 0, "fmt": "pct",
+             "source": src_pop, "aide": aide_pop},
+        ])
+    note = ("La Ville de Luxembourg pèse à elle seule 137 000 habitants, plus que les quinze "
+            "communes suivantes réunies : la traiter comme une seule zone masque l'essentiel.")
+    if pop:
+        note += (" Les prix et les loyers viennent de l'Observatoire de l'Habitat, la population, "
+                 "l'âge et les nationalités du comptage nominatif de la Ville, qui remonte à 2013. "
+                 "Le revenu et l'emploi, eux, ne sont toujours publiés qu'à la commune.")
+    else:
+        note += " Ce niveau ne couvre que le logement."
+    q = {
         "titre": "Luxembourg-Ville, par quartier",
-        "note": ("La Ville de Luxembourg pèse à elle seule 137 000 habitants, plus que les "
-                 "quinze communes suivantes réunies : la traiter comme une seule zone masque "
-                 "l'essentiel. Ce niveau ne couvre que le logement, aucune statistique de "
-                 "revenu ou de population n'est publiée par quartier."),
+        "note": note,
         "source_geo": "Ville de Luxembourg, quartiers, data.public.lu, CC BY",
         "indicateurs": INDS,
         "zones": zones,
     }
+    if series_pop:
+        q["series"] = series_pop
+    if pop:
+        q["nat_source"] = src_pop
+        q["nat_aide"] = aide_pop
+    return q
 
 
 def main():
