@@ -111,14 +111,21 @@
   // nationalité choisie, six au plus, au-delà l'oeil ne les distingue plus.
   var natSel = [];
   // Famille d'indicateurs ouverte dans le sélecteur, et communes retenues
-  // pour la comparaison (cinq au plus : au-delà le tableau ne se lit plus).
+  // pour la comparaison. Dix au plus : le tableau défile alors en largeur,
+  // en-tête et première colonne figés. La limite a d'abord été de cinq, ce
+  // qui tenait sans défiler mais ne suffisait pas à comparer tout un canton.
   var famille = null, panierCommunes = [];
-  var CAT = ["#2563eb", "#d1620a", "#0f8b57", "#8b3fd1", "#c2185b", "#00757f"];
+  var CAT = ["#2563eb", "#d1620a", "#0f8b57", "#8b3fd1", "#c2185b", "#00757f",
+    "#a07800", "#5b6472", "#7a3e1d", "#3aa0d8"];
+  // Dix communes dans le panier, six nationalités sur une carte : sur une
+  // carte les couleurs se touchent et l'oeil n'en sépare pas davantage, dans
+  // un tableau chaque couleur a sa colonne.
+  var MAX_PANIER = 10, MAX_NAT = 6;
   // Trois vues, trois registres. « carte » : un indicateur peint sur une
   // carte, et une commune cliquée montre sa valeur, son rang et sa courbe sur
   // cet indicateur. « deux » : deux cartes côte à côte, chacune son
   // indicateur. « communes » : la carte ne mesure plus rien, elle sert à
-  // choisir jusqu'à cinq communes dont toutes les données se lisent côte à
+  // choisir jusqu'à dix communes dont toutes les données se lisent côte à
   // côte. Avant, le tableau complet s'ouvrait dès le premier clic alors que
   // l'on venait de choisir un seul indicateur : deux registres se mélangeaient.
   var mode = "carte";
@@ -316,9 +323,24 @@
       // défilement, d'où le défilement horizontal réservé aux petits écrans,
       // où l'en-tête ne colle donc pas.
       ".ct-cmpc .defil{overflow-x:visible}",
-      "@media(max-width:760px){.ct-cmpc .defil{overflow-x:auto}}",
+      // Au-delà de cinq colonnes, ou sur un téléphone, le tableau ne tient plus
+      // dans la page : il défile dans son propre cadre, dans les deux sens.
+      // L'en-tête reste en haut du cadre et la première colonne à gauche,
+      // sinon on perd soit le nom de la commune, soit celui de la ligne.
+      ".ct-cmpc.large .defil{overflow:auto;max-height:calc(100vh - var(--h-top,68px) - 24px);",
+      "  border:1px solid var(--border,#e6eaef);border-radius:10px}",
+      ".ct-cmpc.large table{width:max-content;min-width:100%}",
+      ".ct-cmpc.large th,.ct-cmpc.large td{min-width:150px}",
+      ".ct-cmpc.large th:first-child,.ct-cmpc.large tr.ind td:first-child{position:sticky;left:0;z-index:1;",
+      "  min-width:190px;max-width:230px;background:var(--surface,#fff);box-shadow:1px 0 0 var(--border,#e6eaef),6px 0 8px -6px rgba(11,15,22,.22)}",
+      ".ct-cmpc.large tr.ind:hover td:first-child{background:var(--surface-2,#f4f6f9)}",
+      ".ct-cmpc.large tr.fam td span{position:sticky;left:10px;display:inline-block}",
+      "@media(max-width:760px){.ct-cmpc.large th,.ct-cmpc.large td{min-width:118px}",
+      "  .ct-cmpc.large th:first-child,.ct-cmpc.large tr.ind td:first-child{min-width:128px;max-width:150px}}",
       ".ct-cmpc thead th{position:sticky;top:var(--h-top,68px);z-index:2;",
       "  background:var(--surface,#fff);box-shadow:0 1px 0 var(--border,#e6eaef)}",
+      ".ct-cmpc.large thead th{top:0}",
+      ".ct-cmpc.large thead th:first-child{z-index:3}",
       ".ct-cmpc thead th .col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}",
       ".ct-cmpc thead th:first-child .col{align-items:flex-start}",
       ".ct-cmpc thead th .outils{display:flex;gap:2px}",
@@ -610,7 +632,7 @@
     if (!code) return;
     var j = natSel.indexOf(code);
     if (j >= 0) natSel.splice(j, 1);
-    else if (natSel.length < CAT.length) natSel.push(code);
+    else if (natSel.length < MAX_NAT) natSel.push(code);
     if (natSel.length < 2 && courant === "natcmp") {
       if (natSel.length === 1) { choisirNation(natSel[0]); return; }
       indNation = null;
@@ -894,7 +916,7 @@
         poly.bindTooltip('<span class="ct-tip">' + esc(c.nom) +
           (estFrontalier() ? ' <span class="muted">' + esc(c.region || c.canton) + "</span>" : "") +
           "<small>" + (j >= 0 ? "dans la comparaison, cliquer pour la retirer" :
-            (liste.length >= 5 ? "la comparaison est pleine, retirez-en une" :
+            (liste.length >= MAX_PANIER ? "la comparaison est pleine, retirez-en une" :
               "cliquer pour l'ajouter à la comparaison")) + "</small></span>", { sticky: true });
       });
     });
@@ -1298,7 +1320,7 @@
 
   function ajouterCommune(nom) {
     if (!nom || panierCommunes.indexOf(nom) >= 0) return;
-    if (panierCommunes.length >= 5) return;
+    if (panierCommunes.length >= MAX_PANIER) return;
     if (!panierCommunes.length && selection && selection !== nom) panierCommunes.push(selection);
     panierCommunes.push(nom);
   }
@@ -1343,7 +1365,7 @@
   }
 
   function selectAjout(liste) {
-    if (liste.length >= 5) return "";
+    if (liste.length >= MAX_PANIER) return "";
     var h = '<select class="ct-ajout" data-ajout aria-label="Ajouter une ' + motZone(false) + ' à la comparaison">' +
       '<option value="">+ ajouter ' + (liste.length ? "une autre " : "une ") + motZone(false) + "…</option>";
     zones().slice().sort(function (a, b) { return a.nom.localeCompare(b.nom, "fr"); })
@@ -1370,7 +1392,9 @@
     var liste = communesComparees();
     if (!liste.length) { k.innerHTML = ""; return; }
     var dispo = listeIndic();
-    var h = '<div class="card ct-cmpc"><div class="tete">' +
+    // Le tableau large : plus de cinq colonnes, ou un écran de téléphone.
+    var large = liste.length > 5 || (window.matchMedia && window.matchMedia("(max-width:760px)").matches);
+    var h = '<div class="card ct-cmpc' + (large ? " large" : "") + '"><div class="tete">' +
       '<h3 style="margin:0 8px 0 0">' + (liste.length > 1 ? liste.length + " " + motZone(true) +
       " côte à côte" : esc(liste[0].nom) + ", toutes ses données") + "</h3>";
     h += '</div><div class="defil"><table><thead><tr><th></th>';
@@ -1413,7 +1437,7 @@
     }
 
     if ((courant === "nation" || courant === "natcmp") && indNation) {
-      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">Nationalité affichée</td></tr>' +
+      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '"><span>Nationalité affichée</span></td></tr>' +
         ligne(indNation);
     }
     (couche_nom === "quartiers" ? GROUPES_QUARTIERS : groupes()).forEach(function (g) {
@@ -1423,7 +1447,7 @@
         if (ind) lignes += ligne(ind);
       });
       if (lignes) {
-        h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">' + esc(g[0]) + "</td></tr>" + lignes;
+        h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '"><span>' + esc(g[0]) + "</span></td></tr>" + lignes;
       }
     });
 
@@ -1442,7 +1466,7 @@
           return v;
         });
       });
-      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '">Nationalités, part des inscrits</td></tr>';
+      h += '<tr class="fam"><td colspan="' + (liste.length + 1) + '"><span>Nationalités, part des inscrits</span></td></tr>';
       top.forEach(function (code) {
         var n = infoNation(code) || { n: code };
         h += '<tr class="ind" data-nat="' + code + '"><td>' + drapeau(n) + " " + esc(n.n) + "</td>";
@@ -2291,7 +2315,7 @@
       // place, le panier des communes retenues.
       var liste = communesComparees();
       h += '<div class="ct-panier">' +
-        (liste.length ? "" : '<span class="muted">Jusqu\'à cinq ' + motZone(true) +
+        (liste.length ? "" : '<span class="muted">Jusqu\'à dix ' + motZone(true) +
           " : cliquez-les sur la carte, ou prenez-les dans la liste à droite.</span>") +
         puces(liste, true) + selectAjout(liste) + "</div>";
       // La capitale se compare aussi quartier par quartier, et personne ne
@@ -2366,7 +2390,7 @@
           '<i style="background:' + CAT[j] + '"></i><b>' + esc(n ? n.n : code) +
           '</b><span class="x">✕</span></button>';
       });
-      if (natSel.length < CAT.length) {
+      if (natSel.length < MAX_NAT) {
         h += '<button class="ct-natpuce" data-nataddsel="1"><b>+ ajouter celle-ci à la comparaison</b></button>';
       }
       if (natSel.length >= 2) {
