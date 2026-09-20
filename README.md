@@ -504,6 +504,18 @@ Ce que la base contient aujourd'hui :
    plusieurs nationalités et la barre du temps marchent donc à l'identique sur les deux
    territoires. Le revenu et l'emploi, eux, restent publiés à la commune seulement.
 
+   **Ce qui est au même endroit.** `cartes/build_campus.py` regroupe les établissements
+   géocodés par site, même adresse ou moins de cent trente mètres, puis demande à
+   OpenStreetMap ce qui se trouve dans les deux cent vingt mètres : écoles, crèches, halls
+   sportifs, piscines, terrains, aires de jeux, bibliothèques, maisons de jeunes. La note
+   d'une commune montre ces sites, avec leur nom quand une adresse porte le mot campus. Le
+   regroupement par rue exige la même localité, sinon « rue de l'École » réunissait deux
+   villages. Deux limites, écrites sous les notes : le ministère inscrit une école par
+   commune scolaire et non un bâtiment par ligne, et un équipement absent d'OpenStreetMap
+   n'apparaît pas. Le campus Atert de Bertrange l'illustre : le ministère n'y connaît qu'une
+   « École de Bertrange », et le Centre Atert, son hall sportif et sa piscine
+   d'apprentissage ne sont pas encore décrits dans OpenStreetMap.
+
    Sources : le ministère de l'Éducation nationale publie les adresses des bâtiments
    scolaires sur data.public.lu, mais par localité et non par commune ; le rattachement
    passe par les adresses géoréférencées du cadastre, ce qui résout 922 adresses sur 923.

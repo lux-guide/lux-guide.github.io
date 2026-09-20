@@ -34,6 +34,9 @@
   // Ce ne sont pas des chiffres et ils ne viennent pas de la même source, d'où
   // un fichier à part, construit par cartes/build_ecoles.py.
   var KB_ECOLES = "cartes/ecoles_kb.js?v=2";
+  // Ce qui se trouve au même endroit : les établissements regroupés par site,
+  // et ce qu'OpenStreetMap décrit autour. Construit par cartes/build_campus.py.
+  var KB_CAMPUS = "cartes/campus_kb.js?v=1";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   // Fond de carte en sandwich. Une carte thématique pose des aplats de couleur
   // sur un territoire que le lecteur ne connaît pas : sans nom de ville, il ne
@@ -467,6 +470,7 @@
     if (!window.L) { reste += 1; charger(LEAFLET_CSS, "css"); charger(LEAFLET_JS, "js", fini); }
     if (!window.COMMUNES) { reste += 1; charger(KB, "js", fini); }
     if (!window.ECOLES) { reste += 1; charger(KB_ECOLES, "js", fini); }
+    if (!window.CAMPUS) { reste += 1; charger(KB_CAMPUS, "js", fini); }
     if (reste === 0) cb();
   }
 
@@ -1543,6 +1547,39 @@
     return out;
   }
 
+  // Un site, c'est ce qui partage une cour : les établissements que le
+  // ministère place à la même adresse ou à moins de cent trente mètres les uns
+  // des autres, et ce qu'OpenStreetMap décrit dans les deux cents mètres.
+  function sitesDe(lau) {
+    var c = (window.CAMPUS || {}).communes || {};
+    return (c[lau] || []).filter(function (s) {
+      return s.nom || s.etabs.length > 1 || (s.equip || []).length > 2;
+    }).slice(0, 4);
+  }
+
+  function blocSites(lau) {
+    var sites = sitesDe(lau);
+    if (!sites.length) return "";
+    var h = "<h5>Ce qui est regroupé au même endroit</h5><ul>";
+    sites.forEach(function (s) {
+      var noms = s.etabs.map(function (e) { return e.n; });
+      (s.osm || []).forEach(function (n) {
+        // Une école qu'OpenStreetMap nomme et que le ministère ne liste pas :
+        // c'est souvent un bâtiment de plus sur le même campus.
+        var deja = noms.some(function (x) { return x.toLowerCase().indexOf(n.toLowerCase()) >= 0; });
+        if (!deja) noms.push(n + " (OpenStreetMap)");
+      });
+      var equip = (s.equip || []).map(function (e) {
+        return e[1] > 1 ? e[1] + " " + e[0] + "s" : e[0];
+      });
+      h += "<li>" + (s.nom ? "<b>" + esc(s.nom) + "</b> : " : "") + esc(noms.join(", "));
+      if (equip.length) h += '<span class="off">Autour : ' + esc(equip.join(", ")) + "</span>";
+      h += "</li>";
+    });
+    h += "</ul>";
+    return h;
+  }
+
   function listeEtab(titre, items, rendu) {
     if (!items.length) return "";
     return "<h5>" + esc(titre) + "</h5><ul>" + items.map(rendu).join("") + "</ul>";
@@ -1568,9 +1605,7 @@
     h += "</h4>";
     h += '<p class="resume">' + esc(resume.join(", ")) + ".</p>";
     if (campus.length) {
-      h += '<p class="rien">Le mot campus apparaît ici : ' + esc(campus.join(", ")) +
-        ". Le ministère n'inscrit qu'une école par commune scolaire, même quand les classes " +
-        "sont réparties sur deux sites : le nombre ci-dessus compte des écoles, pas des bâtiments.</p>";
+      h += '<p class="rien">Le mot campus apparaît ici : ' + esc(campus.join(", ")) + ".</p>";
     }
 
     h += listeEtab("Écoles fondamentales", ef, function (e) {
@@ -1586,6 +1621,7 @@
       return "<li>" + esc(e.n) + o + "</li>";
     });
     if (!ly.length) h += '<p class="rien">Pas de lycée sur le territoire : les élèves du secondaire en rejoignent un ailleurs, souvent par le bus scolaire ou le train.</p>';
+    h += blocSites(c.lau || (couche_nom === "quartiers" ? "0304" : ""));
     if (sea.tot) {
       h += "<h5>Crèches et maisons relais</h5><ul><li>" + sea.tot + " structures, dont " + sea.conv +
         " conventionnées avec l'État</li><li>" + sea.je + " accueillent les jeunes enfants, " + sea.es +
@@ -1609,8 +1645,14 @@
       (quart ? " Les écoles sont recensées par commune : cette note vaut pour toute la Ville de Luxembourg, pas pour le seul quartier." : "") +
       "</p>" + '<div class="ct-ecoles">' + cartes + "</div>";
     h += notePays();
-    h += '<p class="hint" style="margin-top:10px">' + esc(m.vintage || "") + " Sources : " +
-      esc((m.sources || []).join(" · ")) + "</p>";
+    h += '<p class="hint" style="margin-top:10px"><b>Ce que ces listes ne disent pas.</b> ' +
+      "Le ministère inscrit une école par commune scolaire, pas un bâtiment par ligne : une commune " +
+      "qui répartit ses classes sur trois maisons d'un même campus n'y figure qu'une fois, et le " +
+      "compte ci-dessus est un compte d'écoles, pas de bâtiments. Ce qui entoure un site vient " +
+      "d'OpenStreetMap : un hall sportif ou une piscine que personne n'y a encore décrits " +
+      "n'apparaissent pas, même s'ils sont sur place. Pour le détail d'un campus, le site de la " +
+      "commune fait foi. " + esc(m.vintage || "") + " Sources : " + esc((m.sources || []).join(" · ")) +
+      " · OpenStreetMap, contributeurs, licence ODbL, pour les équipements autour des sites.</p>";
     return h;
   }
 
