@@ -30,6 +30,10 @@
   // si l'on passe de l'autre côté de la frontière : la plupart des visiteurs
   // ne l'ouvriront jamais, et elle pèse autant que le reste de la page.
   var KB_FRONT = "cartes/frontaliers_kb.js?v=1";
+  // Les notes par commune : les noms des écoles, des campus et des lycées.
+  // Ce ne sont pas des chiffres et ils ne viennent pas de la même source, d'où
+  // un fichier à part, construit par cartes/build_ecoles.py.
+  var KB_ECOLES = "cartes/ecoles_kb.js?v=1";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   // Fond de carte en sandwich. Une carte thématique pose des aplats de couleur
   // sur un territoire que le lecteur ne connaît pas : sans nom de ville, il ne
@@ -159,6 +163,24 @@
       // Le panier de communes, et la pastille de couleur qui suit chaque
       // commune de la carte au tableau.
       ".ct-panier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}",
+      // Les notes : une carte par commune, en colonnes quand il y a la place.
+      ".ct-ecoles{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:18px}",
+      ".ct-ecole{border:1px solid var(--border,#e6eaef);border-radius:14px;background:var(--surface,#fff);",
+      "  padding:16px 18px;box-shadow:var(--ombre-s,0 1px 2px rgba(11,18,32,.05))}",
+      ".ct-ecole h4{margin:0 0 4px;font-size:15.5px;display:flex;align-items:center;gap:8px}",
+      ".ct-ecole .resume{margin:0 0 10px;font-size:13.5px;color:var(--muted,#6a7583)}",
+      ".ct-ecole h5{margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;",
+      "  color:var(--muted,#6a7583);font-weight:600}",
+      ".ct-ecole ul{margin:0;padding-left:17px;font-size:13.5px}",
+      ".ct-ecole li{margin:3px 0}",
+      ".ct-ecole li .off{display:block;color:var(--muted,#6a7583);font-size:12.5px}",
+      ".ct-ecole li .off a{color:inherit}",
+      ".ct-ecole .rien{font-size:13.5px;color:var(--muted,#6a7583);margin:6px 0 0}",
+      ".ct-ecole .eti{font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;",
+      "  background:var(--accent-soft,#eaf1fb);color:var(--accent,#0a4fa8);white-space:nowrap}",
+      ".ct-ecoles-pays{margin-top:14px;font-size:13.5px}",
+      ".ct-ecoles-pays summary{cursor:pointer;color:var(--accent,#0a4fa8);font-weight:600;padding:6px 0}",
+      ".ct-ecoles-pays p{margin:6px 0}",
       ".ct-ajout{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
       "  font:inherit;font-size:13.5px;border:1px solid var(--border-fort,#d4dae2);",
       "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
@@ -403,6 +425,7 @@
     var reste = 0, fini = function () { if (--reste === 0) cb(); };
     if (!window.L) { reste += 1; charger(LEAFLET_CSS, "css"); charger(LEAFLET_JS, "js", fini); }
     if (!window.COMMUNES) { reste += 1; charger(KB, "js", fini); }
+    if (!window.ECOLES) { reste += 1; charger(KB_ECOLES, "js", fini); }
     if (reste === 0) cb();
   }
 
@@ -1260,6 +1283,7 @@
       });
     }
     h += "</tbody></table></div></div>";
+    h += notes(liste);
     k.innerHTML = h;
     brancherPanier(k);
     k.querySelectorAll("button[data-deplacer]").forEach(function (b) {
@@ -1269,6 +1293,115 @@
     // « une carte » sur cet indicateur, et l'on se retrouvait sur une autre
     // vue sans l'avoir demandé : on change de vue par la rangée « Vue », pas
     // par un clic dans le tableau.
+  }
+
+  // ---------- les notes : ce qu'un chiffre ne dit pas ----------
+  //
+  // Le nombre d'élèves et le nombre de classes ne répondent pas à la question
+  // « y a-t-il une école ici, un lycée, une école européenne ». Ces faits sont
+  // des noms d'établissements : ils viennent de cartes/ecoles_kb.js, construit
+  // depuis les adresses publiées par le ministère de l'Éducation nationale.
+
+  function noteDe(c) {
+    if (!window.ECOLES || !c) return null;
+    // Les quartiers n'ont pas de code commune : la note est celle de la ville.
+    var lau = c.lau || (couche_nom === "quartiers" ? "0304" : "");
+    return lau ? (window.ECOLES.communes || {})[lau] || null : null;
+  }
+
+  function listeEtab(titre, items, rendu) {
+    if (!items.length) return "";
+    return "<h5>" + esc(titre) + "</h5><ul>" + items.map(rendu).join("") + "</ul>";
+  }
+
+  function noteEcoles(c, titreVille) {
+    var n = noteDe(c);
+    if (!n) return "";
+    var ef = n.ef || [], ly = n.ly || [], sea = n.sea || { tot: 0 };
+    var localites = {}, nloc = 0;
+    ef.forEach(function (e) { if (!localites[e.l]) { localites[e.l] = 1; nloc++; } });
+
+    var resume = [];
+    resume.push(ef.length === 0 ? "aucune école fondamentale dans le fichier du ministère"
+      : ef.length + (ef.length > 1 ? " écoles fondamentales" : " école fondamentale")
+        + (nloc > 1 ? " dans " + nloc + " localités" : ""));
+    if (ly.length) resume.push(ly.length + (ly.length > 1 ? " lycées" : " lycée"));
+    if (sea.tot) resume.push(sea.tot + (sea.tot > 1 ? " structures d'accueil" : " structure d'accueil"));
+
+    var h = '<div class="ct-ecole"><h4>' + esc(titreVille || c.nom);
+    if ((n.campus || []).length) h += '<span class="eti">campus scolaire</span>';
+    h += "</h4>";
+    h += '<p class="resume">' + esc(resume.join(", ")) + ".</p>";
+
+    h += listeEtab("Écoles fondamentales", ef, function (e) {
+      return "<li>" + esc(e.n) + (e.l && e.l !== c.nom ? ' <span class="off">' + esc(e.l) + "</span>" : "") + "</li>";
+    });
+    h += listeEtab("Lycées et écoles internationales", ly, function (e) {
+      var o = "";
+      if (e.o) {
+        o = '<span class="off">' + esc(e.o) + (e.g === false ? ", payant" : ", gratuit");
+        if (e.u) o += ' · <a href="' + esc(e.u) + '" target="_blank" rel="noopener noreferrer">source</a>';
+        o += "</span>";
+      }
+      return "<li>" + esc(e.n) + o + "</li>";
+    });
+    if (!ly.length) h += '<p class="rien">Pas de lycée sur le territoire : les élèves du secondaire en rejoignent un ailleurs, souvent par le bus scolaire ou le train.</p>';
+    if (sea.tot) {
+      h += "<h5>Crèches et maisons relais</h5><ul><li>" + sea.tot + " structures, dont " + sea.conv +
+        " conventionnées avec l'État</li><li>" + sea.je + " accueillent les jeunes enfants, " + sea.es +
+        " les enfants scolarisés</li></ul>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function notes(liste) {
+    if (!window.ECOLES || !liste || !liste.length) return "";
+    var quart = couche_nom === "quartiers";
+    var cartes = quart
+      ? noteEcoles(liste[0], "Luxembourg-Ville, toute la commune")
+      : liste.map(function (c) { return noteEcoles(c); }).join("");
+    if (!cartes) return "";
+    var m = window.ECOLES.meta || {};
+    var h = '<h3 style="margin:26px 0 0">Les écoles, sur le terrain</h3>' +
+      '<p class="hint" style="margin-top:6px">Ce que les chiffres d\'élèves et de classes ne disent pas : ' +
+      'où sont les écoles, comment elles s\'appellent, et quel lycée est sur place.' +
+      (quart ? " Les écoles sont recensées par commune : cette note vaut pour toute la Ville de Luxembourg, pas pour le seul quartier." : "") +
+      "</p>" + '<div class="ct-ecoles">' + cartes + "</div>";
+    h += notePays();
+    h += '<p class="hint" style="margin-top:10px">' + esc(m.vintage || "") + " Sources : " +
+      esc((m.sources || []).join(" · ")) + "</p>";
+    return h;
+  }
+
+  // La question qui vient juste après « et ailleurs ? » : les communes qui ont
+  // un campus, celles qui ont une école européenne gratuite, celles qui ont un
+  // lycée. La réponse tient dans la base, il suffit de la parcourir.
+  function notePays() {
+    var com = (window.ECOLES || {}).communes || {};
+    var noms = {};
+    (kb.communes || []).forEach(function (c) { if (c.lau) noms[c.lau] = c.nom; });
+    var campus = [], avecLycee = [], europeennes = [];
+    Object.keys(com).forEach(function (lau) {
+      var d = com[lau], nom = noms[lau] || "";
+      if (!nom) return;
+      if ((d.campus || []).length) campus.push(nom);
+      if ((d.ly || []).length) avecLycee.push(nom);
+      (d.ly || []).forEach(function (e) {
+        if (e.o && /européen/i.test(e.o) && e.g !== false) europeennes.push(nom + " (" + e.n + ")");
+      });
+    });
+    var tri = function (a) { return a.sort(function (x, y) { return x.localeCompare(y, "fr"); }); };
+    var h = '<details class="ct-ecoles-pays"><summary>Et dans les autres communes ?</summary>';
+    h += "<p><b>Un lycée sur le territoire :</b> " + tri(avecLycee).join(", ") + ". Les " +
+      ((kb.communes || []).length - avecLycee.length) + " autres communes n'en ont pas.</p>";
+    h += "<p><b>Une école qui porte le nom de campus :</b> " + tri(campus).join(", ") +
+      ". Ailleurs, les écoles gardent le nom de leur localité, ce qui ne dit rien de leur taille : " +
+      "plusieurs communes ont regroupé leurs classes sur un seul site sans l'appeler campus.</p>";
+    h += "<p><b>Une école européenne publique et gratuite :</b> " + tri(europeennes).join(" · ") +
+      ". Elles accueillent les élèves de tout le pays, pas seulement ceux de la commune.</p>";
+    h += "</details>";
+    return h;
   }
 
   // La fiche de la vue « une carte » : l'indicateur affiché, et pour la
@@ -1319,6 +1452,7 @@
     }
     if (couche_nom === "communes" && (champ === "nation" || champ === "natcmp")) h += listeNations(c);
     h += "</div>";
+    if (!estFrontalier()) h += notes(liste);
     k.innerHTML = h;
     brancherGraphes(k);
     k.querySelectorAll("li[data-nat]").forEach(function (li) {
@@ -1948,6 +2082,13 @@
         (liste.length ? "" : '<span class="muted">Jusqu\'à cinq ' + motZone(true) +
           " : cliquez-les sur la carte, ou prenez-les dans la liste à droite.</span>") +
         puces(liste, true) + selectAjout(liste) + "</div>";
+      // La capitale se compare aussi quartier par quartier, et personne ne
+      // pense a changer de territoire pour cela : la rangee du dessus le dit.
+      if (couche_nom === "communes" && kb.quartiers) {
+        h += '<p class="hint" style="margin-top:10px">Luxembourg-Ville se compare aussi ' +
+          "quartier par quartier, Cessange contre Merl ou Belair : prenez « " +
+          esc(kb.quartiers.titre) + " » dans la rangée Territoire, ci-dessus.</p>";
+      }
       k.innerHTML = h;
       brancherPanier(k);
       brancherCouches(k);

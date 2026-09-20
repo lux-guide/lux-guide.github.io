@@ -457,7 +457,11 @@ Ce que la base contient aujourd'hui :
    courbe, meilleure valeur marquée. Avant, ce tableau s'ouvrait dès le premier clic alors
    qu'on venait de choisir un seul indicateur, et les deux registres se mélangeaient.
 5. **Le territoire est une seule rangée de choix homogènes** : les cent communes, la
-   capitale par quartier, et la zone frontalière d'un voisin. Les pays étaient d'abord sur
+   capitale par quartier, et la zone frontalière d'un voisin. Les trois vues valent pour
+   chaque territoire : les 24 quartiers de la capitale se comparent donc côte à côte comme
+   les communes, sur les six indicateurs de prix et de loyers que l'Observatoire publie à
+   cette échelle. Comme personne ne pense à changer de territoire pour cela, la vue
+   « comparer » le dit en une ligne sous le panier. Les pays étaient d'abord sur
    une rangée séparée, et « comparer deux cartes » se trouvait parmi les territoires, ce
    qui n'est pas le même registre. Le voisin se choisit dans une liste déroulante, un
    pays à la fois : on n'en regarde jamais qu'un, et trois boutons de pays faisaient lire
@@ -466,6 +470,25 @@ Ce que la base contient aujourd'hui :
    les indicateurs de la famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient
    plus. En vue « comparer des communes », il n'y a pas d'indicateur à choisir, le tableau
    les montre tous, et la rangée disparaît.
+
+7. **Des notes, à côté des chiffres**, construites par `cartes/build_ecoles.py` dans
+   `cartes/ecoles_kb.js` et affichées sous la fiche d'une commune. Un nombre d'élèves et
+   un nombre de classes ne répondent pas à la question que se pose une famille : y a-t-il
+   une école ici, un campus, un lycée, une école européenne gratuite. La note donne les
+   noms : les 168 écoles fondamentales et leur localité, les 51 lycées avec leur offre
+   internationale et un lien vers la source, les 703 crèches et maisons relais avec la part
+   conventionnée. Un bloc dépliable répond à la question d'après, « et ailleurs » : les 18
+   communes qui ont un lycée, les 7 qui ont une école appelée campus, les 6 écoles
+   européennes publiques et gratuites. Les quartiers de la capitale reçoivent la note de la
+   ville entière, ce que la note dit, et les cartes des pays voisins n'en reçoivent aucune.
+
+   Sources : le ministère de l'Éducation nationale publie les adresses des bâtiments
+   scolaires sur data.public.lu, mais par localité et non par commune ; le rattachement
+   passe par les adresses géoréférencées du cadastre, ce qui résout 922 adresses sur 923.
+   Les fichiers du ministère datent de 2021, dernière version publiée : les écoles ouvertes
+   depuis s'ajoutent une à une dans `AJOUTS`, avec leur source, et l'interface affiche ce
+   millésime. L'offre internationale n'est pas publiée en données ouvertes, elle est
+   recopiée des pages du ministère et de la Maison de l'orientation dans `OFFRE`.
 
 Trois garde-fous dans le script, parce qu'une base de données muette se trompe en silence :
 
