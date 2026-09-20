@@ -15,3 +15,16 @@ Garder le nom et laisser l'en-tête faire la distinction, ou changer le nom pour
 ## Décision
 
 À prendre.
+
+Le nom a changé. Le site s'appelle « Vivre au Luxembourg », dans l'onglet du navigateur comme
+dans le cartouche de l'en-tête, où la première ligne est devenue « Vivre ». La deuxième ligne,
+« AU LUXEMBOURG », ne change pas, et le nom suit le même modèle que le site voisin,
+« Épargne-retraite au Luxembourg ».
+
+Ce qui concerne vraiment l'arrivée reste regroupé derrière le menu « Guide d'installation »,
+et un bouton « Je viens d'arriver » sur l'accueil garde le chemin direct vers le parcours.
+
+## Fermé
+
+Fait le 2026-09-18. Le raisonnement et la trace du renommage sont dans le README, section
+d'introduction, avec les deux tentatives écartées, « Moien » et « Guide d'installation ».
