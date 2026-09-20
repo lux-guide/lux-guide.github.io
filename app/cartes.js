@@ -186,6 +186,8 @@
       ".ct-ecole li{margin:3px 0}",
       ".ct-ecole li .off{display:block;color:var(--muted,#6a7583);font-size:12.5px}",
       ".ct-ecole li .off a{color:inherit}",
+      ".ct-ecole .ct-cad{font:inherit;font-size:12.5px;border:0;background:none;padding:0;",
+      "  margin-left:6px;color:var(--accent,#0a4fa8);cursor:pointer;text-decoration:underline}",
       ".ct-ecole .rien{font-size:13.5px;color:var(--muted,#6a7583);margin:6px 0 0}",
       ".ct-ecole .eti{font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 8px;",
       "  background:var(--accent-soft,#eaf1fb);color:var(--accent,#0a4fa8);white-space:nowrap}",
@@ -1500,6 +1502,7 @@
     h += "</tbody></table></div></div>";
     h += notes(liste);
     k.innerHTML = h;
+    brancherCadastre(k);
     brancherPanier(k);
     k.querySelectorAll("button[data-deplacer]").forEach(function (b) {
       b.addEventListener("click", function () { deplacerCommune(b.dataset.deplacer, +b.dataset.sens); });
@@ -1550,18 +1553,44 @@
   // Un site, c'est ce qui partage une cour : les établissements que le
   // ministère place à la même adresse ou à moins de cent trente mètres les uns
   // des autres, et ce qu'OpenStreetMap décrit dans les deux cents mètres.
-  function sitesDe(lau) {
+  function sitesDe(lau, quartier) {
     var c = (window.CAMPUS || {}).communes || {};
-    return (c[lau] || []).filter(function (s) {
+    var l = (c[lau] || []).filter(function (s) {
       return s.nom || s.etabs.length > 1 || (s.equip || []).length > 2;
-    }).slice(0, 4);
+    });
+    // Dans la capitale, chaque site porte son quartier : regarder Cessange ne
+    // doit pas donner les écoles de Bonnevoie.
+    if (quartier) l = l.filter(function (s) { return s.q === quartier; });
+    // Les plus grands d'abord : la surface dit mieux que l'ordre alphabétique
+    // ce qui pèse dans un quartier.
+    l.sort(function (a, b) { return (b.m2 + b.m2sport) - (a.m2 + a.m2sport); });
+    return l.slice(0, quartier ? 6 : 4);
   }
 
-  function blocSites(lau) {
-    var sites = sitesDe(lau);
+  // Une surface se lit en hectares au-delà d'un hectare, en mètres carrés en
+  // dessous. Un terrain de sport de trente mètres carrés est une erreur de
+  // saisie ou un anneau de basket : sous cinq cents, on ne l'annonce pas.
+  function m2(v) {
+    if (!v) return "";
+    return v >= 10000 ? (v / 10000).toFixed(1).replace(".", ",") + " ha"
+      : Math.round(v / 10) * 10 + " m²";
+  }
+
+  // « 2 aire de jeuxs » : le s se met au premier mot, pas au dernier, et pas
+  // du tout sur un mot qui finit deja par s ou x.
+  function pluriel(mot) {
+    var mots = mot.split(" ");
+    var t = mots[0];
+    if (!/[sxz]$/.test(t)) mots[0] = t + "s";
+    return mots.join(" ");
+  }
+
+  function blocSites(lau, quartier) {
+    var sites = sitesDe(lau, quartier);
     if (!sites.length) return "";
-    var h = "<h5>Ce qui est regroupé au même endroit</h5><ul>";
-    sites.forEach(function (s) {
+    var h = "<h5>Ce qui est regroupé au même endroit" +
+      (quartier ? ", dans " + esc(quartier) : "") + "</h5><ul>";
+    sites.forEach(function (s, j) {
       var noms = s.etabs.map(function (e) { return e.n; });
       (s.osm || []).forEach(function (n) {
         // Une école qu'OpenStreetMap nomme et que le ministère ne liste pas :
@@ -1570,10 +1599,18 @@
         if (!deja) noms.push(n + " (OpenStreetMap)");
       });
       var equip = (s.equip || []).map(function (e) {
-        return e[1] > 1 ? e[1] + " " + e[0] + "s" : e[0];
+        return e[1] > 1 ? e[1] + " " + pluriel(e[0]) : e[0];
       });
       h += "<li>" + (s.nom ? "<b>" + esc(s.nom) + "</b> : " : "") + esc(noms.join(", "));
-      if (equip.length) h += '<span class="off">Autour : ' + esc(equip.join(", ")) + "</span>";
+      var dit = [];
+      if (s.m2) dit.push(m2(s.m2) + " de terrain d'école ou d'accueil");
+      if (s.m2sport >= 500) dit.push(m2(s.m2sport) + " de sport");
+      if (equip.length) dit.push("autour : " + equip.join(", "));
+      if (dit.length) {
+        h += '<span class="off">' + esc(dit.join(" · ")) +
+          ' <button type="button" class="ct-cad" data-cad="' + s.c[0] + "," + s.c[1] +
+          '">voir le plan cadastral</button></span>';
+      }
       h += "</li>";
     });
     h += "</ul>";
@@ -1621,7 +1658,8 @@
       return "<li>" + esc(e.n) + o + "</li>";
     });
     if (!ly.length) h += '<p class="rien">Pas de lycée sur le territoire : les élèves du secondaire en rejoignent un ailleurs, souvent par le bus scolaire ou le train.</p>';
-    h += blocSites(c.lau || (couche_nom === "quartiers" ? "0304" : ""));
+    h += blocSites(c.lau || (couche_nom === "quartiers" ? "0304" : ""),
+                   couche_nom === "quartiers" ? c.nom : "");
     if (sea.tot) {
       h += "<h5>Crèches et maisons relais</h5><ul><li>" + sea.tot + " structures, dont " + sea.conv +
         " conventionnées avec l'État</li><li>" + sea.je + " accueillent les jeunes enfants, " + sea.es +
@@ -1629,6 +1667,25 @@
     }
     h += "</div>";
     return h;
+  }
+
+  // Le plan cadastral montre les parcelles : c'est là qu'on voit qu'un campus
+  // occupe tout un îlot, avec ses terrains et sa piscine. Le bouton pose le
+  // fond, allume les points et centre la carte sur le site.
+  function brancherCadastre(k) {
+    k.querySelectorAll("button[data-cad]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var c = b.dataset.cad.split(",").map(Number);
+        fond = "cadastre";
+        POI.forEach(function (p) { poi[p[0]] = true; });
+        boutons();
+        appliquerFond();
+        dessinerPoi();
+        if (map) map.setView(c, Math.max(map.getZoom(), 17), { animate: true });
+        var m = document.getElementById("cartes-map");
+        if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
   }
 
   function notes(liste) {
@@ -1642,7 +1699,7 @@
     var h = '<h3 style="margin:26px 0 0">Les écoles, sur le terrain</h3>' +
       '<p class="hint" style="margin-top:6px">Ce que les chiffres d\'élèves et de classes ne disent pas : ' +
       'où sont les écoles, comment elles s\'appellent, et quel lycée est sur place.' +
-      (quart ? " Les écoles sont recensées par commune : cette note vaut pour toute la Ville de Luxembourg, pas pour le seul quartier." : "") +
+      (quart ? " Le ministère recense les écoles par commune, et les comptes ci-dessous valent donc pour toute la Ville de Luxembourg ; les sites, eux, sont rattachés à leur quartier." : "") +
       "</p>" + '<div class="ct-ecoles">' + cartes + "</div>";
     h += notePays();
     h += '<p class="hint" style="margin-top:10px"><b>Ce que ces listes ne disent pas.</b> ' +
@@ -1737,6 +1794,7 @@
     h += "</div>";
     if (!estFrontalier()) h += notes(liste);
     k.innerHTML = h;
+    brancherCadastre(k);
     brancherGraphes(k);
     k.querySelectorAll("li[data-nat]").forEach(function (li) {
       li.addEventListener("click", function () { choisirNation(li.dataset.nat); });

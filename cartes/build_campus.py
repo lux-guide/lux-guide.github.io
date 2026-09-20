@@ -56,7 +56,7 @@ area["ISO3166-1"="LU"][admin_level=2]->.lu;
   nwr["amenity"~"^(school|kindergarten|childcare|library|community_centre|music_school|theatre)$"](area.lu);
   nwr["leisure"~"^(sports_centre|sports_hall|swimming_pool|pitch|playground|stadium|track)$"](area.lu);
 );
-out tags center;"""
+out tags geom;"""
 
 # Ce qu'on nomme, et comment on le nomme dans la note. Un terrain de sport et
 # une aire de jeux ne sont pas des établissements : ils disent ce qu'il y a
@@ -77,6 +77,8 @@ LIBELLES = [
     ("leisure", "pitch", "terrain de sport"),
     ("leisure", "playground", "aire de jeux"),
 ]
+
+COMMUNES = os.path.join(ICI, "communes_kb.js")
 
 RAYON_SITE = 130.0      # mètres : deux bâtiments plus proches que cela font un site
 RAYON_AUTOUR = 220.0    # mètres autour du site, pour ce qu'OpenStreetMap y décrit
@@ -119,6 +121,69 @@ def overpass():
             sys.stderr.write("  échec : %s\n" % e)
             time.sleep(4)
     raise SystemExit("OpenStreetMap indisponible, rien n'est écrit")
+
+
+def surface(anneau):
+    """Mètres carrés d'un anneau en degrés, projeté à plat sur place. À cette
+    latitude et sur quelques centaines de mètres, l'écart au calcul géodésique
+    se compte en pour mille, et une surface d'école s'annonce à l'are près."""
+    if len(anneau) < 3:
+        return 0.0
+    lat0 = sum(p[0] for p in anneau) / len(anneau)
+    k = math.cos(math.radians(lat0))
+    aire = 0.0
+    for i in range(len(anneau)):
+        x1, y1 = anneau[i][1] * k, anneau[i][0]
+        x2, y2 = anneau[(i + 1) % len(anneau)][1] * k, anneau[(i + 1) % len(anneau)][0]
+        aire += x1 * y2 - x2 * y1
+    return abs(aire) / 2.0 * (111320.0 ** 2)
+
+
+def decode_polyline(s):
+    """L'inverse de encode_polyline de build_cartes.py, pour relire les
+    contours des quartiers déjà publiés plutôt que de les retélécharger."""
+    pts, i, lat, lon = [], 0, 0, 0
+    while i < len(s):
+        for quoi in (0, 1):
+            shift, result = 0, 0
+            while True:
+                b = ord(s[i]) - 63
+                i += 1
+                result |= (b & 0x1f) << shift
+                shift += 5
+                if b < 0x20:
+                    break
+            d = ~(result >> 1) if result & 1 else (result >> 1)
+            if quoi == 0:
+                lat += d
+            else:
+                lon += d
+        pts.append((lat / 1e5, lon / 1e5))
+    return pts
+
+
+def dans_anneau(point, anneau):
+    """Point dans polygone, par le nombre de traversées."""
+    y, x = point
+    dedans = False
+    n = len(anneau)
+    for i in range(n):
+        y1, x1 = anneau[i]
+        y2, x2 = anneau[(i + 1) % n]
+        if (y1 > y) != (y2 > y):
+            xx = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+            if x < xx:
+                dedans = not dedans
+    return dedans
+
+
+def quartiers():
+    """Les contours des quartiers de la capitale, lus dans communes_kb.js."""
+    if not os.path.exists(COMMUNES):
+        return []
+    kb = charger_kb(COMMUNES, "COMMUNES")
+    q = (kb.get("quartiers") or {}).get("zones") or []
+    return [(z["nom"], [decode_polyline(g) for g in z.get("g", [])]) for z in q]
 
 
 def libelle(tags):
@@ -190,10 +255,20 @@ def main():
         mot = libelle(t)
         if not mot:
             continue
-        c = e.get("center") or ({"lat": e.get("lat"), "lon": e.get("lon")} if e.get("lat") else None)
-        if not c or c.get("lat") is None:
+        geom = e.get("geometry") or []
+        pts = [(g["lat"], g["lon"]) for g in geom if g.get("lat") is not None]
+        if pts:
+            lat = sum(p[0] for p in pts) / len(pts)
+            lon = sum(p[1] for p in pts) / len(pts)
+            aire = surface(pts)
+        elif e.get("lat") is not None:
+            lat, lon, aire = e["lat"], e["lon"], 0.0
+        elif e.get("center"):
+            lat, lon, aire = e["center"]["lat"], e["center"]["lon"], 0.0
+        else:
             continue
-        autour.append({"c": [c["lat"], c["lon"]], "m": mot, "n": (t.get("name") or "").strip()})
+        autour.append({"c": [lat, lon], "m": mot, "n": (t.get("name") or "").strip(),
+                       "s": int(round(aire))})
     print("OpenStreetMap : %d équipements retenus" % len(autour))
 
     # Un index par case de mille mètres : comparer chaque site à chaque
@@ -211,6 +286,18 @@ def main():
                 out.extend(grille.get((cy + dy, cx + dx), []))
         return out
 
+    # Dans la capitale, un site se rattache à son quartier : « Luxembourg »
+    # ne dit rien à qui regarde Cessange ou Merl.
+    qz = quartiers()
+    print("quartiers de la capitale : %d contours" % len(qz))
+
+    def quartier_de(c, zones_q):
+        for nom, anneaux in zones_q:
+            for a in anneaux:
+                if dans_anneau(c, a):
+                    return nom
+        return ""
+
     par_lau = {}
     TYPES = {"ef": "école fondamentale", "ly": "lycée", "sea": "crèche ou maison relais"}
     for s in sites:
@@ -224,7 +311,7 @@ def main():
             if cle in vus:
                 continue
             vus.add(cle)
-            equip.append({"m": a["m"], "n": a["n"]})
+            equip.append({"m": a["m"], "n": a["n"], "s": a.get("s") or 0})
         # Un site vaut la peine d'être montré s'il groupe plusieurs choses ou
         # s'il porte un nom de campus. Une école seule dans son village, sans
         # rien autour de cartographié, n'apprend rien de plus que la note.
@@ -234,12 +321,21 @@ def main():
         resume = {}
         for e in equip:
             resume[e["m"]] = resume.get(e["m"], 0) + 1
+        # Deux surfaces, qui ne disent pas la même chose : le terrain de
+        # l'école et de l'accueil d'un côté, ce qui sert au sport de l'autre.
+        SCOLAIRE = ("école", "crèche ou précoce", "structure d'accueil")
+        SPORT = ("terrain de sport", "stade", "piscine", "hall sportif", "piste d'athlétisme")
+        m2_ecole = sum(e["s"] for e in equip if e["m"] in SCOLAIRE)
+        m2_sport = sum(e["s"] for e in equip if e["m"] in SPORT)
         par_lau.setdefault(s["k"], []).append({
             "nom": campus or "",
             "c": [round(s["c"][0], 5), round(s["c"][1], 5)],
             "etabs": [{"n": p.get("n", ""), "t": TYPES.get(p.get("t"), p.get("t"))} for p in s["pts"]],
             "osm": ecoles_osm,
             "equip": sorted(resume.items(), key=lambda x: -x[1]),
+            "m2": m2_ecole,
+            "m2sport": m2_sport,
+            "q": quartier_de(s["c"], qz),
         })
 
     for lau in par_lau:
@@ -263,6 +359,8 @@ def main():
     }
     io.open(SORTIE, "w", encoding="utf-8", newline="\n").write(
         "window.CAMPUS=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n")
+    nq = sum(1 for l in par_lau.values() for s in l if s.get("q"))
+    print("sites rattachés à un quartier de la capitale : %d" % nq)
     nommes = sum(1 for l in par_lau.values() for s in l if s["nom"])
     print("sites retenus : %d dans %d communes, dont %d portent un nom de campus"
           % (sum(len(v) for v in par_lau.values()), len(par_lau), nommes))

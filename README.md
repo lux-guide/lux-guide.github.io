@@ -516,6 +516,15 @@ Ce que la base contient aujourd'hui :
    « École de Bertrange », et le Centre Atert, son hall sportif et sa piscine
    d'apprentissage ne sont pas encore décrits dans OpenStreetMap.
 
+   Chaque site porte sa surface, calculée sur les contours d'OpenStreetMap et séparée en
+   deux : le terrain d'école et d'accueil d'un côté, ce qui sert au sport de l'autre, annoncé
+   seulement au-delà de cinq cents mètres carrés, en dessous c'est un panneau de basket. Dans
+   la capitale, chaque site est rattaché à son quartier par point dans polygone, sur les
+   contours déjà publiés dans `communes_kb.js` : regarder Cessange donne les sites de
+   Cessange, pas ceux de Bonnevoie. Un bouton par site pose le plan cadastral du Géoportail,
+   allume les points des établissements et centre la carte dessus : c'est là qu'on voit
+   qu'un campus occupe un îlot entier avec ses terrains.
+
    Sources : le ministère de l'Éducation nationale publie les adresses des bâtiments
    scolaires sur data.public.lu, mais par localité et non par commune ; le rattachement
    passe par les adresses géoréférencées du cadastre, ce qui résout 922 adresses sur 923.
