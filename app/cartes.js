@@ -158,19 +158,6 @@
       ".ct-couches .chip{font-weight:600;height:var(--ct-h1);display:inline-flex;",
       "  align-items:center;padding:0 14px}",
       ".ct-couches .chip[disabled]{opacity:.45;cursor:not-allowed;transform:none}",
-      // La liste des pays voisins prend l'habit d'une puce, avec un chevron
-      // pour dire qu'elle s'ouvre. Le chevron est en image de fond, il reste
-      // quand la puce devient active.
-      ".ct-couches select.ct-pays{appearance:none;-webkit-appearance:none;cursor:pointer;",
-      // Un select prend toute la largeur par defaut dans la feuille du site :
-      // ici il a la taille de son texte, comme les puces a cote.
-      "  width:auto;flex:0 0 auto;",
-      // La feuille du site donne aux listes deroulantes la hauteur des champs
-      // de formulaire, 49 pixels : a cote d'une puce de 41, la rangee prenait
-      // deux hauteurs. La puce est la reference ici, la liste s'y aligne.
-      "  height:var(--ct-h1);min-height:0;padding:0 32px 0 14px;line-height:normal;",
-      "  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236a7583%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>');background-repeat:no-repeat;",
-      "  background-position:right 11px center;background-size:12px}",
       ".ct-ajout,#ct-sel-0,#ct-sel-1,#ct-nation{",
       "  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236a7583%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>');background-repeat:no-repeat;",
       "  background-position:right 11px center;background-size:12px}",
@@ -206,8 +193,7 @@
       "  border:1px solid var(--border-fort,#d4dae2);",
       "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
       ".ct-ajout{flex:1 1 220px;min-width:0}",
-      ".ct-ajout:hover,#ct-sel-0:hover,#ct-sel-1:hover,#ct-nation:hover,",
-      ".ct-couches select.ct-pays:hover{border-color:var(--accent,#0a4fa8)}",
+      ".ct-ajout:hover,#ct-sel-0:hover,#ct-sel-1:hover,#ct-nation:hover{border-color:var(--accent,#0a4fa8)}",
       ".pt{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:8px;",
       "  vertical-align:middle;flex:none}",
       ".ct-cherche{padding:8px 10px;border-bottom:1px solid var(--border,#e6eaef)}",
@@ -2139,26 +2125,31 @@
     var h = "";
     var fronti = estFrontalier();
     // Première rangée, le territoire : les cent communes du pays, la capitale
-    // par quartier, et la zone frontalière d'un voisin, choisi dans une liste.
-    // Les trois pays étaient trois boutons : on n'en regarde jamais qu'un à
-    // la fois, et trois noms de pays sur la rangée la faisaient lire comme
-    // une liste de pays plutôt que comme le choix d'un territoire.
-    function terr(code, nom) {
-      return '<button class="chip' + (couche_nom === code ? " actif" : "") +
+    // par quartier, et la zone frontalière d'un voisin. Le voisin a été un
+    // temps trois boutons de pays sur cette rangée, qui la faisaient lire
+    // comme une liste de pays, puis une liste déroulante, qui détonnait au
+    // milieu des puces. Il est maintenant une puce comme les autres, et le
+    // pays se choisit sur une rangée à lui, qui n'apparaît qu'une fois la
+    // frontière franchie : même geste et même forme que la région, en dessous.
+    function terr(code, nom, actif) {
+      return '<button class="chip' + (actif ? " actif" : "") +
         '" data-couche="' + code + '">' + esc(nom) + "</button>";
     }
     var paysActif = PAYS_COUCHE[couche_nom] ? couche_nom : "";
-    var selPays = '<select class="chip ct-pays' + (paysActif ? " actif" : "") +
-      '" data-pays aria-label="Zone frontalière : choisir le pays voisin">' +
-      '<option value=""' + (paysActif ? "" : " selected") + ">Zone frontalière d'un voisin…</option>" +
-      [["fr", "France"], ["be", "Belgique"], ["de", "Allemagne"]].map(function (p) {
-        return '<option value="' + p[0] + '"' + (paysActif === p[0] ? " selected" : "") + ">" +
-          p[1] + ", zone frontalière</option>";
-      }).join("") + "</select>";
     h += '<div class="ct-tete"><div class="ct-couches"><span>Territoire</span>' +
-      terr("communes", "Luxembourg, les cent communes") +
-      (kb.quartiers ? terr("quartiers", kb.quartiers.titre) : "") +
-      selPays + "</div>";
+      terr("communes", "Luxembourg, les cent communes", couche_nom === "communes") +
+      (kb.quartiers ? terr("quartiers", kb.quartiers.titre, couche_nom === "quartiers") : "") +
+      terr(paysActif || dernierPays, "Zone frontalière d'un voisin", !!paysActif) + "</div>";
+    // Le pays voisin regardé. La rangée ne s'affiche que de l'autre côté de
+    // la frontière : trois noms de pays posés là en permanence donneraient à
+    // lire une liste de pays avant même qu'on ait demandé à en voir un.
+    if (paysActif) {
+      h += '<div class="ct-couches"><span>Pays</span>' +
+        [["fr", "France"], ["be", "Belgique"], ["de", "Allemagne"]].map(function (x) {
+          return '<button class="chip' + (paysActif === x[0] ? " actif" : "") +
+            '" data-couche="' + x[0] + '">' + x[1] + "</button>";
+        }).join("") + "</div>";
+    }
     // Les régions du pays affiché. Une carte de cinq cents communes qu'on ne
     // connaît pas se lit mieux ramenée à un département.
     var v = coucheVoisine();
@@ -2390,14 +2381,16 @@
 
   // Les rangées de l'en-tête, territoire, région et vue, se branchent de la
   // même façon quelle que soit la vue affichée.
+  // Le dernier voisin regardé, pour que la puce « Zone frontalière » y
+  // revienne. La France par défaut : c'est de là que viennent la moitié des
+  // frontaliers, et il faut bien ouvrir sur un pays.
+  var dernierPays = "fr";
+
   function brancherCouches(k) {
     k.querySelectorAll("button[data-couche]").forEach(function (b) {
       b.addEventListener("click", function () { changerCouche(b.dataset.couche); });
     });
-    // La liste des pays : revenir au premier choix ramène aux cent communes.
-    k.querySelectorAll("select[data-pays]").forEach(function (s) {
-      s.addEventListener("change", function () { changerCouche(s.value || "communes"); });
-    });
+
     k.querySelectorAll("button[data-region]").forEach(function (b) {
       b.addEventListener("click", function () {
         regionSel = b.dataset.region || null;
@@ -2429,6 +2422,10 @@
     fiche();
   }
 
+  function retenirPays(nom) {
+    if (PAYS_COUCHE[nom]) dernierPays = nom;
+  }
+
   function changerCouche(nom) {
     if (nom === couche_nom) return;
     // La base des voisins n'est chargée qu'à la première visite de l'autre côté.
@@ -2444,6 +2441,7 @@
     // carte ne connaît que celles-là. Comparer des communes vaut partout.
     if (mode === "deux" && nom !== "communes") { mode = "carte"; comparer = false; }
     couche_nom = nom;
+    retenirPays(nom);
     selection = null;
     panierCommunes = [];
     famille = null;
