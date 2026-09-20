@@ -4204,7 +4204,22 @@
     });
   }
 
-  // ---------- Carte : ecoles et transports ----------
+  // ---------- Comparer des logements ----------
+  //
+  // Trois zones, qui ne se mélangent pas. À gauche, les logements que l'on a
+  // repérés, enregistrés dans ce navigateur avec leurs notes. À droite, la
+  // carte et rien d'autre que ses commandes d'affichage. Dessous, la
+  // comparaison ligne par ligne. Avant, un seul bloc portait le repère,
+  // l'ajout, le rayon, cinq cases à cocher et les adresses, et la carte
+  // mêlait cinq sortes de points sans légende.
+  //
+  // Deux sources pour ce qui entoure un logement. Les écoles, les maisons
+  // relais, les crèches et les lycées viennent du fichier du ministère de
+  // l'Éducation nationale, cartes/ecoles_kb.js : les noms sont officiels, le
+  // calcul est local et immédiat, et il dit quand une école a son accueil sur
+  // le même site. Les arrêts, les commerces et la santé viennent
+  // d'OpenStreetMap par Overpass, service externe qui cale souvent : s'il ne
+  // répond pas, la moitié scolaire du tableau reste là.
 
   var carteDemarree = false, carteObj = null, carteCouche = null;
 
@@ -4223,61 +4238,71 @@
     document.head.appendChild(s);
   }
 
-  function statsCarteMessage(txt) {
-    var k = $("#c-stats");
-    if (!k) return;
-    k.innerHTML = "";
-    k.appendChild(el("p", "muted", txt));
+  // Le fichier des établissements est celui de l'onglet Communes : même
+  // adresse, donc un seul téléchargement pour les deux onglets.
+  function chargerEcoles(cb) {
+    if (window.ECOLES) return cb();
+    var s = el("script");
+    s.src = "cartes/ecoles_kb.js?v=2";
+    s.onload = cb;
+    s.onerror = cb;
+    document.head.appendChild(s);
   }
 
-  // Les adresses comparées et le repère de trajet vivent dans ce navigateur
-  // uniquement : rien n'est envoyé à un serveur du guide, rien n'est versionné.
+  // Les logements et le repère de trajet vivent dans ce navigateur uniquement :
+  // rien n'est envoyé à un serveur du guide, rien n'est versionné.
   var STORAGE_CARTE = "luxguide.carte.v1";
+  var MAX_LOGEMENTS = 10;
   var adresses = [], repere = null;
-  var COULEURS = ["#0a4fa8", "#b45309", "#7c3aed", "#0c6b3e"];
 
-  // Catégories cherchées autour de chaque adresse.
+  // Ce que l'on regarde autour d'un logement. `source` dit d'où vient la
+  // catégorie : "menje" pour le fichier du ministère, "osm" pour Overpass.
   var CATS = [
-    { id: "ecoles", label: "Écoles", couleur: "#2563eb", case: "#c-ecoles",
-      requete: 'nwr["amenity"="school"]',
-      test: function (t) { return t.amenity === "school"; } },
-    { id: "creches", label: "Crèches", couleur: "#7c3aed", case: "#c-creches",
-      requete: 'nwr["amenity"~"^(kindergarten|childcare)$"]',
-      test: function (t) { return t.amenity === "kindergarten" || t.amenity === "childcare"; } },
-    { id: "arrets", label: "Bus, tram, train", couleur: "#059669", case: "#c-arrets",
-      requete: 'node["highway"="bus_stop"]',
-      requete2: 'node["railway"~"^(tram_stop|station|halt)$"]',
+    { id: "ecoles", label: "Écoles fondamentales", court: "École fondamentale", couleur: "#d1620a", source: "menje",
+      garde: function (q) { return q.t === "ef"; } },
+    { id: "accueil", label: "Maisons relais et foyers", court: "Maison relais ou foyer de jour", couleur: "#0f8b57", source: "menje",
+      garde: function (q) { return q.t === "sea" && q.es; } },
+    { id: "creches", label: "Crèches", court: "Crèche", couleur: "#8b3fd1", source: "menje",
+      garde: function (q) { return q.t === "sea" && q.je; } },
+    { id: "lycees", label: "Lycées", court: "Lycée", couleur: "#c2185b", source: "menje", partout: true,
+      garde: function (q) { return q.t === "ly"; } },
+    { id: "arrets", label: "Bus, tram, train", court: "Arrêt", couleur: "#2563eb", source: "osm",
+      requetes: ['node["highway"="bus_stop"]', 'node["railway"~"^(tram_stop|station|halt)$"]'],
       test: function (t) {
         return t.highway === "bus_stop" || t.railway === "tram_stop" ||
                t.railway === "station" || t.railway === "halt";
       } },
-    { id: "commerces", label: "Commerces", couleur: "#b45309", case: "#c-commerces",
-      requete: 'nwr["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]',
+    { id: "commerces", label: "Commerces", court: "Commerce", couleur: "#a07800", source: "osm",
+      requetes: ['nwr["shop"~"^(supermarket|convenience|bakery|butcher|greengrocer|general)$"]'],
       test: function (t) {
         return ["supermarket", "convenience", "bakery", "butcher", "greengrocer", "general"]
           .indexOf(t.shop) !== -1;
       } },
-    { id: "sante", label: "Santé", couleur: "#be123c", case: "#c-sante",
-      requete: 'nwr["amenity"~"^(pharmacy|doctors|hospital|clinic)$"]',
+    { id: "sante", label: "Santé", court: "Pharmacie, médecin ou hôpital", couleur: "#be123c", source: "osm",
+      requetes: ['nwr["amenity"~"^(pharmacy|doctors|hospital|clinic)$"]'],
       test: function (t) {
         return ["pharmacy", "doctors", "hospital", "clinic"].indexOf(t.amenity) !== -1;
       } }
   ];
+  var catsOn = { ecoles: true, accueil: true, creches: false, lycees: false, arrets: true, commerces: false, sante: false };
 
-  function catsActives() {
-    return CATS.filter(function (c) {
-      var e = $(c.case);
-      return e && e.checked;
-    });
+  // « Esch-sur-Alzette », commune d'Esch-sur-Alzette : la seconde ligne ne dit rien.
+  function communeUtile(a) {
+    return !!a.commune && a.nom.toLowerCase().indexOf(a.commune.toLowerCase()) === -1;
   }
+
+  function catsActives() { return CATS.filter(function (c) { return catsOn[c.id]; }); }
+  function rayonCarte() { return Number(($("#c-rayon") || {}).value) || 1000; }
 
   function sauverCarte() {
     try {
       localStorage.setItem(STORAGE_CARTE, JSON.stringify({
         adresses: adresses.map(function (a) {
-          return { nom: a.nom, lat: a.lat, lon: a.lon, commune: a.commune };
+          return { nom: a.nom, lat: a.lat, lon: a.lon, commune: a.commune,
+                   prix: a.prix || "", lien: a.lien || "", note: a.note || "" };
         }),
-        repere: repere ? { nom: repere.nom, lat: repere.lat, lon: repere.lon } : null
+        repere: repere ? { nom: repere.nom, lat: repere.lat, lon: repere.lon } : null,
+        cats: catsOn
       }));
     } catch (e) { /* stockage indisponible */ }
   }
@@ -4288,6 +4313,7 @@
       if (!d) return;
       adresses = d.adresses || [];
       repere = d.repere || null;
+      if (d.cats) CATS.forEach(function (c) { if (d.cats[c.id] !== undefined) catsOn[c.id] = !!d.cats[c.id]; });
       if (repere && $("#c-travail")) $("#c-travail").value = repere.nom;
     } catch (e) { adresses = []; repere = null; }
   }
@@ -4314,10 +4340,10 @@
   }
 
   function statsCarteMessage(txt) {
-    var k = $("#c-stats");
+    var k = $("#c-etat");
     if (!k) return;
-    k.innerHTML = "";
-    k.appendChild(el("p", "muted", txt));
+    k.textContent = txt || "";
+    k.hidden = !txt;
   }
 
   // Géocodage d'un libellé : coordonnées + commune, via OpenStreetMap.
@@ -4337,24 +4363,36 @@
       });
   }
 
-  // Les points d'intérêt autour d'une adresse, toutes catégories cochées.
-  function alentours(adr) {
-    var rayon = Number($("#c-rayon").value) || 1000;
-    var cats = catsActives();
-    if (!cats.length) return Promise.resolve([]);
+  // Les établissements du ministère autour d'un logement : tous, triés par
+  // distance. Le calcul est local, neuf cents points, il ne coûte rien.
+  function etablissements(adr) {
+    return ((window.ECOLES || {}).points || []).map(function (q) {
+      return { lat: q.c[0], lon: q.c[1], nom: q.n, q: q, d: distance(adr, { lat: q.c[0], lon: q.c[1] }) };
+    }).sort(function (a, b) { return a.d - b.d; });
+  }
+
+  // Arrêts, commerces et santé autour d'un logement, par Overpass. Les trois
+  // catégories sont toujours demandées ensemble et gardées en mémoire : cocher
+  // ou décocher une catégorie ne relance alors aucun appel.
+  function alentoursOsm(adr, rayon) {
     var blocs = [];
-    cats.forEach(function (c) {
-      blocs.push(c.requete + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
-      if (c.requete2) blocs.push(c.requete2 + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
+    CATS.forEach(function (c) {
+      (c.requetes || []).forEach(function (rq) {
+        blocs.push(rq + "(around:" + rayon + "," + adr.lat + "," + adr.lon + ");");
+      });
     });
     var q = "[out:json][timeout:25];(" + blocs.join("") + ");out center 400;";
-    // Overpass repond souvent 504 quand il est charge, et 429 quand on l'a
-    // trop sollicite. On retente une fois, plus longuement sur un 429, et on
-    // borne l'attente : une requete qui traine ne doit pas figer le tableau.
+    // Overpass répond souvent 504 quand il est chargé, et 429 quand on l'a
+    // trop sollicité. On retente une fois, plus longuement sur un 429, et on
+    // borne l'attente : une requête qui traîne ne doit pas figer le tableau.
+    // Deux serveurs publics, le second en secours : le premier renvoie des 504
+    // par périodes entières, et l'onglet restait alors à moitié vide.
+    var SERVEURS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+    var essai = 0;
     function appel() {
       var stop = new AbortController();
       var minuteur = setTimeout(function () { stop.abort(); }, 30000);
-      return fetch("https://overpass-api.de/api/interpreter", {
+      return fetch(SERVEURS[essai++ % SERVEURS.length], {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "data=" + encodeURIComponent(q),
@@ -4362,9 +4400,7 @@
       }).then(function (r) {
         clearTimeout(minuteur);
         if (!r.ok) {
-          var e = new Error(r.status === 429
-            ? "service momentanément saturé"
-            : "HTTP " + r.status);
+          var e = new Error(r.status === 429 ? "service momentanément saturé" : "HTTP " + r.status);
           e.trop = r.status === 429;
           throw e;
         }
@@ -4384,79 +4420,140 @@
         var lo = e.lon !== undefined ? e.lon : (e.center && e.center.lon);
         if (la === undefined || lo === undefined) return;
         var t = e.tags || {};
-        var cat = cats.filter(function (c) { return c.test(t); })[0];
+        var cat = CATS.filter(function (c) { return c.test && c.test(t); })[0];
         if (!cat) return;
-        pts.push({ lat: la, lon: lo, nom: t.name || "", cat: cat.id, couleur: cat.couleur,
+        pts.push({ lat: la, lon: lo, nom: t.name || "", cat: cat.id,
                    d: distance(adr, { lat: la, lon: lo }) });
       });
       return pts;
     });
   }
 
-  // Recalcule et redessine tout : appelée à chaque ajout et à chaque changement
-  // de catégorie ou de rayon.
+  function osmDemande() {
+    return catsActives().some(function (c) { return c.source === "osm"; });
+  }
+
+  // Recalcule et redessine tout. Ce qui vient du ministère est immédiat ; ce
+  // qui vient d'Overpass n'est demandé que pour les logements qui ne l'ont
+  // pas déjà au rayon courant, et le tableau s'affiche sans l'attendre.
   function rafraichirCarte() {
     if (!window.L || !carteObj) return;
+    rendreListeAdresses();
+    rendreCommandes();
     if (!adresses.length) {
       carteCouche.clearLayers();
       if (repere) marquerRepere();
+      $("#c-stats").innerHTML = "";
       statsCarteMessage(repere
-        ? "Ajoutez un logement à comparer : ses distances au repère et à ce qui l'entoure s'afficheront ici."
-        : "Ajoutez une ou plusieurs adresses pour les comparer.");
-      rendreListeAdresses();
+        ? "Ajoutez un logement : ses distances au repère et à ce qui l'entoure s'afficheront ici."
+        : "Ajoutez un premier logement pour voir ce qui l'entoure.");
       return;
     }
-    statsCarteMessage("Calcul des environs (OpenStreetMap)...");
-    rendreListeAdresses();
-    // Les requetes sont enchainees et non lancees en parallele : le service
+    statsCarteMessage("");
+    var rayon = rayonCarte();
+    adresses.forEach(function (a) { a.etab = etablissements(a); });
+    dessinerCarte();
+    rendreComparaison();
+
+    var aCharger = osmDemande() ? adresses.filter(function (a) { return !a.osm || a.osmRayon !== rayon; }) : [];
+    if (!aCharger.length) return;
+    statsCarteMessage("Arrêts, commerces et santé : chargement depuis OpenStreetMap…");
+    // Les requêtes sont enchaînées et non lancées en parallèle : le service
     // Overpass refuse les rafales, ce qui laissait des colonnes vides.
     var echecs = [];
-    adresses.reduce(function (p, a, i) {
+    aCharger.reduce(function (p, a, i) {
       return p.then(function () {
         return (i ? new Promise(function (r) { setTimeout(r, 900); }) : Promise.resolve())
-          .then(function () { return alentours(a); })
-          .then(function (pts) { a.pts = pts; })
-          .catch(function (e) { a.pts = null; echecs.push(a.nom + " (" + e.message + ")"); });
+          .then(function () { return alentoursOsm(a, rayon); })
+          .then(function (pts) { a.osm = pts; a.osmRayon = rayon; })
+          .catch(function (e) { a.osm = null; echecs.push(a.nom + " (" + e.message + ")"); });
       });
     }, Promise.resolve()).then(function () {
-      dessinerCarte();
+      dessinerCarte(true);
       rendreComparaison();
+      statsCarteMessage(echecs.length
+        ? "Arrêts, commerces et santé n'ont pas pu être chargés pour : " + echecs.join(", ") +
+          ". Le service de cartographie limite le nombre d'appels, réessayez dans un instant. " +
+          "Les écoles et l'accueil ne dépendent pas de ce service."
+        : "");
       if (echecs.length) {
-        var z = $("#c-stats");
-        z.appendChild(el("p", "hint",
-          "Les environs n'ont pas pu être chargés pour : " + echecs.join(", ") +
-          ". Le service de cartographie limite le nombre d'appels ; réessayez dans un instant."));
+        // Un logement en échec n'a pas de points : le prochain passage le
+        // redemande, et lui seul.
+        var encore = el("button", "lg-mini", "Réessayer");
+        encore.type = "button";
+        encore.style.marginLeft = "10px";
+        encore.addEventListener("click", rafraichirCarte);
+        $("#c-etat").appendChild(encore);
       }
     });
+  }
+
+  // Les points d'une catégorie autour d'un logement, dans le rayon.
+  function pointsDe(a, c, rayon) {
+    if (c.source === "menje") {
+      return (a.etab || []).filter(function (p) { return c.garde(p.q) && p.d <= rayon; });
+    }
+    if (!a.osm) return a.osm === null ? false : null;
+    return a.osm.filter(function (p) { return p.cat === c.id; });
+  }
+
+  // Le plus proche, même hors du rayon pour ce qui vient du ministère : un
+  // lycée est rarement à un kilomètre, et « aucun » serait alors faux.
+  function plusProche(a, c) {
+    if (c.source === "menje") {
+      return (a.etab || []).filter(function (p) { return c.garde(p.q); })[0] || null;
+    }
+    if (!a.osm) return a.osm === null ? false : undefined;
+    var sel = a.osm.filter(function (p) { return p.cat === c.id; });
+    return sel.length ? sel.reduce(function (m, p) { return p.d < m.d ? p : m; }) : null;
   }
 
   function marquerRepere() {
     if (!repere) return;
     L.marker([repere.lat, repere.lon]).addTo(carteCouche)
-      .bindPopup("<b>Repère : " + repere.nom + "</b>");
+      .bindTooltip("Repère : " + repere.nom, { direction: "top" });
   }
 
-  function dessinerCarte() {
-    var rayon = Number($("#c-rayon").value) || 1000;
+  function pastilleLogement(i) {
+    return L.divIcon({ className: "", iconSize: [28, 28], iconAnchor: [14, 14],
+      html: '<span class="lg-pin">' + (i + 1) + "</span>" });
+  }
+
+  function dessinerCarte(sansCadrer) {
+    var rayon = rayonCarte();
     carteCouche.clearLayers();
     marquerRepere();
-    var bornes = [];
-    adresses.forEach(function (a, i) {
-      var col = COULEURS[i % COULEURS.length];
+    var bornes = [], vus = {};
+    adresses.forEach(function (a) {
       bornes.push([a.lat, a.lon]);
-      L.circle([a.lat, a.lon], { radius: rayon, color: col, weight: 1.5, fillOpacity: .05 })
-        .addTo(carteCouche);
-      L.circleMarker([a.lat, a.lon], {
-        radius: 9, color: "#fff", fillColor: col, fillOpacity: 1, weight: 2
-      }).addTo(carteCouche).bindPopup("<b>" + (i + 1) + ". " + a.nom + "</b>" +
-        (a.commune ? "<br>" + a.commune : ""));
-      (a.pts || []).forEach(function (p) {
-        L.circleMarker([p.lat, p.lon], {
-          radius: 5, color: p.couleur, fillColor: p.couleur, fillOpacity: .8, weight: 1
-        }).addTo(carteCouche).bindPopup("<b>" + (p.nom || "Sans nom") + "</b><br>" +
-          formaterDistance(p.d) + " de " + a.nom);
+      L.circle([a.lat, a.lon], { radius: rayon, color: "#0b0f16", weight: 1.2, dashArray: "4 4",
+        fillOpacity: .03, interactive: false }).addTo(carteCouche);
+    });
+    // Les points d'abord, les logements par-dessus : c'est eux que l'on cherche.
+    catsActives().forEach(function (c) {
+      adresses.forEach(function (a) {
+        (pointsDe(a, c, rayon) || []).forEach(function (p) {
+          var cle = c.id + "|" + p.lat + "|" + p.lon;
+          if (vus[cle]) return;
+          vus[cle] = 1;
+          var campus = c.id === "ecoles" && p.q && p.q.mr && p.q.mr.length;
+          if (campus) {
+            L.circleMarker([p.lat, p.lon], { radius: 10, color: "#0f8b57", weight: 2.5, fill: false,
+              interactive: false }).addTo(carteCouche);
+          }
+          L.circleMarker([p.lat, p.lon], { radius: 6, color: "#fff", fillColor: c.couleur,
+            fillOpacity: .95, weight: 1.5 }).addTo(carteCouche)
+            .bindTooltip("<b>" + (p.nom || c.court) + "</b><br>" + c.court +
+              (campus ? "<br>Accueil sur le même site : " + p.q.mr.join(", ") : ""), { direction: "top" });
+        });
       });
     });
+    adresses.forEach(function (a, i) {
+      L.marker([a.lat, a.lon], { icon: pastilleLogement(i), zIndexOffset: 1000 }).addTo(carteCouche)
+        .bindTooltip("<b>" + (i + 1) + ". " + a.nom + "</b>" + (a.commune ? "<br>" + a.commune : ""),
+          { direction: "top", offset: [0, -10] });
+    });
+    if (sansCadrer) return;
     if (repere) bornes.push([repere.lat, repere.lon]);
     if (bornes.length > 1) carteObj.fitBounds(bornes, { padding: [40, 40] });
     else if (bornes.length === 1) {
@@ -4464,123 +4561,221 @@
     }
   }
 
+  // Les commandes de la carte : ce qu'elle affiche, et dans quel rayon. Des
+  // puces avec leur couleur, qui servent aussi de légende.
+  function rendreCommandes() {
+    var k = $("#c-cats");
+    if (!k) return;
+    k.innerHTML = "";
+    CATS.forEach(function (c) {
+      var b = el("button", "chip lg-cat" + (catsOn[c.id] ? " actif" : ""));
+      b.type = "button";
+      b.setAttribute("aria-pressed", catsOn[c.id] ? "true" : "false");
+      var pt = el("i", "lg-pt");
+      pt.style.background = c.couleur;
+      b.appendChild(pt);
+      b.appendChild(document.createTextNode(c.label));
+      b.addEventListener("click", function () {
+        catsOn[c.id] = !catsOn[c.id];
+        sauverCarte();
+        rafraichirCarte();
+      });
+      k.appendChild(b);
+    });
+  }
+
+  // La liste des logements : une fiche par adresse, avec ce que l'on veut
+  // garder en tête. Les champs s'enregistrent en quittant le champ, sans
+  // redessiner la liste : on ne perd pas le curseur en tapant.
   function rendreListeAdresses() {
     var l = $("#c-liste");
     if (!l) return;
     l.innerHTML = "";
+    var compte = $("#c-compte");
+    if (compte) compte.textContent = adresses.length ? adresses.length + " sur " + MAX_LOGEMENTS : "";
+    if (!adresses.length) {
+      l.appendChild(el("p", "muted lg-vide",
+        "Aucun logement enregistré. Ajoutez l'adresse d'une annonce, d'un quartier ou d'une commune."));
+      return;
+    }
     adresses.forEach(function (a, i) {
-      var b = el("button", "chip adr-chip");
-      var p = el("span", "adr-pastille");
-      p.style.background = COULEURS[i % COULEURS.length];
-      p.textContent = String(i + 1);
-      b.appendChild(p);
-      b.appendChild(document.createTextNode(a.nom + " ✕"));
-      b.title = "Retirer cette adresse";
-      b.addEventListener("click", function () {
+      var c = el("div", "lg-fiche");
+      var tete = el("div", "lg-fiche-tete");
+      tete.appendChild(el("span", "lg-pin", String(i + 1)));
+      var titre = el("div", "lg-fiche-nom");
+      titre.appendChild(el("b", null, a.nom));
+      if (communeUtile(a)) titre.appendChild(el("span", null, a.commune));
+      tete.appendChild(titre);
+      var voir = el("button", "lg-mini", "Voir");
+      voir.type = "button";
+      voir.title = "Centrer la carte sur ce logement";
+      voir.addEventListener("click", function () {
+        carteObj.setView([a.lat, a.lon], 15);
+        var m = $("#carte-map");
+        if (m && m.scrollIntoView && window.matchMedia("(max-width:980px)").matches) m.scrollIntoView({ block: "center" });
+      });
+      tete.appendChild(voir);
+      var x = el("button", "lg-mini", "Retirer");
+      x.type = "button";
+      x.addEventListener("click", function () {
         adresses.splice(i, 1);
         sauverCarte();
         rafraichirCarte();
       });
-      l.appendChild(b);
+      tete.appendChild(x);
+      c.appendChild(tete);
+
+      var champs = el("div", "lg-champs");
+      [["prix", "Loyer ou prix", "Ex : 1 950 € charges comprises"],
+       ["lien", "Lien de l'annonce", "https://"],
+       ["note", "Note", "Ex : 3e étage, visite jeudi, cave"]].forEach(function (f) {
+        var lab = el("label", "lg-champ");
+        lab.appendChild(el("span", null, f[1]));
+        var inp = el("input");
+        inp.type = f[0] === "lien" ? "url" : "text";
+        inp.placeholder = f[2];
+        inp.value = a[f[0]] || "";
+        inp.addEventListener("change", function () {
+          a[f[0]] = inp.value.trim();
+          sauverCarte();
+          rendreComparaison();
+        });
+        lab.appendChild(inp);
+        champs.appendChild(lab);
+      });
+      c.appendChild(champs);
+      l.appendChild(c);
     });
   }
 
-  // Le tableau de comparaison : une colonne par adresse, une ligne par critère.
+  // Le tableau de comparaison : une colonne par logement, une ligne par critère.
   function rendreComparaison() {
     var z = $("#c-stats");
     z.innerHTML = "";
-    var cats = catsActives();
-    if (!cats.length) {
-      z.appendChild(el("p", "muted", "Cochez au moins une catégorie pour comparer."));
-      return;
-    }
+    if (!adresses.length) return;
+    var cats = catsActives(), rayon = rayonCarte(), plusieurs = adresses.length > 1;
 
-    z.appendChild(el("h3", null, adresses.length > 1
-      ? "Comparaison des " + adresses.length + " adresses"
-      : "Autour de cette adresse"));
+    z.appendChild(el("h2", null, plusieurs
+      ? "Les " + adresses.length + " logements, ligne par ligne"
+      : "Autour de ce logement"));
 
-    var wrap = el("div", "table-wrap"), tab = el("table", "mrh-table carte-table");
+    var wrap = el("div", "table-wrap lg-wrap"), tab = el("table", "mrh-table carte-table");
     var thead = el("thead"), tr0 = el("tr");
     tr0.appendChild(el("th", null, ""));
     adresses.forEach(function (a, i) {
       var th = el("th", "num");
-      var p = el("span", "adr-pastille");
-      p.style.background = COULEURS[i % COULEURS.length];
-      p.textContent = String(i + 1);
-      th.appendChild(p);
+      th.appendChild(el("span", "lg-pin", String(i + 1)));
       th.appendChild(el("div", null, a.nom));
-      if (a.commune) th.appendChild(el("div", "carte-commune", a.commune));
+      if (communeUtile(a)) th.appendChild(el("div", "carte-commune", a.commune));
       tr0.appendChild(th);
     });
     thead.appendChild(tr0); tab.appendChild(thead);
     var tb = el("tbody");
 
-    // Distance au repère de trajet
+    function titre(txt) {
+      var tr = el("tr", "lg-section"), td = el("td", null);
+      td.colSpan = adresses.length + 1;
+      td.appendChild(el("span", null, txt));
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    }
+
+    // Ce que l'on a noté soi-même, d'abord : c'est ce qui départage en premier.
+    if (adresses.some(function (a) { return a.prix || a.note || a.lien; })) {
+      titre("Vos notes");
+      [["prix", "Loyer ou prix"], ["note", "Note"], ["lien", "Annonce"]].forEach(function (f) {
+        if (!adresses.some(function (a) { return a[f[0]]; })) return;
+        var tr = el("tr");
+        tr.appendChild(el("td", null, f[1]));
+        adresses.forEach(function (a) {
+          var td = el("td", "num");
+          if (f[0] === "lien" && /^https?:\/\//i.test(a.lien || "")) {
+            var lien = el("a", null, "Ouvrir l'annonce");
+            lien.href = a.lien; lien.target = "_blank"; lien.rel = "noopener";
+            td.appendChild(lien);
+          } else td.textContent = a[f[0]] || "—";
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+    }
+
     if (repere) {
+      titre("Le trajet");
       var trR = el("tr");
       trR.appendChild(el("td", null, "Distance à " + repere.nom));
       var dists = adresses.map(function (a) { return distance(a, repere); });
       var mini = Math.min.apply(null, dists);
       dists.forEach(function (d) {
-        var td = el("td", "num" + (d === mini && adresses.length > 1 ? " cell-ok" : ""));
+        var td = el("td", "num" + (d === mini && plusieurs ? " cell-ok" : ""));
         td.appendChild(el("span", null, formaterDistance(d)));
         trR.appendChild(td);
       });
       tb.appendChild(trR);
     }
 
-    // Une ligne de comptage et une ligne de proximité par catégorie
-    cats.forEach(function (c) {
-      var trN = el("tr");
-      trN.appendChild(el("td", null, c.label + " dans le rayon"));
-      var nb = adresses.map(function (a) {
-        if (!a.pts) return null;
-        return a.pts.filter(function (p) { return p.cat === c.id; }).length;
-      });
-      var max = Math.max.apply(null, nb.map(function (x) { return x === null ? -1 : x; }));
-      nb.forEach(function (n) {
-        var td = el("td", "num" + (n !== null && n === max && max > 0 && adresses.length > 1 ? " cell-ok" : ""),
-          n === null ? "—" : String(n));
-        trN.appendChild(td);
-      });
-      tb.appendChild(trN);
-
+    function lignes(c) {
+      // Le plus proche, avec son nom.
       var trD = el("tr");
-      trD.appendChild(el("td", "sous-ligne", "Le plus proche"));
-      var pp = adresses.map(function (a) {
-        if (!a.pts) return null;
-        var sel = a.pts.filter(function (p) { return p.cat === c.id; });
-        if (!sel.length) return null;
-        return sel.reduce(function (m, p) { return p.d < m.d ? p : m; });
-      });
+      trD.appendChild(el("td", null, c.court + " le plus proche"));
+      var pp = adresses.map(function (a) { return plusProche(a, c); });
       var minD = Math.min.apply(null, pp.map(function (p) { return p ? p.d : Infinity; }));
       pp.forEach(function (p) {
-        var td = el("td", "num sous-ligne" + (p && p.d === minD && adresses.length > 1 ? " cell-ok" : ""));
-        if (!p) { td.textContent = "aucun"; }
+        var td = el("td", "num" + (p && p.d === minD && plusieurs ? " cell-ok" : ""));
+        if (p === undefined) td.textContent = "…";
+        else if (p === false) td.textContent = "non chargé";
+        else if (!p) td.textContent = "aucun dans le rayon";
         else {
           td.appendChild(el("span", null, formaterDistance(p.d) + ", " + minutesAPied(p.d) + " min à pied"));
           if (p.nom) td.appendChild(el("div", "carte-poi", p.nom));
+          if (c.id === "ecoles" && p.q && p.q.mr && p.q.mr.length) {
+            td.appendChild(el("div", "lg-campus", "accueil sur le même site"));
+          }
         }
         trD.appendChild(td);
       });
       tb.appendChild(trD);
-    });
+      if (c.partout) return;
+      // Le nombre dans le rayon.
+      var trN = el("tr");
+      trN.appendChild(el("td", "sous-ligne", "Nombre dans le rayon de " + formaterDistance(rayon)));
+      var nb = adresses.map(function (a) {
+        var l = pointsDe(a, c, rayon);
+        return l === false ? false : (l === null ? null : l.length);
+      });
+      var max = Math.max.apply(null, nb.map(function (x) { return typeof x === "number" ? x : -1; }));
+      nb.forEach(function (n) {
+        trN.appendChild(el("td", "num sous-ligne" + (typeof n === "number" && n === max && max > 0 && plusieurs ? " cell-ok" : ""),
+          n === false ? "non chargé" : (n === null ? "…" : String(n))));
+      });
+      tb.appendChild(trN);
+    }
+
+    var scol = cats.filter(function (c) { return c.source === "menje"; });
+    var osm = cats.filter(function (c) { return c.source === "osm"; });
+    if (scol.length) { titre("Écoles et accueil des enfants"); scol.forEach(lignes); }
+    if (osm.length) { titre("Transports, commerces, santé"); osm.forEach(lignes); }
 
     tab.appendChild(tb); wrap.appendChild(tab); z.appendChild(wrap);
+    if (!cats.length) {
+      z.appendChild(el("p", "muted", "Aucune catégorie n'est affichée : choisissez-en au-dessus de la carte."));
+    }
     z.appendChild(el("p", "hint",
       "Les cases en vert signalent la meilleure valeur de la ligne. Les distances sont à vol " +
       "d'oiseau et les minutes une marche à 4,5 km/h : un ordre de grandeur pour départager, " +
       "pas un temps de trajet réel. Un arrêt proche ne dit rien de la fréquence des bus, " +
-      "que mobiliteit.lu donne."));
+      "que mobiliteit.lu donne. Écoles, maisons relais, crèches et lycées : adresses du ministère " +
+      "de l'Éducation nationale, situation 2021, écoles publiques seulement ; l'école la plus " +
+      "proche n'est pas forcément celle du secteur, c'est la commune qui l'attribue."));
   }
 
   function ajouterAdresse(q) {
     if (!q || !window.L || !carteObj) return;
-    if (adresses.length >= 4) {
-      statsCarteMessage("Quatre adresses au maximum : retirez-en une pour en ajouter une autre.");
+    if (adresses.length >= MAX_LOGEMENTS) {
+      statsCarteMessage("Dix logements au maximum : retirez-en un pour en ajouter un autre.");
       return;
     }
-    statsCarteMessage("Recherche de l'adresse...");
+    statsCarteMessage("Recherche de l'adresse…");
     geocoder(q).then(function (a) {
       if (!a) {
         statsCarteMessage("Adresse introuvable au Luxembourg. Essayez avec la commune ou le quartier.");
@@ -4596,7 +4791,7 @@
 
   function fixerRepere(q) {
     if (!q) { repere = null; sauverCarte(); rafraichirCarte(); return; }
-    statsCarteMessage("Recherche du repère...");
+    statsCarteMessage("Recherche du repère…");
     geocoder(q).then(function (a) {
       if (!a) { statsCarteMessage("Repère introuvable au Luxembourg."); return; }
       repere = a;
@@ -4608,9 +4803,11 @@
   }
 
   // Exemple : trois quartiers ou communes publics et un pôle d'emploi connu.
-  // Aucune adresse personnelle, ici comme ailleurs dans ce guide.
+  // Aucune adresse personnelle, ici comme ailleurs dans ce guide. Il ne
+  // remplace jamais des logements déjà enregistrés sans le demander.
   function exempleCarte() {
-    statsCarteMessage("Chargement de l'exemple...");
+    if (adresses.length && !window.confirm("L'exemple remplace les logements enregistrés. Continuer ?")) return;
+    statsCarteMessage("Chargement de l'exemple…");
     adresses = [];
     $("#c-travail").value = "Kirchberg, Luxembourg";
     var lieux = ["Belair, Luxembourg", "Esch-sur-Alzette", "Mersch"];
@@ -4666,12 +4863,14 @@
     });
   }
 
-  // Appelee a l'ouverture de l'onglet : la bibliotheque de carte n'est chargee qu'a ce moment.
+  // Appelée à l'ouverture de l'onglet : la bibliothèque de carte n'est chargée qu'à ce moment.
   function initCarte() {
     rendreOutilsCarte();
     if (carteDemarree) return;
     carteDemarree = true;
     chargerCarte();
+    rendreListeAdresses();
+    rendreCommandes();
     chargerLeaflet(function () {
       carteObj = L.map("carte-map").setView([49.6116, 6.1319], 11);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -4679,7 +4878,7 @@
         attribution: "© les contributeurs OpenStreetMap"
       }).addTo(carteObj);
       carteCouche = L.layerGroup().addTo(carteObj);
-      rafraichirCarte();
+      chargerEcoles(rafraichirCarte);
     });
 
     $("#c-chercher").addEventListener("click", function () {
@@ -4700,17 +4899,12 @@
     });
     $("#c-exemple").addEventListener("click", exempleCarte);
     $("#c-vider").addEventListener("click", function () {
+      if (adresses.length && !window.confirm("Effacer les " + adresses.length + " logements enregistrés et le repère ?")) return;
       adresses = []; repere = null;
       $("#c-travail").value = "";
       $("#c-adresse").value = "";
       sauverCarte();
       rafraichirCarte();
-    });
-
-    // Changer une categorie ou le rayon recalcule tout, sans retaper les adresses.
-    CATS.forEach(function (c) {
-      var e = $(c.case);
-      if (e) e.addEventListener("change", rafraichirCarte);
     });
     $("#c-rayon").addEventListener("change", rafraichirCarte);
   }

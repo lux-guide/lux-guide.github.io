@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=40">
+<link rel="stylesheet" href="app/styles.css?v=41">
 </head>
 <body>
 
@@ -819,67 +819,77 @@
   <section class="panel" role="region" aria-labelledby="nom-carte" id="panel-carte" hidden>
     <h1>Comparer des logements</h1>
     <p class="lead">
-      Quand on hésite entre deux ou trois logements, la question n'est pas « qu'y a-t-il autour »
-      mais « lequel est le mieux placé ». Ajoutez vos adresses : elles se comparent ligne par ligne,
-      écoles, crèches, transports et distance aux bassins d'emploi.
+      Quand on hésite entre plusieurs logements, la question n'est pas « qu'y a-t-il autour »
+      mais « lequel est le mieux placé ». Enregistrez ici les adresses que vous avez repérées,
+      avec le loyer, le lien de l'annonce et vos notes : elles restent dans ce navigateur d'une
+      visite à l'autre, et se comparent ligne par ligne, trajet, écoles et accueil des enfants,
+      transports, commerces et santé.
     </p>
-    <div class="card">
-      <div class="row">
-        <div style="flex:2">
-          <label for="c-travail">Votre lieu de travail, ou tout autre point de repère</label>
-          <input type="text" id="c-travail" placeholder="Ex : Kirchberg, Gare de Luxembourg, Cloche d'Or..." autocomplete="off">
+
+    <!-- Deux colonnes qui ne se mélangent pas : à gauche ce que l'on a noté, à
+         droite la carte et ses seules commandes d'affichage. La comparaison
+         vient dessous, sur toute la largeur. -->
+    <div class="lg-haut">
+      <div class="card lg-col">
+        <div class="lg-titre"><h2>Vos logements</h2><span class="muted" id="c-compte"></span></div>
+        <div class="lg-ajout">
+          <label for="c-adresse">Adresse, quartier ou commune</label>
+          <div class="lg-ligne">
+            <input type="text" id="c-adresse" placeholder="Ex : 12 rue de Strasbourg Luxembourg, Belair, Mersch" autocomplete="off">
+            <button class="btn" id="c-chercher">Ajouter</button>
+          </div>
         </div>
-        <div style="align-self:flex-end">
-          <button class="btn ghost" id="c-fixer">Fixer le repère</button>
+        <div id="c-liste"></div>
+
+        <div class="lg-repere">
+          <label for="c-travail">Votre lieu de travail, ou tout autre repère</label>
+          <div class="lg-ligne">
+            <input type="text" id="c-travail" placeholder="Ex : Kirchberg, Gare de Luxembourg, Cloche d'Or" autocomplete="off">
+            <button class="btn ghost" id="c-fixer">Fixer</button>
+          </div>
         </div>
-      </div>
-      <p class="hint" style="margin:10px 0 0">
-        Vos adresses restent dans ce navigateur : elles ne sont envoyées à aucun serveur du guide,
-        et rien n'est enregistré ailleurs. Seule la recherche de coordonnées interroge le service
-        de cartographie OpenStreetMap.
-      </p>
-      <hr class="c-sep">
-      <div class="row">
-        <div style="flex:2">
-          <label for="c-adresse">Ajouter un logement à comparer</label>
-          <input type="text" id="c-adresse" placeholder="Ex : Belair Luxembourg, Esch-sur-Alzette, Mersch..." autocomplete="off">
-        </div>
-        <div>
-          <label for="c-rayon">Rayon autour</label>
-          <select id="c-rayon">
-            <option value="500">500 m, à pied</option>
-            <option value="1000" selected>1 km</option>
-            <option value="2000">2 km</option>
-          </select>
-        </div>
-        <div style="align-self:flex-end">
-          <button class="btn" id="c-chercher">Ajouter</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div class="check"><input type="checkbox" id="c-ecoles" checked><label for="c-ecoles">Écoles</label></div>
-        <div class="check"><input type="checkbox" id="c-creches" checked><label for="c-creches">Crèches</label></div>
-        <div class="check"><input type="checkbox" id="c-arrets" checked><label for="c-arrets">Bus, tram, train</label></div>
-        <div class="check"><input type="checkbox" id="c-commerces" checked><label for="c-commerces">Commerces</label></div>
-        <div class="check"><input type="checkbox" id="c-sante" checked><label for="c-sante">Santé</label></div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap">
+
+        <div class="lg-actions">
           <button class="chip" id="c-exemple">Voir un exemple</button>
           <button class="chip" id="c-vider">Tout effacer</button>
         </div>
+        <p class="hint" style="margin:12px 0 0">
+          Vos adresses et vos notes restent dans ce navigateur : elles ne sont envoyées à aucun
+          serveur du guide. Seule la recherche de coordonnées interroge le service de cartographie
+          OpenStreetMap.
+        </p>
       </div>
-      <div class="chips" id="c-liste"></div>
+
+      <div class="lg-col-carte">
+        <div class="lg-cmd">
+          <span class="lg-cmd-t">Afficher</span>
+          <div class="lg-cats" id="c-cats"></div>
+          <label class="lg-rayon" for="c-rayon">Rayon
+            <select id="c-rayon">
+              <option value="500">500 m, à pied</option>
+              <option value="1000" selected>1 km</option>
+              <option value="2000">2 km</option>
+            </select>
+          </label>
+        </div>
+        <div id="carte-map"></div>
+        <p class="hint" style="margin:8px 0 0">
+          Les pastilles numérotées sont vos logements, le cercle en pointillé leur rayon. Une école
+          entourée d'un anneau vert a, sur le même site, une structure qui accueille les enfants
+          avant et après la classe.
+        </p>
+      </div>
     </div>
-    <div id="carte-map"></div>
+
+    <p class="muted" id="c-etat" hidden></p>
     <div id="c-stats"></div>
     <p class="hint" id="c-note">
-      Données OpenStreetMap (© les contributeurs OpenStreetMap), chargées à la demande :
-      l'exhaustivité n'est pas garantie. Les distances sont à vol d'oiseau, pas des temps de
-      trajet : pour ceux-là, mobiliteit.lu fait foi. Pour l'inscription scolaire, c'est la
-      commune qui décide, voir la fiche Scolariser ses enfants. Cet onglet est le seul du
-      guide à exiger le réseau : ouvert par double-clic sur le fichier, sans serveur, le
-      navigateur bloque ces appels et les colonnes restent vides.
+      Arrêts, commerces et santé : données OpenStreetMap (© les contributeurs OpenStreetMap),
+      chargées à la demande, l'exhaustivité n'est pas garantie. Les distances sont à vol
+      d'oiseau, pas des temps de trajet : pour ceux-là, mobiliteit.lu fait foi. Pour l'inscription
+      scolaire, c'est la commune qui décide, voir la fiche Scolariser ses enfants. Cet onglet
+      demande le réseau : ouvert par double-clic sur le fichier, sans serveur, le navigateur peut
+      bloquer ces appels, et les lignes correspondantes restent vides.
     </p>
 
     <h2>Les outils officiels, pour aller plus loin</h2>
@@ -1106,7 +1116,7 @@
 <script src="comparateur/offres_kb.js?v=39"></script>
 <script src="app/chat.js?v=39"></script>
 <script src="app/avantages.js?v=2"></script>
-<script src="app/ui.js?v=40"></script>
+<script src="app/ui.js?v=41"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=12"></script>
 <script src="app/communaute.js?v=39"></script>
