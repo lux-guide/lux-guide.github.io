@@ -4479,7 +4479,7 @@
       if (echecs.length) {
         // Un logement en échec n'a pas de points : le prochain passage le
         // redemande, et lui seul.
-        var encore = el("button", "lg-mini", "Réessayer");
+        var encore = el("button", "lo-mini", "Réessayer");
         encore.type = "button";
         encore.style.marginLeft = "10px";
         encore.addEventListener("click", rafraichirCarte);
@@ -4516,7 +4516,7 @@
 
   function pastilleLogement(i) {
     return L.divIcon({ className: "", iconSize: [28, 28], iconAnchor: [14, 14],
-      html: '<span class="lg-pin">' + (i + 1) + "</span>" });
+      html: '<span class="lo-pin">' + (i + 1) + "</span>" });
   }
 
   function dessinerCarte(sansCadrer) {
@@ -4568,10 +4568,10 @@
     if (!k) return;
     k.innerHTML = "";
     CATS.forEach(function (c) {
-      var b = el("button", "chip lg-cat" + (catsOn[c.id] ? " actif" : ""));
+      var b = el("button", "chip lo-cat" + (catsOn[c.id] ? " actif" : ""));
       b.type = "button";
       b.setAttribute("aria-pressed", catsOn[c.id] ? "true" : "false");
-      var pt = el("i", "lg-pt");
+      var pt = el("i", "lo-pt");
       pt.style.background = c.couleur;
       b.appendChild(pt);
       b.appendChild(document.createTextNode(c.label));
@@ -4594,19 +4594,19 @@
     var compte = $("#c-compte");
     if (compte) compte.textContent = adresses.length ? adresses.length + " sur " + MAX_LOGEMENTS : "";
     if (!adresses.length) {
-      l.appendChild(el("p", "muted lg-vide",
+      l.appendChild(el("p", "muted lo-vide",
         "Aucun logement enregistré. Ajoutez l'adresse d'une annonce, d'un quartier ou d'une commune."));
       return;
     }
     adresses.forEach(function (a, i) {
-      var c = el("div", "lg-fiche");
-      var tete = el("div", "lg-fiche-tete");
-      tete.appendChild(el("span", "lg-pin", String(i + 1)));
-      var titre = el("div", "lg-fiche-nom");
+      var c = el("div", "lo-fiche");
+      var tete = el("div", "lo-fiche-tete");
+      tete.appendChild(el("span", "lo-pin", String(i + 1)));
+      var titre = el("div", "lo-fiche-nom");
       titre.appendChild(el("b", null, a.nom));
       if (communeUtile(a)) titre.appendChild(el("span", null, a.commune));
       tete.appendChild(titre);
-      var voir = el("button", "lg-mini", "Voir");
+      var voir = el("button", "lo-mini", "Voir");
       voir.type = "button";
       voir.title = "Centrer la carte sur ce logement";
       voir.addEventListener("click", function () {
@@ -4615,7 +4615,7 @@
         if (m && m.scrollIntoView && window.matchMedia("(max-width:980px)").matches) m.scrollIntoView({ block: "center" });
       });
       tete.appendChild(voir);
-      var x = el("button", "lg-mini", "Retirer");
+      var x = el("button", "lo-mini", "Retirer");
       x.type = "button";
       x.addEventListener("click", function () {
         adresses.splice(i, 1);
@@ -4625,11 +4625,11 @@
       tete.appendChild(x);
       c.appendChild(tete);
 
-      var champs = el("div", "lg-champs");
+      var champs = el("div", "lo-champs");
       [["prix", "Loyer ou prix", "Ex : 1 950 € charges comprises"],
        ["lien", "Lien de l'annonce", "https://"],
        ["note", "Note", "Ex : 3e étage, visite jeudi, cave"]].forEach(function (f) {
-        var lab = el("label", "lg-champ");
+        var lab = el("label", "lo-champ");
         lab.appendChild(el("span", null, f[1]));
         var inp = el("input");
         inp.type = f[0] === "lien" ? "url" : "text";
@@ -4659,12 +4659,12 @@
       ? "Les " + adresses.length + " logements, ligne par ligne"
       : "Autour de ce logement"));
 
-    var wrap = el("div", "table-wrap lg-wrap"), tab = el("table", "mrh-table carte-table");
+    var wrap = el("div", "table-wrap lo-wrap"), tab = el("table", "mrh-table carte-table");
     var thead = el("thead"), tr0 = el("tr");
     tr0.appendChild(el("th", null, ""));
     adresses.forEach(function (a, i) {
       var th = el("th", "num");
-      th.appendChild(el("span", "lg-pin", String(i + 1)));
+      th.appendChild(el("span", "lo-pin", String(i + 1)));
       th.appendChild(el("div", null, a.nom));
       if (communeUtile(a)) th.appendChild(el("div", "carte-commune", a.commune));
       tr0.appendChild(th);
@@ -4673,7 +4673,7 @@
     var tb = el("tbody");
 
     function titre(txt) {
-      var tr = el("tr", "lg-section"), td = el("td", null);
+      var tr = el("tr", "lo-section"), td = el("td", null);
       td.colSpan = adresses.length + 1;
       td.appendChild(el("span", null, txt));
       tr.appendChild(td);
@@ -4729,7 +4729,7 @@
           td.appendChild(el("span", null, formaterDistance(p.d) + ", " + minutesAPied(p.d) + " min à pied"));
           if (p.nom) td.appendChild(el("div", "carte-poi", p.nom));
           if (c.id === "ecoles" && p.q && p.q.mr && p.q.mr.length) {
-            td.appendChild(el("div", "lg-campus", "accueil sur le même site"));
+            td.appendChild(el("div", "lo-campus", "accueil sur le même site"));
           }
         }
         trD.appendChild(td);
@@ -4907,6 +4907,24 @@
       rafraichirCarte();
     });
     $("#c-rayon").addEventListener("change", rafraichirCarte);
+
+    // Plein écran : toute la colonne de la carte passe en position fixe, et
+    // non la carte seule. Les puces d'affichage et le rayon viennent donc
+    // avec elle, sans être recopiés : on choisit ce que montre la carte sans
+    // quitter le plein écran. Pas l'interface Fullscreen du navigateur, qui
+    // est refusée dans une page embarquée ; Échap en sort.
+    var colonne = $(".lo-col-carte"), bPlein = $("#c-plein");
+    function plein(on) {
+      colonne.classList.toggle("plein", on);
+      bPlein.textContent = on ? "Quitter le plein écran" : "Plein écran";
+      bPlein.classList.toggle("actif", on);
+      document.body.style.overflow = on ? "hidden" : "";
+      if (carteObj) setTimeout(function () { carteObj.invalidateSize(); }, 60);
+    }
+    bPlein.addEventListener("click", function () { plein(!colonne.classList.contains("plein")); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && colonne.classList.contains("plein")) plein(false);
+    });
   }
 
   // ---------- Administration ----------

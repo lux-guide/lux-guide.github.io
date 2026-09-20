@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=41">
+<link rel="stylesheet" href="app/styles.css?v=42">
 </head>
 <body>
 
@@ -829,27 +829,27 @@
     <!-- Deux colonnes qui ne se mélangent pas : à gauche ce que l'on a noté, à
          droite la carte et ses seules commandes d'affichage. La comparaison
          vient dessous, sur toute la largeur. -->
-    <div class="lg-haut">
-      <div class="card lg-col">
-        <div class="lg-titre"><h2>Vos logements</h2><span class="muted" id="c-compte"></span></div>
-        <div class="lg-ajout">
+    <div class="lo-haut">
+      <div class="card lo-col">
+        <div class="lo-titre"><h2>Vos logements</h2><span class="muted" id="c-compte"></span></div>
+        <div class="lo-ajout">
           <label for="c-adresse">Adresse, quartier ou commune</label>
-          <div class="lg-ligne">
+          <div class="lo-ligne">
             <input type="text" id="c-adresse" placeholder="Ex : 12 rue de Strasbourg Luxembourg, Belair, Mersch" autocomplete="off">
             <button class="btn" id="c-chercher">Ajouter</button>
           </div>
         </div>
         <div id="c-liste"></div>
 
-        <div class="lg-repere">
+        <div class="lo-repere">
           <label for="c-travail">Votre lieu de travail, ou tout autre repère</label>
-          <div class="lg-ligne">
+          <div class="lo-ligne">
             <input type="text" id="c-travail" placeholder="Ex : Kirchberg, Gare de Luxembourg, Cloche d'Or" autocomplete="off">
             <button class="btn ghost" id="c-fixer">Fixer</button>
           </div>
         </div>
 
-        <div class="lg-actions">
+        <div class="lo-actions">
           <button class="chip" id="c-exemple">Voir un exemple</button>
           <button class="chip" id="c-vider">Tout effacer</button>
         </div>
@@ -860,17 +860,18 @@
         </p>
       </div>
 
-      <div class="lg-col-carte">
-        <div class="lg-cmd">
-          <span class="lg-cmd-t">Afficher</span>
-          <div class="lg-cats" id="c-cats"></div>
-          <label class="lg-rayon" for="c-rayon">Rayon
+      <div class="lo-col-carte">
+        <div class="lo-cmd">
+          <span class="lo-cmd-t">Afficher</span>
+          <div class="lo-cats" id="c-cats"></div>
+          <label class="lo-rayon" for="c-rayon">Rayon
             <select id="c-rayon">
               <option value="500">500 m, à pied</option>
               <option value="1000" selected>1 km</option>
               <option value="2000">2 km</option>
             </select>
           </label>
+          <button class="chip lo-plein" id="c-plein" type="button">Plein écran</button>
         </div>
         <div id="carte-map"></div>
         <p class="hint" style="margin:8px 0 0">
@@ -1116,7 +1117,7 @@
 <script src="comparateur/offres_kb.js?v=39"></script>
 <script src="app/chat.js?v=39"></script>
 <script src="app/avantages.js?v=2"></script>
-<script src="app/ui.js?v=41"></script>
+<script src="app/ui.js?v=42"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=12"></script>
 <script src="app/communaute.js?v=39"></script>

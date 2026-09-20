@@ -42,6 +42,17 @@ tableau restait sur « Calcul des environs ».
    liste, sur la carte et en tête de colonne. Les couleurs sont réservées aux
    catégories.
 
+## Suites, le même jour
+
+1. Plein écran. C'est toute la colonne de la carte qui passe en position
+   fixe, et non la carte seule : les puces d'affichage et le rayon viennent
+   avec elle, sans être recopiés. On choisit ce que montre la carte sans
+   quitter le plein écran. Échap en sort, le bouton le dit aussi.
+2. Collision de noms corrigée. Les classes de cet onglet s'appelaient
+   `lg-`, comme celles de l'onglet Bus, tram et train, dont le style s'injecte
+   pour toute la page : `.lg-pin` existait des deux côtés, et chacun
+   redessinait les pastilles de l'autre. Elles s'appellent maintenant `lo-`.
+
 ## Limites
 
 1. Le fichier du ministère date de 2021 et ne porte que les écoles publiques.
