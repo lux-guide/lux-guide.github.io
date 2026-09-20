@@ -1002,6 +1002,47 @@
   var poi = { ef: false, mr: false, cr: false, ly: false };
   var couchePoi = null, renduPoi = null, signaturePoi = "";
 
+  // Un point dit où est une école, pas la place qu'elle prend : le campus
+  // Geesseknäppchen couvre vingt-trois hectares, une école de village tient
+  // dans une cour. Les emprises viennent d'OpenStreetMap, par
+  // cartes/build_emprises.py, et ne se chargent qu'au premier point demandé.
+  var KB_EMPRISES = "cartes/emprises_kb.js?v=1", empriseDemandee = false;
+
+  // Trois fonds. La carte claire porte les aplats de couleur. La photo
+  // aérienne et le plan cadastral montrent le terrain : les aplats deviennent
+  // alors presque transparents, sinon ils cacheraient ce qu'on est venu voir.
+  // Les deux couches sont celles du Géoportail, en données ouvertes, et ne
+  // couvrent que le Luxembourg.
+  var FONDS = {
+    photo: { nom: "Photo aérienne", min: 0,
+      url: "https://wmts{s}.geoportail.lu/opendata/wmts/ortho_latest/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.jpeg" },
+    cadastre: { nom: "Plan cadastral", min: 14,
+      url: "https://wmts{s}.geoportail.lu/opendata/wmts/cadastre/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.png" }
+  };
+  var fond = "clair", fondPose = "clair", coucheFond = null;
+
+  // Appelée à chaque rendu : elle ne touche à la carte que si le fond voulu
+  // a changé, par un clic ou parce qu'on a passé la frontière.
+  function appliquerFond() {
+    if (!map) return;
+    var voulu = poiPossible() ? fond : "clair";
+    if (voulu === fondPose) return;
+    fondPose = voulu;
+    if (coucheFond) { map.removeLayer(coucheFond); coucheFond = null; }
+    if (voulu !== "clair") {
+      if (!map.getPane("fondplus")) {
+        // Au-dessus du fond clair (200), sous les communes (400).
+        map.createPane("fondplus").style.zIndex = 250;
+      }
+      coucheFond = L.tileLayer(FONDS[voulu].url, {
+        pane: "fondplus", subdomains: "1234", minZoom: FONDS[voulu].min, maxZoom: 20, maxNativeZoom: 19,
+        attribution: "Photo aérienne et plan cadastral : Administration du cadastre et de la topographie"
+      }).addTo(map);
+    }
+    map.getPane("overlayPane").style.opacity = voulu === "clair" ? "" : ".22";
+    map.setMaxZoom(voulu === "clair" ? 19 : 20);
+  }
+
   function poiPossible() { return !estFrontalier() && mode !== "deux"; }
 
   function categoriePoi(q) {
@@ -1020,13 +1061,14 @@
         (q.cv ? ", conventionné" : ", non conventionné");
     var h = '<span class="ct-tip">' + esc(q.n) + "<small>" + esc(genre) + "<br>" + esc(q.a);
     if (q.mr && q.mr.length) h += "<br>Sur le même site : " + esc(q.mr.join(", "));
-    if (q.p === 1) h += "<br>Point posé au n° " + esc(q.v) + ", le numéro exact manque au registre des adresses";
+    if (q.p === 1) h += "<br>Point estimé " + esc(q.v) + ", le numéro exact manque au registre des adresses";
     if (q.p === 2) h += "<br>Position approximative, au milieu de la rue";
     return h + "</small></span>";
   }
 
   function dessinerPoi() {
     if (!map) return;
+    appliquerFond();
     var actifs = POI.filter(function (p) { return poi[p[0]]; }).map(function (p) { return p[0]; });
     var sig = poiPossible() ? actifs.join(",") : "";
     if (sig === signaturePoi) return;
@@ -1044,7 +1086,34 @@
     if (!sig) return;
     var couleurs = {};
     POI.forEach(function (p) { couleurs[p[0]] = p[2]; });
-    ((window.ECOLES || {}).points || []).forEach(function (q) {
+    // Les emprises d'abord, les points par-dessus. Le fichier se charge à la
+    // première demande, puis la couche se redessine.
+    if (!window.EMPRISES && !empriseDemandee) {
+      empriseDemandee = true;
+      charger(KB_EMPRISES, "js", function () { signaturePoi = "?"; dessinerPoi(); });
+    }
+    var ecoles = poi.ef || poi.ly, accueils = poi.mr || poi.cr;
+    ((window.EMPRISES || {}).zones || []).forEach(function (z) {
+      if (z.t === "ec" ? !ecoles : !accueils) return;
+      var c = z.t === "ec" ? couleurs.ef : couleurs.mr;
+      z.g.forEach(function (enc) {
+        L.polygon(decoder(enc), { pane: "poi", renderer: renduPoi, color: c, weight: 2,
+          fillColor: c, fillOpacity: .22 })
+          .bindTooltip('<span class="ct-tip">' + esc(z.n || (z.t === "ec" ? "École" : "Structure d'accueil")) +
+            "<small>Emprise d'environ " + (z.s >= 10000
+              ? (z.s / 10000).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " hectares"
+              : Math.round(z.s / 10) * 10 + " m²") +
+            ", contour OpenStreetMap</small></span>", { sticky: true })
+          .addTo(couchePoi);
+      });
+    });
+    // Les écoles se dessinent en dernier : sur un même site, l'école et sa
+    // maison relais ont le même point, et c'est l'école qu'on doit voir,
+    // entourée de son anneau vert.
+    var ordre = { cr: 0, mr: 1, ly: 2, ef: 3 };
+    ((window.ECOLES || {}).points || []).slice().sort(function (a, b) {
+      return ordre[categoriePoi(a)] - ordre[categoriePoi(b)];
+    }).forEach(function (q) {
       var cat = categoriePoi(q);
       if (!poi[cat]) return;
       var gros = cat === "ef" || cat === "ly";
@@ -1054,7 +1123,14 @@
       }
       L.circleMarker(q.c, { pane: "poi", renderer: renduPoi, radius: gros ? 6 : 4.5, color: "#ffffff",
         weight: 1.5, fillColor: couleurs[cat], fillOpacity: .95 })
-        .bindTooltip(bullePoi(q), { direction: "top", offset: [0, -4] }).addTo(couchePoi);
+        .bindTooltip(bullePoi(q), { direction: "top", offset: [0, -4] })
+        // Cliquer un point mène au site : à l'échelle du pays on voit où
+        // sont les écoles, à l'échelle de la rue on voit ce qu'elles occupent.
+        .on("click", function (e) {
+          L.DomEvent.stopPropagation(e);
+          map.setView(q.c, Math.max(map.getZoom(), 17), { animate: true });
+        })
+        .addTo(couchePoi);
     });
   }
 
@@ -2187,11 +2263,26 @@
           p[2] + '"></i>' + esc(p[1]) + "</button>";
       });
       h += "</div>";
-      if (poi.ef) {
-        h += '<p class="hint" style="margin:8px 0 0">Une école entourée d\'un anneau vert a, sur le même site, ' +
-          "une structure qui accueille les enfants avant et après la classe. Adresses du ministère de " +
-          "l'Éducation nationale, situation 2021, dernière version publiée.</p>";
-      }
+      // Le fond : la carte claire, la photo aérienne, le plan cadastral. Un
+      // choix et non des interrupteurs, on ne regarde qu'un fond à la fois.
+      h += '<div class="ct-couches"><span>Fond</span>' +
+        '<button class="chip' + (fond === "clair" ? " actif" : "") + '" data-fond="clair">Carte claire</button>';
+      Object.keys(FONDS).forEach(function (f) {
+        h += '<button class="chip' + (fond === f ? " actif" : "") + '" data-fond="' + f + '">' +
+          esc(FONDS[f].nom) + "</button>";
+      });
+      h += "</div>";
+      var notes = [];
+      if (poi.ef) notes.push("Une école entourée d'un anneau vert a, sur le même site, une structure qui " +
+        "accueille les enfants avant et après la classe.");
+      if (poi.ef || poi.mr || poi.cr || poi.ly) notes.push("Cliquer un point mène au site : la surface " +
+        "colorée est son emprise, d'après OpenStreetMap. Adresses du ministère de l'Éducation nationale, " +
+        "situation 2021, dernière version publiée.");
+      if (fond === "cadastre") notes.push("Le plan cadastral apparaît en zoomant sur une commune, à partir " +
+        "de l'échelle du quartier. Les bâtiments publics y sont en bleu.");
+      if (fond !== "clair") notes.push("Sur ce fond, les couleurs de l'indicateur deviennent presque " +
+        "transparentes pour laisser voir le terrain.");
+      if (notes.length) h += '<p class="hint" style="margin:8px 0 0">' + notes.join(" ") + "</p>";
     }
     h += "</div>";
 
@@ -2406,6 +2497,13 @@
         poi[b.dataset.poi] = !poi[b.dataset.poi];
         boutons();
         dessinerPoi();
+      });
+    });
+    k.querySelectorAll("button[data-fond]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        fond = b.dataset.fond;
+        boutons();
+        appliquerFond();
       });
     });
   }
