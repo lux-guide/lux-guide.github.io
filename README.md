@@ -490,6 +490,15 @@ Ce que la base contient aujourd'hui :
    millésime. L'offre internationale n'est pas publiée en données ouvertes, elle est
    recopiée des pages du ministère et de la Maison de l'orientation dans `OFFRE`.
 
+Côté écran, **deux tailles de commande, et deux seulement** : 41 pixels pour ce qui change
+ce que montre la carte (le territoire, la vue, la région), 39 pour le reste (la famille et
+l'indicateur, la recherche, la liste d'ajout au panier, les puces des communes retenues).
+Quatre hauteurs se croisaient auparavant sur le même écran : la règle `select` de
+`app/styles.css`, écrite pour les champs du simulateur, imposait 49 pixels à toutes les listes
+déroulantes du module, si bien que « Zone frontalière d'un voisin » dépassait de huit pixels les
+puces de sa propre rangée. Les listes du module portent maintenant le même chevron dessiné que
+les puces, plutôt que la flèche du navigateur à côté d'un chevron dessiné.
+
 Trois garde-fous dans le script, parce qu'une base de données muette se trompe en silence :
 
 1. **Le niveau géographique ne se lit jamais sur le nom.** Le canton de Luxembourg et la

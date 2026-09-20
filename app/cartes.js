@@ -33,7 +33,7 @@
   // Les notes par commune : les noms des écoles, des campus et des lycées.
   // Ce ne sont pas des chiffres et ils ne viennent pas de la même source, d'où
   // un fichier à part, construit par cartes/build_ecoles.py.
-  var KB_ECOLES = "cartes/ecoles_kb.js?v=1";
+  var KB_ECOLES = "cartes/ecoles_kb.js?v=2";
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   // Fond de carte en sandwich. Une carte thématique pose des aplats de couleur
   // sur un territoire que le lecteur ne connaît pas : sans nom de ville, il ne
@@ -144,20 +144,34 @@
       // L'en-tête du sélecteur : des rangées annoncées par un intitulé, le
       // territoire puis la vue. Sans intitulé, cinq noms de lieux posés à
       // côté de trois façons de regarder ne disent pas de quoi ils sont la liste.
+      // Deux tailles de commande dans tout l'onglet, et deux seulement.
+      // --ct-h1, la puce : choisir un territoire, une vue, une region, ce qui
+      // change ce que montre la carte. --ct-h2, le controle secondaire :
+      // choisir un indicateur, chercher, ajouter une commune au panier.
+      // Avant, quatre hauteurs se croisaient sur le meme ecran.
+      "#panel-cartes{--ct-h1:41px;--ct-h2:39px}",
       ".ct-tete{padding-bottom:14px;border-bottom:1px solid var(--border,#e6eaef)}",
       ".ct-couches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
       ".ct-couches + .ct-couches{margin-top:10px}",
       ".ct-couches > span{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;",
       "  color:var(--muted,#6a7583);font-weight:600;margin-right:4px;min-width:5.5em}",
-      ".ct-couches .chip{font-weight:600}",
+      ".ct-couches .chip{font-weight:600;height:var(--ct-h1);display:inline-flex;",
+      "  align-items:center;padding:0 14px}",
       ".ct-couches .chip[disabled]{opacity:.45;cursor:not-allowed;transform:none}",
       // La liste des pays voisins prend l'habit d'une puce, avec un chevron
       // pour dire qu'elle s'ouvre. Le chevron est en image de fond, il reste
       // quand la puce devient active.
-      ".ct-couches select.ct-pays{appearance:none;-webkit-appearance:none;padding-right:30px;cursor:pointer;",
+      ".ct-couches select.ct-pays{appearance:none;-webkit-appearance:none;cursor:pointer;",
       // Un select prend toute la largeur par defaut dans la feuille du site :
       // ici il a la taille de son texte, comme les puces a cote.
       "  width:auto;flex:0 0 auto;",
+      // La feuille du site donne aux listes deroulantes la hauteur des champs
+      // de formulaire, 49 pixels : a cote d'une puce de 41, la rangee prenait
+      // deux hauteurs. La puce est la reference ici, la liste s'y aligne.
+      "  height:var(--ct-h1);min-height:0;padding:0 32px 0 14px;line-height:normal;",
+      "  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236a7583%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>');background-repeat:no-repeat;",
+      "  background-position:right 11px center;background-size:12px}",
+      ".ct-ajout,#ct-sel-0,#ct-sel-1,#ct-nation{",
       "  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236a7583%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>');background-repeat:no-repeat;",
       "  background-position:right 11px center;background-size:12px}",
       // Le panier de communes, et la pastille de couleur qui suit chaque
@@ -181,13 +195,24 @@
       ".ct-ecoles-pays{margin-top:14px;font-size:13.5px}",
       ".ct-ecoles-pays summary{cursor:pointer;color:var(--accent,#0a4fa8);font-weight:600;padding:6px 0}",
       ".ct-ecoles-pays p{margin:6px 0}",
-      ".ct-ajout{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:10px;",
-      "  font:inherit;font-size:13.5px;border:1px solid var(--border-fort,#d4dae2);",
+      // Les trois listes secondaires du module, a la meme enseigne : ajouter
+      // une commune au panier, choisir l'indicateur d'une des deux cartes,
+      // choisir une nationalite. Le chevron est le meme que sur la liste des
+      // pays voisins, dessine plutot que laisse au navigateur : sinon deux
+      // fleches de formes differentes cohabitent sur le meme ecran.
+      ".ct-ajout,#ct-sel-0,#ct-sel-1,#ct-nation{appearance:none;-webkit-appearance:none;cursor:pointer;",
+      "  height:var(--ct-h2);min-height:0;padding:0 32px 0 12px;line-height:normal;",
+      "  border-radius:10px;font:inherit;font-size:13.5px;",
+      "  border:1px solid var(--border-fort,#d4dae2);",
       "  background:var(--surface,#fff);color:var(--text,#0b0f16)}",
+      ".ct-ajout{flex:1 1 220px;min-width:0}",
+      ".ct-ajout:hover,#ct-sel-0:hover,#ct-sel-1:hover,#ct-nation:hover,",
+      ".ct-couches select.ct-pays:hover{border-color:var(--accent,#0a4fa8)}",
       ".pt{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:8px;",
       "  vertical-align:middle;flex:none}",
       ".ct-cherche{padding:8px 10px;border-bottom:1px solid var(--border,#e6eaef)}",
-      ".ct-cherche input{width:100%;padding:7px 9px;border-radius:9px;font:inherit;font-size:13.5px;",
+      ".ct-cherche input{width:100%;height:var(--ct-h2);min-height:0;padding:0 11px;",
+      "  border-radius:10px;font:inherit;font-size:13.5px;",
       "  border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);color:var(--text,#0b0f16)}",
       "#ct-cote .ct-scroll-choix{max-height:calc(min(74vh,620px) - 96px)}",
       // La fiche d'une vue « une carte » : les communes retenues sur
@@ -249,12 +274,17 @@
       // famille ouverte. Quarante-huit boutons d'un bloc ne se lisaient plus.
       ".ct-familles{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}",
       ".ct-familles button{border:0;background:none;color:var(--muted,#6a7583);font:inherit;",
-      "  font-size:13.5px;font-weight:500;padding:7px 11px;border-radius:9px;cursor:pointer}",
+      "  font-size:13.5px;font-weight:500;padding:0 12px;border-radius:10px;cursor:pointer;",
+      "  height:var(--ct-h2);display:inline-flex;align-items:center}",
       ".ct-familles button:hover{color:var(--text,#0b0f16);background:var(--surface-2,#f4f6f9)}",
       ".ct-familles button.actif{color:var(--accent,#2563eb);font-weight:600;",
       "  background:var(--accent-soft,#eaf1fb)}",
       ".ct-indics{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;padding-top:12px;",
       "  border-top:1px solid var(--border,#e6eaef)}",
+      // L'indicateur se choisit sous sa famille : meme hauteur que la rangee
+      // des familles, juste au-dessus, et la forme de pastille qui dit qu'on
+      // prend un element dans une longue liste.
+      ".ct-indics .chip{height:var(--ct-h2);display:inline-flex;align-items:center;padding:0 13px}",
       // Comparateur de communes : un tableau, une colonne par commune, les
       // indicateurs en lignes par famille. Il sert pour une commune comme
       // pour cinq, avec la même forme.
@@ -339,7 +369,10 @@
       ".ct-nat select{flex:1 1 190px;min-width:0;padding:7px 9px;border-radius:9px;font:inherit;font-size:13.5px;",
       "  border:1px solid var(--border,#e6eaef);background:var(--surface,#fff);color:var(--text,#0b0f16)}",
       ".ct-natpuces{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}",
-      ".ct-natpuce{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;",
+      // La puce d'une commune retenue se pose a cote de la liste « ajouter une
+      // commune » : meme hauteur qu'elle, sinon la rangee du panier ondule.
+      ".ct-natpuce{display:inline-flex;align-items:center;gap:7px;height:var(--ct-h2,39px);",
+      "  padding:0 11px;border-radius:999px;",
       "  border:1px solid var(--border-fort,#d4dae2);background:var(--surface,#fff);font-size:13px;",
       "  cursor:pointer}",
       ".ct-natpuce i{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}",
@@ -931,8 +964,8 @@
   }
 
   function dessiner() {
-    if (mode === "communes") { dessinerChoix(); return; }
-    if (multiple()) { dessinerCat(); return; }
+    if (mode === "communes") { dessinerChoix(); dessinerPoi(); return; }
+    if (multiple()) { dessinerCat(); dessinerPoi(); return; }
     var ind = indic();
     var vals = zones().filter(function (c) { return c.i[courant] !== undefined; })
       .map(function (c) { return c.i[courant]; });
@@ -960,6 +993,83 @@
     panneauGrandeRegion();
     majSource();
     majAvertissement();
+    dessinerPoi();
+  }
+
+  // ---------- les établissements sur la carte ----------
+  //
+  // Écoles fondamentales, maisons relais et foyers, crèches, lycées : quatre
+  // familles de points que l'on affiche à la demande, par-dessus la carte
+  // coloriée. Rien n'est affiché au départ : neuf cents points d'un coup
+  // cacheraient la carte qu'on est venu lire.
+  //
+  // Une école entourée d'un anneau vert a, sur le même site, une structure
+  // qui accueille les enfants scolarisés avant et après la classe : c'est ce
+  // qu'on appelle un campus, qu'il en porte le nom ou non. La règle est dans
+  // cartes/build_ecoles.py : même adresse, ou deux bâtiments à 150 mètres.
+  var POI = [
+    ["ef", "Écoles fondamentales", "#d1620a"],
+    ["mr", "Maisons relais et foyers de jour", "#0f8b57"],
+    ["cr", "Crèches", "#8b3fd1"],
+    ["ly", "Lycées", "#c2185b"]
+  ];
+  var poi = { ef: false, mr: false, cr: false, ly: false };
+  var couchePoi = null, renduPoi = null, signaturePoi = "";
+
+  function poiPossible() { return !estFrontalier() && mode !== "deux"; }
+
+  function categoriePoi(q) {
+    if (q.t === "ef" || q.t === "ly") return q.t;
+    // Une structure qui accueille les deux âges se montre avec les maisons
+    // relais, et avec les crèches quand elles seules sont demandées.
+    if (q.es && poi.mr) return "mr";
+    if (q.je && poi.cr) return "cr";
+    return q.es ? "mr" : "cr";
+  }
+
+  function bullePoi(q) {
+    var genre = q.t === "ef" ? "École fondamentale publique" : q.t === "ly" ? "Lycée"
+      : (q.es && q.je ? "Accueil des jeunes enfants et des enfants scolarisés"
+        : q.es ? "Accueil des enfants scolarisés" : "Accueil des jeunes enfants") +
+        (q.cv ? ", conventionné" : ", non conventionné");
+    var h = '<span class="ct-tip">' + esc(q.n) + "<small>" + esc(genre) + "<br>" + esc(q.a);
+    if (q.mr && q.mr.length) h += "<br>Sur le même site : " + esc(q.mr.join(", "));
+    if (q.p === 1) h += "<br>Point posé au n° " + esc(q.v) + ", le numéro exact manque au registre des adresses";
+    if (q.p === 2) h += "<br>Position approximative, au milieu de la rue";
+    return h + "</small></span>";
+  }
+
+  function dessinerPoi() {
+    if (!map) return;
+    var actifs = POI.filter(function (p) { return poi[p[0]]; }).map(function (p) { return p[0]; });
+    var sig = poiPossible() ? actifs.join(",") : "";
+    if (sig === signaturePoi) return;
+    signaturePoi = sig;
+    if (!couchePoi) {
+      // Un calque à part, au-dessus des communes et sous les noms de lieux :
+      // les communes repassent devant les unes les autres au survol, les
+      // points ne doivent pas disparaître dessous.
+      var pane = map.createPane("poi");
+      pane.style.zIndex = 620;
+      renduPoi = L.canvas({ pane: "poi" });
+      couchePoi = L.layerGroup().addTo(map);
+    }
+    couchePoi.clearLayers();
+    if (!sig) return;
+    var couleurs = {};
+    POI.forEach(function (p) { couleurs[p[0]] = p[2]; });
+    ((window.ECOLES || {}).points || []).forEach(function (q) {
+      var cat = categoriePoi(q);
+      if (!poi[cat]) return;
+      var gros = cat === "ef" || cat === "ly";
+      if (cat === "ef" && q.mr && q.mr.length) {
+        L.circleMarker(q.c, { pane: "poi", renderer: renduPoi, radius: 10, color: couleurs.mr,
+          weight: 2.5, fill: false, interactive: false }).addTo(couchePoi);
+      }
+      L.circleMarker(q.c, { pane: "poi", renderer: renduPoi, radius: gros ? 6 : 4.5, color: "#ffffff",
+        weight: 1.5, fillColor: couleurs[cat], fillOpacity: .95 })
+        .bindTooltip(bullePoi(q), { direction: "top", offset: [0, -4] }).addTo(couchePoi);
+    });
   }
 
   function surligner(nom, on) {
@@ -2072,7 +2182,27 @@
       vueBtn("carte", "Une carte") +
       vueBtn("deux", "Deux cartes côte à côte",
         couche_nom === "communes" ? "" : "Seulement sur les cent communes du Luxembourg") +
-      vueBtn("communes", "Comparer des " + motZone(true)) + "</div></div>";
+      vueBtn("communes", "Comparer des " + motZone(true)) + "</div>";
+    // Troisième rangée, ce que l'on pose en plus sur la carte : les écoles et
+    // les structures d'accueil. Des interrupteurs et non un choix : chacun
+    // s'allume et s'éteint seul. Les fichiers du ministère ne couvrent que le
+    // Luxembourg, la rangée disparaît donc de l'autre côté de la frontière.
+    var nPoints = ((window.ECOLES || {}).points || []).length;
+    if (poiPossible() && nPoints) {
+      h += '<div class="ct-couches"><span>Afficher</span>';
+      POI.forEach(function (p) {
+        h += '<button class="chip' + (poi[p[0]] ? " actif" : "") + '" data-poi="' + p[0] +
+          '" aria-pressed="' + (poi[p[0]] ? "true" : "false") + '"><i class="pt" style="border-radius:50%;background:' +
+          p[2] + '"></i>' + esc(p[1]) + "</button>";
+      });
+      h += "</div>";
+      if (poi.ef) {
+        h += '<p class="hint" style="margin:8px 0 0">Une école entourée d\'un anneau vert a, sur le même site, ' +
+          "une structure qui accueille les enfants avant et après la classe. Adresses du ministère de " +
+          "l'Éducation nationale, situation 2021, dernière version publiée.</p>";
+      }
+    }
+    h += "</div>";
 
     if (mode === "communes") {
       // Pas d'indicateur à choisir ici : le tableau les montre tous. À la
@@ -2277,6 +2407,13 @@
     });
     k.querySelectorAll("button[data-vue]").forEach(function (b) {
       b.addEventListener("click", function () { changerMode(b.dataset.vue); });
+    });
+    k.querySelectorAll("button[data-poi]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        poi[b.dataset.poi] = !poi[b.dataset.poi];
+        boutons();
+        dessinerPoi();
+      });
     });
   }
 
