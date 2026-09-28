@@ -794,18 +794,27 @@ window.KB = {
       tags: ["assurance", "auto", "voiture", "responsabilité civile", "bonus", "malus", "relevé d'informations", "franchise"],
       corps: [
         "L'assurance en responsabilité civile est obligatoire pour tout véhicule immatriculé, et l'attestation est exigée au moment de l'immatriculation. Elle doit donc être souscrite avant, et non après.",
-        { h: "Faire valoir son historique" },
-        "Le point qui pèse le plus sur la prime est votre historique de sinistres. Demandez à votre assureur précédent un relevé d'informations, document qui récapitule vos années d'assurance et vos éventuels sinistres. La plupart des assureurs luxembourgeois en tiennent compte, ce qui peut représenter plusieurs centaines d'euros par an. Réclamez-le avant de résilier, il devient plus difficile à obtenir ensuite.",
+        { h: "Le relevé d'information est un droit, pas une faveur" },
+        "Le point qui pèse le plus sur la prime est votre historique de sinistres, et le document qui le porte s'appelle relevé d'information en France, attestation de sinistralité en Belgique, certificat bonus-malus au Luxembourg. C'est le même document. Depuis la directive européenne de 2021 sur l'assurance automobile, votre assureur doit vous le remettre dans les quinze jours de votre demande, et il couvre au moins les cinq dernières années. Un assureur d'un autre État membre doit en tenir compte comme il tiendrait compte d'un document national : la directive interdit de traiter différemment un conducteur selon sa nationalité ou son pays de résidence précédent.",
+        "Réclamez-le avant de résilier. Après la résiliation il reste dû, mais il faut souvent relancer.",
+        { h: "Si vous n'avez jamais eu de contrat à votre nom" },
+        "C'est le cas de qui conduisait la voiture d'un parent, d'un conjoint ou d'un beau-parent sans être inscrit au contrat. Le relevé appartient au preneur d'assurance et ne nomme que les conducteurs désignés au contrat : celui de votre proche ne vous mentionne pas, et son bonus ne vous suit pas.",
+        "Concrètement, vous entrez alors au degré neutre de l'échelle luxembourgeoise, celle qui va de -3 à 22 et dont le degré 11 correspond à la prime de base. Ce n'est pas bloquant : aucun relevé n'est exigé pour assurer ni pour immatriculer, il ne joue que sur le prix. Deux choses valent la peine d'être tentées : demander à l'assureur de votre proche une attestation écrite disant que vous conduisiez le véhicule sans sinistre, qu'un assureur luxembourgeois est libre d'accepter ou non, et vous faire inscrire comme conducteur désigné sur un contrat tant que vous roulez sans en avoir un à vous.",
         { h: "Ce qui distingue les contrats" },
         "Au-delà de la responsabilité civile obligatoire, les garanties dites tous risques couvrent aussi les dommages à votre propre véhicule. La comparaison utile porte sur quelques points précis : le montant des franchises, la présence d'une assistance dès le domicile ou seulement à partir d'une certaine distance, le prêt d'un véhicule de remplacement, et la couverture du bris de glace.",
         "Comme pour l'habitation, ces éléments figurent dans les conditions générales et non dans le devis. Réclamez le document d'information standardisé, les conditions générales et les conditions particulières : deux contrats au même prix peuvent différer nettement sur la franchise et sur l'assistance, c'est-à-dire précisément sur ce que vous constaterez le jour du sinistre."
       ],
       aRetenir: [
         "Assurance obligatoire avant l'immatriculation.",
-        "Réclamer le relevé d'informations avant de résilier.",
+        "Le relevé d'information se réclame dans les quinze jours, c'est un droit.",
+        "Sans contrat à son nom, on entre au degré neutre, et rien n'est bloqué.",
         "Comparer franchises et assistance, pas seulement la prime."
       ],
-      sources: [{ t: "Commissariat aux assurances", u: "https://www.caa.lu/fr/accueil" }]
+      sources: [
+        { t: "Commissariat aux assurances", u: "https://www.caa.lu/fr/accueil" },
+        { t: "Directive européenne 2021/2118, relevé de sinistres", u: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32021L2118" },
+        { t: "France, contenu du relevé d'information, annexe à l'article A121-1", u: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051155686" }
+      ]
     },
     {
       id: "transport",
@@ -910,6 +919,8 @@ window.KB = {
   ],
 
   faq: [
+    { q: "Faut-il un relevé d'information pour assurer sa voiture au Luxembourg ?", a: "Il n'est pas exigé, ni pour assurer ni pour immatriculer : il ne joue que sur le prix. Si vous avez eu un contrat à votre nom, réclamez-le, c'est un droit : votre assureur doit le fournir dans les quinze jours et il couvre au moins cinq ans. Sans contrat à votre nom, il n'y a rien à demander, et vous entrez au degré neutre de l'échelle luxembourgeoise, le degré 11 sur une échelle qui va de -3 à 22.", fiche: "assurance_auto" },
+    { q: "J'ai conduit la voiture d'un proche sans être inscrit au contrat, est-ce que ça compte ?", a: "Pas automatiquement. Le relevé appartient au preneur d'assurance et ne nomme que les conducteurs désignés au contrat : celui de votre proche ne vous mentionne pas. Vous pouvez demander à son assureur une attestation écrite disant que vous conduisiez sans sinistre, mais aucun assureur luxembourgeois n'est tenu de l'accepter. Se faire inscrire comme conducteur désigné évite le problème pour la suite.", fiche: "assurance_auto" },
     { q: "La carte grise n'est pas au nom du vendeur, est-ce bloquant ?", a: "Non, et un acte de vente règle la question. Un contrat signé des deux parties, daté, désignant le véhicule par son numéro de châssis, établit la propriété ; quand le certificat est à un troisième nom, demandez la chaîne complète des actes, de la personne inscrite jusqu'à vous. Sans aucune preuve, la SNCA vous inscrit comme titulaire, mais le certificat porte la mention que le titulaire n'est pas identifié comme propriétaire.", fiche: "vehicule" },
     { q: "Faut-il repasser le contrôle technique en arrivant au Luxembourg ?", a: "Pas si le contrôle étranger est encore valable. Un certificat passé dans un autre État membre ou en Suisse reste valable, mais sa durée devient celle du droit luxembourgeois : premier contrôle quatre ans après la première mise en circulation, deuxième deux ans après, puis chaque année.", fiche: "vehicule" },
     { q: "Dans quel délai immatriculer un véhicule qu'on amène avec soi ?", a: "Dans les six mois de la déclaration d'arrivée à la commune. Avant la SNCA, il faut le numéro d'immatriculation, l'assurance luxembourgeoise et la vignette 705 des douanes, cette dernière étant exigée même quand aucune TVA n'est due.", fiche: "vehicule" },
