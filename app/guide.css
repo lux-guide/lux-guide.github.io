@@ -1,0 +1,189 @@
+/* Fiches guidées (app/guide.js) : repères, tri du cas, onglets, étapes,
+   dossier à cocher. Reprend les jetons de styles.css, rien n'y est redéfini. */
+
+/* La colonne de texte est un élément de grille : sans min-width: 0, la barre
+   d'onglets, qui ne passe pas à la ligne, l'élargit au-delà de l'écran. */
+.detail-texte { min-width: 0; }
+
+/* ---------- Repères ---------- */
+.g-reperes {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  margin: 0 0 34px;
+}
+.g-repere {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 16px 18px; box-shadow: var(--ombre-s);
+}
+.g-k {
+  font-size: var(--micro); text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--muted); font-weight: 650;
+}
+.g-v { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1.1; color: var(--accent); }
+.g-repere .g-d { font-size: 13.5px; color: var(--text-2); line-height: 1.45; }
+
+/* ---------- Votre cas ---------- */
+.g-cas { margin: 0 0 34px; }
+.detail-texte .g-cas h2 { margin: 0 0 14px; }
+.g-cas-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.g-cas-item {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 16px 18px;
+}
+.g-cas-item strong { font-size: 15px; line-height: 1.35; }
+.g-cas-item p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.g-cas-item.actif {
+  background: var(--accent-soft); border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.g-badge {
+  align-self: flex-start; font-size: var(--micro); text-transform: uppercase;
+  letter-spacing: 1px; font-weight: 650; color: var(--accent);
+}
+
+/* ---------- Onglets ---------- */
+.g-tabs {
+  position: sticky; top: calc(var(--h-top) + 8px); z-index: 5;
+  display: flex; gap: 4px; padding: 5px; margin: 0 0 24px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.g-tabs::-webkit-scrollbar { display: none; }
+.g-tab {
+  flex: 1 0 auto; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 14.5px; font-weight: 550; color: var(--muted);
+  padding: 9px 16px; border-radius: 999px; white-space: nowrap; transition: all .15s;
+}
+.g-tab:hover { color: var(--text); }
+.g-tab.actif { background: var(--surface); color: var(--accent); box-shadow: var(--ombre-s); }
+.g-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.g-p { font-size: 16px; line-height: 1.7; color: var(--text-2); margin: 0 0 18px; }
+.g-note {
+  margin: 0 0 22px; padding: 13px 16px; font-size: 14.5px; line-height: 1.55;
+  background: var(--warn-soft); color: var(--text);
+  border-left: 3px solid var(--warn); border-radius: 0 var(--r-s) var(--r-s) 0;
+}
+.g-discret { font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+
+/* ---------- Étapes ---------- */
+.g-etapes { list-style: none; margin: 0 0 22px; padding: 0; }
+.g-etape { position: relative; padding: 0 0 16px 54px; }
+.g-etape::before {
+  content: ""; position: absolute; left: 17px; top: 40px; bottom: 0;
+  width: 2px; background: var(--border-fort);
+}
+.g-etape:last-child::before { display: none; }
+.g-num {
+  position: absolute; left: 0; top: 4px; width: 36px; height: 36px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--accent); color: var(--surface); font-weight: 700; font-size: 15px;
+}
+.g-etape-carte {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 16px 20px; box-shadow: var(--ombre-s);
+}
+.g-etape-carte h3 { margin: 4px 0 6px; font-size: 18px; }
+.g-etape-carte > p { margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: var(--text-2); }
+.g-champs {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px 14px;
+  margin: 0; padding-top: 12px; border-top: 1px solid var(--border);
+}
+.g-champs dt {
+  font-size: var(--micro); text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); font-weight: 650; padding-top: 3px;
+}
+.g-champs dd { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.g-ligne { display: block; }
+.g-ligne + .g-ligne { margin-top: 3px; }
+.g-pied { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.g-lien { color: var(--accent); font-size: 14px; font-weight: 550; }
+.g-bouton { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-size: 14px; font-weight: 550; color: var(--accent); }
+.g-bouton:hover, .g-lien:hover { text-decoration: underline; }
+
+/* ---------- Dossier à cocher ---------- */
+.g-cocher {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 18px 20px; box-shadow: var(--ombre-s);
+}
+.g-cocher-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.g-compte { font-size: 15px; font-variant-numeric: tabular-nums; }
+.g-barre { height: 6px; border-radius: 999px; background: var(--surface-2); margin: 10px 0 8px; overflow: hidden; }
+.g-barre span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.g-cocher.complet .g-barre span { background: var(--ok); }
+.g-cocher.complet .g-compte { color: var(--ok); }
+.g-cocher ul { list-style: none; margin: 0; padding: 0; }
+.g-cocher li { padding: 11px 0; border-bottom: 1px solid var(--border); }
+.g-cocher li:last-child { border-bottom: 0; }
+/* label et input ont un style de formulaire global dans styles.css : on le neutralise ici. */
+.g-cocher label {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+  margin: 0; font-size: inherit; font-weight: 400; color: var(--text); letter-spacing: 0;
+}
+.g-cocher input {
+  width: 20px; height: 20px; margin: 2px 0 0; padding: 0; border-radius: 4px;
+  flex: 0 0 auto; accent-color: var(--accent); cursor: pointer;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .g-cocher { color-scheme: dark; } }
+:root[data-theme="dark"] .g-cocher { color-scheme: dark; }
+.g-item { display: flex; flex-direction: column; gap: 2px; }
+.g-item .g-t { font-size: 15px; line-height: 1.45; }
+.g-item .g-d { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.g-cocher li.fait .g-t { color: var(--muted); }
+.g-cocher li > .g-lien { display: inline-block; margin: 4px 0 0 32px; font-size: 13.5px; }
+
+/* ---------- Vendeur, par pays ---------- */
+.g-pays .chips { margin: 0 0 16px; }
+.g-pays-vue { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+.g-pays-col {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 16px 20px; box-shadow: var(--ombre-s);
+}
+.g-pays-col h4 {
+  margin: 0 0 8px; font-size: var(--micro); text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--muted); font-weight: 650;
+}
+.g-pays-col ul { margin: 0; padding-left: 18px; }
+.g-pays-col li { margin: 7px 0; font-size: 14.5px; line-height: 1.5; }
+
+/* ---------- Coûts ---------- */
+.g-table td.num { white-space: normal; }
+.g-onglets .table-wrap { margin-bottom: 18px; }
+
+/* ---------- Cas particuliers ---------- */
+.g-plis { display: flex; flex-direction: column; gap: 10px; }
+.g-pli {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); padding: 0 20px; box-shadow: var(--ombre-s);
+}
+.g-pli summary {
+  list-style: none; cursor: pointer; padding: 15px 28px 15px 0; position: relative;
+  font-weight: 600; font-size: 16px;
+}
+.g-pli summary::-webkit-details-marker { display: none; }
+.g-pli summary::after {
+  content: "+"; position: absolute; right: 0; top: 12px;
+  font-size: 22px; font-weight: 400; color: var(--muted);
+}
+.g-pli[open] summary::after { content: "−"; }
+.g-pli p { margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: var(--text-2); }
+.g-pli p:last-child { margin-bottom: 16px; }
+
+/* ---------- Petits écrans ---------- */
+@media (max-width: 720px) {
+  .g-reperes { grid-template-columns: 1fr; gap: 8px; }
+  .g-repere { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 12px 16px; }
+  .g-v { font-size: 26px; }
+  .g-repere .g-d { flex: 1 1 100%; }
+  .g-cas-grille, .g-pays-vue { grid-template-columns: 1fr; }
+  .g-etape { padding-left: 46px; }
+  .g-num { width: 32px; height: 32px; font-size: 14px; }
+  .g-etape::before { left: 15px; top: 36px; }
+  .g-etape-carte { padding: 14px 16px; }
+  .g-champs { grid-template-columns: 1fr; gap: 2px; }
+  .g-champs dd { margin-bottom: 8px; }
+  /* Sur mobile, les onglets passent à la ligne : un onglet coupé au bord ne se voit pas. */
+  .g-tabs { flex-wrap: wrap; border-radius: var(--r-m); overflow: visible; }
+  .g-tab { flex: 1 1 auto; padding: 8px 12px; font-size: 14px; }
+}

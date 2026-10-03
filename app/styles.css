@@ -1483,6 +1483,7 @@ mark.surligne.pulse { animation: surlign 1.5s ease-out; }
 
 @media (max-width: 759px) {
   main { padding: 0 16px 70px; }
+  .detail-hero { margin: 0 -16px 24px; }
   .ask { padding: 22px 16px 18px; border-radius: var(--r-m); }
   .hero { min-height: min(64vh, 460px); border-radius: var(--r-m); }
   .hero-in { padding: 60px 18px 30px; }

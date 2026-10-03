@@ -26,3 +26,18 @@ au pluriel, sans montant. Deux questions restent ouvertes :
 Appeler la SNCA, (+352) 26 626 400, ou relire la page des timbres de
 l'Administration de l'enregistrement, puis corriger le tableau des coûts de la
 fiche si besoin.
+
+## Tranché le 3 octobre 2026
+
+Guichet.lu, « Immatriculer un véhicule lors d'un déménagement transfrontalier », mise à
+jour le 16.04.2026, répond aux deux questions :
+
+1. Le timbre de 50 euros est le droit de chancellerie lui-même : « du timbre fiscal d'une
+   valeur de 50 euros (droit de chancellerie) pour immatriculer le véhicule ». Le pluriel
+   de la SNCA vient des suppléments, qui se paient aussi en timbres. Acheté à la SNCA, le
+   timbre coûte 3 euros de plus.
+2. Les 24 euros sont officiels, mais pour le transfert d'un numéro **personnalisé** :
+   « 200 euros pour un numéro de plaque personnalisé ; ou 24 euros s'il s'agit d'un
+   transfert de numéro personnalisé ».
+
+Les deux montants sont publiés dans l'onglet Coûts de la fiche.

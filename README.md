@@ -655,6 +655,13 @@ Les modifications sont d'abord enregistrées dans le navigateur. Pour les rendre
 
 Le bouton **Revenir au contenu d'origine** annule les modifications locales.
 
+**Fiches guidées.** Une fiche peut porter un `guide` au lieu d'un corps en paragraphes : des repères
+chiffrés, un tri du cas, puis des onglets (étapes numérotées, dossier à cocher, pièces par pays,
+coûts, cas particuliers). Elle vit dans `app/fiches/`, le format est décrit en tête de `app/guide.js`,
+et elle se modifie dans son fichier, pas dans l'Administration : son corps, que lisent la recherche
+et l'assistant, est recalculé depuis le guide à chaque chargement. Première fiche passée au format,
+le 3 octobre 2026 : « Immatriculer son véhicule ».
+
 ---
 
 ## Structure
@@ -666,6 +673,9 @@ lux_guide/
   app/
     bareme.js           barème officiel ACD, extrait de la source
     kb.js               base de connaissances, fiches et questions
+    fiches/             fiches guidées, une par fichier, reprises par kb.js
+    guide.js            rendu des fiches guidées : repères, étapes, onglets, dossier à cocher
+    guide.css           styles de ces fiches
     communaute.js       astuces de la communauté, autonome, une entrée par fiche
     simulateur.js       calcul du net et de la capacité d'emprunt
     chat.js             profil, recherche, appel au modèle

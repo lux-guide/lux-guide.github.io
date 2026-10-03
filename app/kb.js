@@ -709,83 +709,8 @@ window.KB = {
       ],
       sources: [{ t: "Guichet.lu, permis étranger", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/permis-conduire/international/transcription-enregistement-permis.html" }]
     },
-    {
-      id: "vehicule",
-      titre: "Immatriculer son véhicule",
-      cat: "Mobilite",
-      resume: "L'ordre des étapes compte, et la vignette des douanes est exigée même quand il n'y a aucune TVA à payer.",
-      tags: ["voiture", "véhicule", "immatriculation", "snca", "snct", "contrôle technique", "plaque", "import",
-             "occasion", "vignette 705", "douanes", "carte grise", "acte de vente", "car-pass", "france", "belgique",
-             "allemagne", "certificat de conformité", "cession"],
-      corps: [
-        "Trois situations se distinguent, et elles ne demandent pas le même travail. Un véhicule acheté chez un concessionnaire luxembourgeois est immatriculé par lui, et votre seule obligation est l'assurance. Un véhicule d'occasion déjà immatriculé au Luxembourg demande les deux parties du certificat et un document-facture. Un véhicule que vous faites venir de France, de Belgique ou d'Allemagne demande une procédure complète, décrite ici en premier parce que c'est celle qui pose des questions.",
-        { h: "L'ordre des étapes, pour un véhicule venant d'un pays de l'Union" },
-        "L'ordre n'est pas indifférent : chaque étape produit une pièce demandée à la suivante, et la SNCA refuse un dossier incomplet.",
-        "D'abord le numéro d'immatriculation, qui se demande en ligne sur MyGuichet ou se reprend d'un véhicule que vous possédez déjà. Ensuite l'assurance en responsabilité civile, souscrite auprès d'une compagnie agréée au Luxembourg : l'attestation fait partie du dossier, elle ne peut donc pas venir après. Puis la vignette 705, délivrée par les douanes. Puis le contrôle technique, si le véhicule y est soumis. Enfin le rendez-vous à la SNCA, à Sandweiler, Esch-sur-Alzette ou au Fridhaff, ou l'envoi du dossier par courrier recommandé.",
-        { h: "La vignette 705, l'étape que tout le monde oublie" },
-        "C'est un document douanier, et il est exigé pour immatriculer au Luxembourg un véhicule qui vient d'un autre État membre, qu'il soit neuf ou d'occasion. Beaucoup croient qu'elle ne concerne que les véhicules taxables : elle atteste justement la situation fiscale, y compris quand rien n'est dû.",
-        "Elle s'obtient au centre des douanes de Luxembourg-Howald ou à celui de Diekirch, du lundi au vendredi de 8 heures à 17 heures, en s'y rendant avec le véhicule, le certificat d'immatriculation étranger ou le certificat de conformité, la facture ou le contrat de vente, et une pièce d'identité. La TVA luxembourgeoise n'est due que si le véhicule est neuf au sens fiscal, et elle se paie alors par virement ou au guichet.",
-        { h: "Le contrôle technique" },
-        "Un certificat de contrôle technique passé dans un autre État membre ou en Suisse reste valable quand le véhicule est immatriculé au Luxembourg, mais sa durée devient celle du droit luxembourgeois. Cette durée suit l'âge du véhicule : premier contrôle quatre ans après la première mise en circulation, deuxième deux ans plus tard, puis un contrôle chaque année. Un véhicule de moins de quatre ans qui n'a jamais été contrôlé n'a donc rien à passer, et un véhicule plus ancien dont le contrôle étranger est encore valable garde ce contrôle jusqu'à son terme luxembourgeois.",
-        { h: "Le dossier que la SNCA demande" },
-        "La liste vaut pour un véhicule d'occasion immatriculé en dernier lieu dans un pays de l'Union : le formulaire de demande en obtention d'un certificat d'immatriculation, signé, les timbres de chancellerie, l'attestation d'assurance en cours de validité, le document douanier portant la vignette 705, le certificat d'immatriculation étranger, une pièce d'identité du titulaire, le certificat de conformité européen quand la première mise en circulation est postérieure au 1er février 2016, et le certificat de contrôle technique lorsque le véhicule y est soumis.",
-        "La facture d'origine ou le contrat de vente est, lui, facultatif au sens strict. C'est une nuance importante, et elle fait l'objet de la section suivante.",
-        { h: "Si le certificat étranger n'est pas au nom du vendeur" },
-        "C'est le cas classique du véhicule acheté à quelqu'un qui ne l'a jamais mis à son nom, ou revendu deux fois en quelques mois. La règle luxembourgeoise sépare deux rôles : le titulaire, celui qui déclare le véhicule et le met à sa charge, et le propriétaire, celui dont la propriété est établie par une pièce.",
-        "Un acte de vente convient parfaitement, et c'est même la pièce à réunir : un contrat signé par les deux parties, daté, désignant le véhicule par son numéro de châssis, suffit à établir la propriété. Quand le certificat n'est pas au nom de votre vendeur, demandez la chaîne complète : l'acte entre la personne inscrite sur le certificat et votre vendeur, puis le vôtre. Une facture de professionnel joue le même rôle.",
-        "Sans aucune de ces pièces, la démarche n'est pas bloquée, mais le résultat n'est pas le même : la SNCA vous inscrit comme titulaire, et le certificat porte alors la mention que le titulaire n'est pas identifié comme propriétaire du véhicule. Vous pouvez rouler, assurer et payer la taxe, mais le document ne vous reconnaît pas propriétaire, ce qui gêne à la revente et en cas de litige.",
-        { h: "Ce que le vendeur doit vous remettre, selon son pays" },
-        "La procédure luxembourgeoise est la même quel que soit le pays de départ. Ce qui change, ce sont les pièces que le vendeur doit produire, et les formalités qu'il doit accomplir chez lui. Un vendeur qui néglige les siennes vous laisse avec un dossier incomplet, ou continue de recevoir les amendes.",
-        { h: "Deux choses à ne pas oublier" },
-        "Demandez à votre assureur précédent un relevé d'informations avant de résilier : il récapitule vos années d'assurance et vos sinistres, la plupart des assureurs luxembourgeois en tiennent compte, et il devient plus difficile à obtenir une fois le contrat clos.",
-        "Et ne laissez pas traîner. Un résident qui arrive avec son véhicule doit l'immatriculer dans les six mois de sa déclaration d'arrivée à la commune. À l'immatriculation, vous recevez une vignette fiscale provisoire valable trente jours, le temps que la taxe sur les véhicules automoteurs prenne le relais."
-      ],
-      tableaux: [{
-        titre: "Les pièces que le vendeur doit vous remettre",
-        colonnes: ["Pays de départ", "Ce qu'il vous remet", "Ce qu'il doit faire chez lui"],
-        lignes: [
-          ["France",
-           "La carte grise barrée, avec la mention vendu le, la date, l'heure et sa signature ; le certificat de cession, formulaire Cerfa 15776, en deux exemplaires ; le code de cession ; un certificat de situation administrative de moins de 15 jours ; le contrôle technique de moins de 6 mois si le véhicule a plus de 4 ans",
-           "Déclarer la cession en ligne dans les 15 jours, ce qui produit le code de cession"],
-          ["Belgique",
-           "Les deux parties du certificat d'immatriculation ; le certificat de conformité ; le Car-Pass, qui retrace le kilométrage et qui est obligatoire ; le contrôle technique en vue de la vente",
-           "Garder sa plaque, qui est personnelle, et la faire radier auprès de la DIV"],
-          ["Allemagne",
-           "Les deux parties du certificat, Zulassungsbescheinigung Teil I et Teil II ; le procès-verbal du dernier contrôle technique",
-           "Remettre les plaques allemandes et demander une plaque d'exportation pour rouler jusqu'ici, ce qui ne suppose plus de désimmatriculation préalable"]
-        ]
-      }, {
-        titre: "Ce que coûte l'immatriculation",
-        colonnes: ["Poste", "Montant"],
-        lignes: [
-          ["Timbre fiscal pour le certificat d'immatriculation", "50 €"],
-          ["Numéro personnalisé, en plus du timbre", "200 €"],
-          ["Plaques", "selon le fournisseur"],
-          ["Contrôle technique, si le véhicule y est soumis", "selon l'organisme agréé"],
-          ["TVA luxembourgeoise", "due seulement si le véhicule est neuf au sens fiscal"]
-        ]
-      }],
-      aRetenir: [
-        "L'ordre : numéro, assurance, vignette 705, contrôle technique, SNCA.",
-        "La vignette 705 est exigée même quand aucune TVA n'est due.",
-        "Un acte de vente signé vaut preuve de propriété quand le certificat est à un autre nom.",
-        "Sans preuve de propriété, vous êtes titulaire, et le certificat le dit.",
-        "Six mois après la déclaration d'arrivée pour immatriculer un véhicule importé."
-      ],
-      sources: [
-        { t: "SNCA, véhicule d'occasion immatriculé dans l'Union", u: "https://snca.public.lu/fr/vehicules/immatriculation/immatriculer-vehicule-occasion/vehicule-immatricule-eu.html" },
-        { t: "Guichet.lu, importer son véhicule lors d'un déménagement", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/vehicule-motorise/immatriculer-vehicule/vehicule-demenagement-transfrontalier.html" },
-        { t: "Guichet.lu, acheter un véhicule immatriculé au Luxembourg", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/vehicule-motorise/immatriculer-vehicule/acheter-vehicule-luxembourg.html" },
-        { t: "Guichet.lu, conformité du véhicule", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/vehicule-motorise/immatriculer-vehicule/conformite-vehicule.html" },
-        { t: "Guichet.lu, contrôle technique", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/vehicule-motorise/controle-technique-pneumatiques/controle-technique-obligatoire-vehicule.html" },
-        { t: "Administration des douanes et accises, questions sur les véhicules", u: "https://douanes.public.lu/fr/support/faq/faq-vehicules.html" },
-        { t: "France, déclarer la cession d'un véhicule", u: "https://immatriculation.ants.gouv.fr/" },
-        { t: "France, certificat de cession Cerfa 15776", u: "https://www.formulaires.service-public.gouv.fr/gf/cerfa_15776.do" },
-        { t: "Belgique, exporter un véhicule", u: "https://mobilit.belgium.be/fr/route/immatriculer-et-radier/exporter-un-vehicule-plaque-x" },
-        { t: "Belgique, Car-Pass", u: "https://www.car-pass.be/fr" },
-        { t: "Allemagne, plaque d'exportation, service de Berlin", u: "https://service.berlin.de/dienstleistung/121476/" }
-      ]
-    },
+    // Fiche guidée, dans son propre fichier : app/fiches/vehicule.js
+    window.FICHES.vehicule,
     {
       id: "assurance_auto",
       titre: "Assurer son véhicule",

@@ -851,13 +851,18 @@
     var chapo = el("p", "chapo", f.resume);
     texte.appendChild(chapo);
 
+    // Une fiche guidee a son propre rendu (app/guide.js) : son corps n'est
+    // alors qu'un texte derive, pour la recherche et l'assistant.
+    var guidee = !!(f.guide && window.FicheGuide);
+    if (guidee) window.FicheGuide.rendre(f, texte);
+
     // Un element de corps est soit un paragraphe, soit { h: "Sous-titre" }
-    (f.corps || []).forEach(function (p) {
+    (guidee ? [] : f.corps || []).forEach(function (p) {
       if (p && typeof p === "object" && p.h) { texte.appendChild(el("h2", null, p.h)); return; }
       texte.appendChild(el("p", null, String(p)));
     });
 
-    (f.tableaux || []).forEach(function (t) {
+    (guidee ? [] : f.tableaux || []).forEach(function (t) {
       texte.appendChild(el("h3", null, t.titre));
       var wrap = el("div", "table-wrap"), tab = el("table");
       var thead = el("thead"), trh = el("tr");
