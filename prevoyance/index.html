@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Épargne-retraite au Luxembourg</title>
+<title>Épargne et retraite · Vivre au Luxembourg</title>
 <meta name="description" content="Ce que l'État vous rend quand vous préparez votre retraite. La déduction 111bis chiffrée sur votre situation, sans compte et sans nom.">
-<link rel="stylesheet" href="app/site.css?v=6">
+<link rel="stylesheet" href="app/site.css?v=8">
+<link rel="stylesheet" href="../app/entete.css?v=1">
 </head>
 <body>
 
@@ -43,47 +44,30 @@
   </defs>
 </svg>
 
-<!-- Coquille propre a ce site : une marque, quatre liens, un pied de page.
-     Aucune barre du guide d'installation, aucun selecteur d'audience. Ce site
-     s'adresse aussi bien a quelqu'un qui vient d'arriver qu'a quelqu'un qui vit
-     ici depuis dix ans, et sa navigation doit le dire. -->
+<!-- Une rubrique du site Vivre au Luxembourg, dans sa propre page pour que son
+     code ne se charge que si on l'ouvre. La barre est celle de tout le site :
+     ../app/entete.js l'ecrit, avec Budget marque et l'assistant de la rubrique. -->
 <!-- Tout ce qui n'est pas le volet vit dans cette colonne. C'est elle qui
      defile quand le volet est ouvert, et sa barre tombe alors a sa droite,
      juste a gauche du volet, au lieu de disparaitre derriere lui. -->
 <div class="page" id="page">
-<header class="top">
-  <div class="top-in">
-    <button class="brand" id="brand" title="Retour à l'accueil" aria-label="Épargne-retraite au Luxembourg, retour à l'accueil">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-          <path d="M3 17.5 9 11l4 3.5L21 6"/>
-          <path d="M15.5 6H21v5.5"/>
-        </svg>
-      </span>
-      <span class="brand-lock">
-        <span class="brand-txt">Épargne-retraite</span>
-        <span class="brand-desc">au Luxembourg</span>
-      </span>
-    </button>
-    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-accueil"/></svg><span>Accueil</span></button>
-      <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-calcul"/></svg><span>Simulateur</span></button>
-      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-questions"/></svg><span>Questions</span></button>
-    </nav>
-    <!-- L'assistant n'est pas une destination, c'est un compagnon : il s'ouvre
-         par-dessus la vue courante et y reste pendant qu'on lit. -->
-    <button id="assistant-btn" class="btn-assistant" aria-expanded="false" aria-controls="panneau"
-            title="Assistant" aria-label="Ouvrir l'assistant">
-      <svg class="ic-ia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path class="et et-1" d="M10 3.2l1.5 4.1 4.1 1.5-4.1 1.5L10 14.4 8.5 10.3 4.4 8.8l4.1-1.5z"/>
-        <path class="et et-2" d="M17.6 13.6l.75 2.05 2.05.75-2.05.75-.75 2.05-.75-2.05-2.05-.75 2.05-.75z"/>
-      </svg>
-    </button>
-  </div>
-</header>
+<header class="top" id="entete" data-racine="../" data-courant="epargne" data-assistant="panneau"></header>
+<script src="../app/entete.js?v=1"></script>
 
 <main>
+
+  <!-- On sait ou l'on est : la famille Budget, puis la rubrique. Ses trois vues
+       sont des onglets de la rubrique, pas des entrees de la barre, qui est
+       celle de tout le site. La premiere est une vue d'ensemble, et non un
+       « Accueil », mot que la barre reserve a l'accueil du site. -->
+  <div class="rubrique">
+    <p class="fil">Budget<span aria-hidden="true">›</span><b>Épargne et retraite</b></p>
+    <nav class="sous-nav" id="tabs" role="tablist" aria-label="Épargne et retraite">
+      <button role="tab" id="tab-accueil" data-vue="accueil" aria-selected="true" aria-controls="vue-accueil" tabindex="0">Vue d'ensemble</button>
+      <button role="tab" id="tab-simulateur" data-vue="simulateur" aria-selected="false" aria-controls="vue-simulateur" tabindex="-1">Simulateur</button>
+      <button role="tab" id="tab-questions" data-vue="questions" aria-selected="false" aria-controls="vue-questions" tabindex="-1">Questions</button>
+    </nav>
+  </div>
 
   <!-- Accueil -->
   <section class="vue" role="tabpanel" aria-labelledby="tab-accueil" id="vue-accueil">
@@ -173,14 +157,13 @@
   <div class="pied-grille">
     <div class="pied-marque">
       <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-          <path d="M3 17.5 9 11l4 3.5L21 6"/>
-          <path d="M15.5 6H21v5.5"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" focusable="false">
+          <circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.4 13.4 8.4 15.6 10.6 10.6z" fill="currentColor"/>
         </svg>
       </span>
       <div>
-        <strong>Épargne-retraite au Luxembourg</strong>
-        <p>Démonstration. Sans compte, sans nom, et sans modèle de langue.</p>
+        <strong>Vivre au Luxembourg</strong>
+        <p>Épargne et retraite. Démonstration, sans compte, sans nom, et sans modèle de langue.</p>
       </div>
     </div>
     <div class="pied-col">
@@ -194,7 +177,7 @@
   </div>
   <p class="pied-bas">
     Les montants sont ceux de la loi luxembourgeoise, vérifiés à la date indiquée sur chaque
-    source. Ce site ne compare aucun contrat du marché et ne recommande aucun placement. Rien de
+    source. Cette rubrique ne compare aucun contrat d'épargne du marché et ne recommande aucun placement. Rien de
     ce que vous saisissez ne quitte votre navigateur.
   </p>
 </footer>
@@ -265,6 +248,6 @@
 
 <script src="app/prevoyance.js?v=6"></script>
 <script src="app/questions.js?v=6"></script>
-<script src="app/site.js?v=7"></script>
+<script src="app/site.js?v=8"></script>
 </body>
 </html>

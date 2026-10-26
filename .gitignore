@@ -1,1 +1,4 @@
 cartes/cache/
+lignes/*.zip
+__pycache__/
+*.pyc

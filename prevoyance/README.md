@@ -1,35 +1,40 @@
-# Épargne-retraite au Luxembourg
+# Épargne et retraite
 
-Site de démonstration autonome, consacré à la prévoyance-vieillesse luxembourgeoise, l'article 111bis, et aux autres postes déductibles. Il chiffre ce qu'une situation rapporte, sans compte, sans nom et sans modèle de langue.
+Rubrique du site [Vivre au Luxembourg](../README.md), consacrée à la prévoyance-vieillesse luxembourgeoise, l'article 111bis, et aux autres postes déductibles. Elle chiffre ce qu'une situation rapporte, sans compte, sans nom et sans modèle de langue.
 
-Ouvrir `index.html` dans un navigateur, ou servir le dossier. Aucune dépendance, aucun outil de construction.
+Servir le dossier du guide, et non ce seul dossier : la barre du site vit dans `../app/`. Aucune dépendance, aucun outil de construction.
 
----
-
-## Pourquoi un site à part, et pas un onglet du guide
-
-Le sujet a d'abord été ajouté comme onglet au [guide d'installation](../lux_guide/README.md). C'était une erreur, pour une raison simple : **la déduction ne concerne pas que les arrivants.** Elle s'ouvre à toute personne imposée au Luxembourg, qu'elle soit là depuis huit jours ou depuis vingt ans. Rangée sous « s'installer », elle devenait invisible pour la moitié des gens qu'elle concerne.
-
-Ce qui trahit, quand on héberge un sujet dans un produit qui n'est pas le sien, n'est pas ce qu'on masque : c'est ce qu'on garde. L'ordre des sections, le vocabulaire, ce qui arrive en premier. D'où un second site, avec sa propre adresse, sa propre coquille et sa propre identité.
-
-| | Guide d'installation | Ce site |
-|---|---|---|
-| Adresse | `/` | `/prevoyance/` |
-| Public | les personnes qui arrivent | toute personne imposée au Luxembourg |
-| Vu en premier | un parcours de démarches | un chiffre, avant toute question |
-| Coquille | huit sections, un assistant global | trois onglets, un assistant en panneau |
-| Typographie | Fraunces et Inter | Barlow et Inter |
-| Thème | clair, sombre, système | un seul, clair |
-
-Un lien discret dans le pied de page mène au guide, pour qui vient d'arriver. C'est le seul point de contact, et il est volontairement en bas.
+```bash
+python -m http.server 8932 --directory lux_guide
+python lux_guide/prevoyance/test_prevoyance.py
+```
 
 ---
 
-## Trois onglets, et un assistant qui reste ouvert à côté
+## Une rubrique du site, dans sa propre page
 
-1. **Accueil.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée et qui ne suppose rien du lecteur, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
+Le sujet a d'abord été un onglet du guide, puis un site à part, puis une rubrique du site. Chaque étape a sa raison, et la dernière tient compte des deux premières.
+
+1. **Sortie du guide, en septembre 2026.** Le guide s'appelait alors « S'installer au Luxembourg ». Or la déduction ne concerne pas que les arrivants : elle s'ouvre à toute personne imposée au Luxembourg, là depuis huit jours ou depuis vingt ans. Rangée sous « s'installer », elle devenait invisible pour la moitié des gens qu'elle concerne. D'où un second site, avec sa propre coquille et sa propre identité.
+2. **Retour dans le site, le 12 octobre 2026.** Le guide a pris le nom « Vivre au Luxembourg » le 18 septembre, précisément pour ne plus désigner les seuls arrivants. La raison de la séparation est donc tombée, et deux identités pour un même site faisaient croire, au premier clic sur « Épargne et retraite », qu'on venait de le quitter.
+
+Ce qui est commun avec le reste du site :
+
+1. **La barre**, écrite par `../app/entete.js` et habillée par `../app/entete.css`, la même sur toutes les pages. Ici, la famille Budget et l'entrée Épargne et retraite y sont marquées, et l'entrée Assistant ouvre le volet de cette rubrique.
+2. **Les jetons** : palette, rayons, largeur de page, typographie (Instrument Serif pour les titres et les chiffres, Inter pour le texte).
+3. **Le thème** : clair, sombre ou celui du système, réglé dans les paramètres du site et suivi ici.
+
+Ce qui reste propre à la rubrique :
+
+1. **Sa page.** Son code (le moteur de calcul, les questions, l'interface, près de 140 Ko) ne se charge que si on l'ouvre, au lieu de peser sur chaque visite du guide.
+2. **Ses trois vues**, en sous-onglets sous un fil « Budget › Épargne et retraite ».
+3. **Son assistant**, qui ne répond que sur l'épargne et la retraite, à partir de réponses écrites et sourcées.
+
+## Trois vues, et un assistant qui reste ouvert à côté
+
+1. **Vue d'ensemble.** Le plafond montré comme un mouvement, un chiffre calculé dès l'arrivée et qui ne suppose rien du lecteur, les quatre moments du dispositif, les trois conditions, six questions fréquentes.
 2. **Simulateur.** Quatre questions dont aucune n'est obligatoire, les plafonds ouverts, le mode d'obtention de chaque montant, l'économie par taux d'imposition en barres, et le cumul sur dix ans en courbes.
-3. **Questions.** Vingt-neuf questions écrites et sourcées, filtrables, groupées par thème.
+3. **Questions.** Les questions écrites et sourcées, filtrables, groupées par thème.
 
 **L'assistant n'est pas une destination, c'est un compagnon.** Il était un quatrième onglet, ce qui obligeait à quitter le simulateur pour poser une question, puis à y revenir pour vérifier. Il s'ouvre maintenant en volet, du haut au bas de l'écran, et reste ouvert pendant qu'on lit.
 
@@ -127,17 +132,11 @@ Deux règles tenues par des tests. **L'axe monte au palier rond juste au-dessus 
 
 Une nuance de tracé qui compte : les étiquettes de fin de courbe sont dans la couleur du texte, pas dans celle de leur série. La teinte la plus claire de l'échelle rend 1,9 sur blanc, illisible dès qu'elle sert à écrire. C'est le point coloré au bout de la ligne qui la relie à son étiquette.
 
-### 12. Le bouton de l'assistant n'a pas de texte, et s'anime trois fois
+### 12. L'assistant s'ouvre depuis la barre du site
 
-Une icône seule n'est comprise que si elle porte son nom autrement : le libellé vit dans `title` et `aria-label`, et `aria-expanded` dit si le volet est ouvert. Un bouton muet pour la souris comme pour un lecteur d'écran n'est pas un bouton, c'est une devinette.
+Depuis que la rubrique a rejoint le site, l'assistant s'ouvre par l'entrée « Assistant » de la barre, au même endroit et avec le même libellé que dans le guide, son point qui respire compris. Elle annonce par `aria-expanded` si le volet est ouvert, et le point cesse de respirer tant qu'il l'est : attirer vers un volet déjà devant soi n'attire vers rien.
 
-Deux étincelles disent l'aide automatique. **Elles ne promettent pas un modèle de langue**, et le volet dit dès sa première ligne qu'il n'y en a pas : l'icône nomme la fonction, la phrase dit comment elle marche, les deux ne se contredisent pas.
-
-Elles sont tracées en clair dans le bouton et non appelées par `<use>` comme le reste du jeu, pour une raison technique : ce qu'un `<use>` instancie vit dans un arbre fantôme, où une règle CSS de la page ne peut pas entrer pour animer une étincelle à la fois.
-
-**Une animation sert à attirer, donc elle ne sert qu'une fois.** Le halo joue à la toute première visite, quand personne ne sait encore qu'il y a un assistant, et jamais ensuite. Les étincelles ne répondent plus qu'au survol, qui est un geste volontaire et non un appel : elles rejouaient à chaque ouverture, ce qui n'attirait vers rien puisque le volet s'ouvrait déjà devant soi. Une animation permanente dans une barre fixe finit d'ailleurs par se voir en travaillant, et l'on ferme l'onglet.
-
-Trois chemins mènent au volet, et l'appel doit s'éteindre par les trois : le bouton, l'adresse `#assistant`, et un volet resté ouvert depuis la dernière visite. Il ne s'éteignait que par le premier, donc il revenait à chaque page pour qui passait par les autres. Il était aussi posé avant qu'on sache si le volet se rouvrait de lui-même, ce qui appelait le regard vers un volet déjà ouvert. Un test parcourt les trois chemins.
+Trois chemins mènent au volet : l'entrée de la barre, l'adresse `#assistant`, et un volet resté ouvert depuis la dernière visite. Un test parcourt les trois.
 
 ### 13. L'assistant renvoie à l'endroit exact de la page
 
@@ -191,15 +190,13 @@ La leçon vaut au-delà de ce point : **une page de vulgarisation officielle n'e
 
 ## La palette
 
-Couleurs et typographie relevées sur le site institutionnel du groupe, en mesurant les styles calculés de la page plutôt qu'en les estimant à l'œil : bleu `#2957c8`, marine `#01213c`, gris `#1a1d23` et `#67768e`, fonds `#f8f9fc` et `#eaeefa`, Barlow pour les titres, Inter pour le texte, rayons courts de 4 et 8 px.
+Celle du site Vivre au Luxembourg, recopiée dans `app/site.css` depuis `../app/styles.css` : changer une couleur du site veut dire la changer aux deux endroits.
 
-La reprise s'arrête là. **Aucun logo, aucun nom, aucune signature :** ce site traite un dispositif fiscal public, il ne doit passer pour la page officielle de personne. Le test cherche les noms d'assureurs dans tous les fichiers et échoue s'il en trouve un.
+Jusqu'au 12 octobre 2026, la rubrique portait sa propre charte, relevée sur un site institutionnel (bleu `#2957c8`, Barlow, rayons de 4 et 8 px). Elle a été abandonnée avec l'identité séparée. La règle qui l'accompagnait demeure : **aucun logo, aucun nom, aucune signature d'un organisme**, la rubrique traite un dispositif fiscal public et ne doit passer pour la page officielle de personne. Le test cherche les noms d'assureurs dans tous les fichiers et échoue s'il en trouve un.
 
-Un écart assumé par rapport à la charte relevée : **le gris a été assombri**, de `#67768e` à `#5f6d85`. Le gris d'origine rend 4,38 sur le fond de page et 3,97 sur le bleu clair, sous le seuil de 4,5 exigé pour du petit texte. Un test mesure le contraste de chaque texte visible sur son fond réel, sur les quatre vues.
+**Le gris secondaire passe le contraste partout.** `#636d7b` rend au moins 4,61 sur tous les fonds clairs, le bleu clair compris, au-dessus du seuil de 4,5 exigé pour du petit texte. Le gris d'origine du guide, `#6a7583`, tombait à 4,12 : il a été corrigé pour tout le site. Un test mesure le contraste de chaque texte visible sur son fond réel, sur les trois vues.
 
-Les graphiques utilisent une échelle séquentielle tirée de la même charte, `#a9bce9`, `#7c9ade`, `#2957c8`, `#041d58` : le taux le plus élevé porte la couleur la plus dense, ce qui se lit sans légende.
-
-**Un seul thème.** Il n'y a pas de mode sombre, et donc pas de sélecteur : la palette est bâtie pour le blanc, et deux thèmes veulent dire deux fois les réglages de contraste à tenir pour un site de démonstration qui se lit de jour.
+**Les graphiques suivent le thème.** Leur échelle séquentielle vient des jetons `--serie-1` à `--serie-4`, ancrés sur l'accent : le taux le plus élevé porte la couleur la plus dense, ce qui se lit sans légende. En thème sombre, l'échelle s'inverse en luminosité, et la couleur la plus dense devient la plus claire.
 
 ---
 

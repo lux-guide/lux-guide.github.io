@@ -247,21 +247,15 @@
 
   // ---------- Navigation ----------
 
-  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "avantages", "carte", "lignes", "cartes", "assistant", "admin"];
+  var PANNEAUX = ["accueil", "fiches", "parcours", "faq", "simulateur", "comparateur", "avantages", "carte", "lignes", "cartes", "jeux", "assistant", "admin"];
 
   var pagePrecedente = null;
 
-  // La barre d'onglets tient sur une ligne et defile quand la fenetre est
-  // etroite. On signale par un fondu qu'il reste des onglets a gauche ou a
-  // droite, sinon on croit la liste terminee.
-  function majDefilementOnglets() {
-    var nav = $("#tabs");
-    if (!nav) return;
-    var reste = nav.scrollWidth - nav.clientWidth;
-    if (reste <= 2) { nav.removeAttribute("data-defile"); return; }
-    var g = nav.scrollLeft > 2, d = nav.scrollLeft < reste - 2;
-    nav.setAttribute("data-defile", g && d ? "deux" : (g ? "gauche" : "droite"));
-  }
+  // La barre, ses menus, leur clavier et leur fondu de defilement sont communs
+  // a tout le site et vivent dans app/entete.js. Le guide n'en garde que ce qui
+  // lui est propre : ouvrir un panneau et marquer la section ouverte.
+  function majDefilementOnglets() { if (window.Entete) window.Entete.majDefilement(); }
+  function fermerMenus(sauf) { if (window.Entete) window.Entete.fermerMenus(sauf); }
 
   // Une animation de defilement n'est pas un ornement pour tout le monde :
   // certains la ressentent physiquement. On la coupe quand le systeme le demande.
@@ -286,95 +280,12 @@
     if (b && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest", behavior: doux() });
   }
 
-  // ----- Menus de familles -----
-
-  function menuDe(b) { return document.getElementById(b.getAttribute("aria-controls")); }
-
-  function fermerMenus(sauf) {
-    $$("#tabs .grp-btn").forEach(function (b) {
-      if (b === sauf) return;
-      b.setAttribute("aria-expanded", "false");
-      var m = menuDe(b);
-      if (m) m.hidden = true;
-    });
-  }
-
-  // Place fixe : la bande de sections defile horizontalement sur telephone, et
-  // un menu pose dedans y serait coupe. On le colle sous son bouton, sans le
-  // laisser sortir de l'ecran par la droite.
-  function placerMenu(b, m) {
-    var r = b.getBoundingClientRect();
-    m.style.top = Math.round(r.bottom + 7) + "px";
-    m.style.left = "0px";
-    var g = Math.min(r.left, window.innerWidth - m.offsetWidth - 10);
-    m.style.left = Math.round(Math.max(8, g)) + "px";
-  }
-
-  function ouvrirMenu(b) {
-    var m = menuDe(b);
-    if (!m) return;
-    fermerMenus(b);
-    m.hidden = false;
-    b.setAttribute("aria-expanded", "true");
-    placerMenu(b, m);
-  }
-
-  function basculerMenu(b) {
-    if (b.getAttribute("aria-expanded") === "true") fermerMenus();
-    else ouvrirMenu(b);
-  }
-
   function initOnglets() {
     // Entrees directes et entrees de menu portent toutes data-panel.
     $$("#tabs [data-panel]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.panel); });
     });
 
-    $$("#tabs .grp-btn").forEach(function (b) {
-      b.addEventListener("click", function () { basculerMenu(b); });
-      // Fleche bas : le menu s'ouvre et le premier choix prend le focus, comme
-      // partout ailleurs. C'est la seule touche que ce bouton doit connaitre.
-      b.addEventListener("keydown", function (e) {
-        if (e.key !== "ArrowDown") return;
-        e.preventDefault();
-        ouvrirMenu(b);
-        var premier = $("[data-panel], [data-lien]", menuDe(b));
-        if (premier) premier.focus();
-      });
-    });
-
-    // Dans un menu ouvert, les fleches circulent et Echap revient au bouton.
-    $$("#tabs .menu").forEach(function (m) {
-      m.addEventListener("keydown", function (e) {
-        var b = $(".grp-btn", m.parentNode);
-        if (e.key === "Escape" || e.key === "Tab") {
-          fermerMenus();
-          if (e.key === "Escape" && b) { b.focus(); e.preventDefault(); }
-          return;
-        }
-        var items = $$("[data-panel], [data-lien]", m);
-        var i = items.indexOf(document.activeElement);
-        if (i === -1) return;
-        var j = null;
-        if (e.key === "ArrowDown") j = (i + 1) % items.length;
-        else if (e.key === "ArrowUp") j = (i - 1 + items.length) % items.length;
-        else if (e.key === "Home") j = 0;
-        else if (e.key === "End") j = items.length - 1;
-        if (j === null) return;
-        e.preventDefault();
-        items[j].focus();
-      });
-    });
-
-    // Un clic ailleurs, Echap, un defilement ou un redimensionnement referment
-    // le menu : il est place a la main, il ne suivrait pas la page.
-    document.addEventListener("click", function (e) {
-      var t = e.target;
-      if (t && t.closest && t.closest("#tabs .grp")) return;
-      fermerMenus();
-    });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerMenus(); });
-    window.addEventListener("resize", function () { fermerMenus(); });
     // Boutons d'appel a l'action de la page d'accueil
     $$("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { ouvrir(b.dataset.go); });
@@ -385,26 +296,6 @@
     // L'administration n'est pas une section du guide, c'est un outil.
     var adm = $("#admin-btn");
     if (adm) adm.addEventListener("click", function () { ouvrir("admin"); });
-
-    var nav = $("#tabs");
-    if (!nav) return;
-    nav.addEventListener("scroll", majDefilementOnglets, { passive: true });
-    window.addEventListener("resize", majDefilementOnglets);
-    // Le defilement de la page ne ferme pas les menus : l'en-tete est fixe, le
-    // menu reste sous son bouton. Seul le defilement horizontal de la bande
-    // les deplace, et donc les ferme.
-    nav.addEventListener("scroll", function () { fermerMenus(); }, { passive: true });
-
-    // La molette verticale fait defiler la bande a la souris, ou le geste
-    // horizontal n'existe pas.
-    nav.addEventListener("wheel", function (e) {
-      if (nav.scrollWidth <= nav.clientWidth + 2) return;
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-      nav.scrollLeft += e.deltaY;
-      e.preventDefault();
-    }, { passive: false });
-
-    majDefilementOnglets();
   }
 
   function ouvrir(nom, sansHash) {

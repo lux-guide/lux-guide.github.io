@@ -1,0 +1,238 @@
+/* En-tete commune du site Vivre au Luxembourg : l'apparence de la barre, de
+   ses entrees, de ses menus et de ses outils. Elle sert toutes les pages, et
+   va avec app/entete.js, qui ecrit la barre. La place de la barre (fixe, ou
+   collante dans une page a volet) est decidee par la feuille de chaque page.
+
+   Une entree est un bouton dans le guide, qui ouvre un panneau, et un lien
+   dans une rubrique a part, qui mene au guide : les deux se ressemblent. */
+
+header.top {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: saturate(190%) blur(18px);
+  -webkit-backdrop-filter: saturate(190%) blur(18px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+a.brand, a.outil, nav.tabs > a.entree { text-decoration: none; }
+nav.tabs > a.entree { display: inline-flex; align-items: center; gap: 7px; }
+
+/* L'en-tete tient sur une seule ligne a toutes les largeurs. Rien n'y passe
+   jamais a la ligne : une barre sur deux ou trois lignes deplace le contenu de
+   la page a chaque redimensionnement.
+
+   Les sections sont dix, et dix noms alignes ne se lisent plus : on les
+   parcourt tous avant d'en choisir un. Elles sont donc rangees en trois
+   familles derriere un menu, ce qui laisse cinq entrees dans la barre. Le menu
+   a la place d'ecrire ce que contient chaque section, ce que l'onglet nu ne
+   pouvait pas faire.
+
+   Le nom du guide tient sur deux lignes dans son cartouche et ne disparait a
+   aucune largeur. En dessous de 560 px environ, la bande de sections defile,
+   avec un fondu du cote ou il en reste : c'est le geste attendu au doigt.
+
+   La hauteur de l'en-tete ne varie qu'entre paliers, jamais a l'interieur :
+   un en-tete colle qui change de hauteur fait sauter le contenu. */
+
+:root { --h-top: 68px; }
+
+.top-in {
+  max-width: var(--max); margin: 0 auto;
+  height: var(--h-top);
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+  display: flex; align-items: center; gap: 18px; flex-wrap: nowrap;
+}
+
+.brand {
+  font-family: var(--serif); font-size: 21px; letter-spacing: -.1px;
+  display: flex; align-items: center; gap: 11px; white-space: nowrap;
+  flex: none; min-width: 0;
+  border: 0; background: none; color: inherit; padding: 0; cursor: pointer;
+  border-radius: 12px;
+}
+/* Le nom du guide dit exactement ce qu'il est, et n'a donc rien a expliquer.
+   Son seul defaut etait sa longueur sur une ligne : 223 px, qui disparaissaient
+   des qu'une fenetre se resserrait. Il tient sur deux lignes dans un cartouche,
+   comme le fait un titre de collection : 118 px au lieu de 223, et il n'a plus
+   jamais besoin de disparaitre. */
+.brand-lock {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px; min-width: 0; line-height: 1;
+}
+.brand-txt {
+  font-size: 19px; letter-spacing: -.2px; line-height: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.brand-desc {
+  font-family: var(--sans); font-size: 9.5px; font-weight: 620;
+  letter-spacing: 1.7px; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap; line-height: 1;
+  transition: color .16s;
+}
+.brand:hover .brand-desc { color: var(--accent); }
+/* La marque etait une pastille en degrade bleu-cyan-violet avec une ombre
+   coloree : trois couleurs et un halo pour un objet de 32 px, c'est le style
+   des applications de 2019. Un aplat de la couleur d'accent, un angle plus
+   ferme et aucune ombre portee tiennent mieux, et laissent la typographie
+   porter le nom. */
+.brand .mark {
+  width: 32px; height: 32px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; color: var(--surface);
+  background: var(--accent);
+  transition: background .18s, transform .18s cubic-bezier(.2,.7,.2,1);
+}
+.brand .mark svg { width: 18px; height: 18px; display: block; }
+.brand:hover .mark { background: var(--text); transform: translateY(-1px); }
+
+/* Outils : ils ne sont pas des sections du guide, ils ne sont donc pas des
+   onglets. Le reglage du theme et l'administration du contenu vivent ensemble
+   a droite, en icones. */
+.top-outils { display: flex; align-items: center; gap: 6px; flex: none; margin-left: 6px; }
+.outil {
+  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
+  width: 34px; height: 34px; border-radius: 10px; cursor: pointer; flex: none;
+  display: grid; place-items: center; font-size: 15px; line-height: 1; padding: 0;
+  transition: color .16s, border-color .16s, background .16s;
+}
+.outil svg { width: 17px; height: 17px; display: block; }
+.outil:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.outil[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+nav.tabs {
+  display: flex; gap: 2px; flex-wrap: nowrap; margin-left: auto;
+  flex: 0 1 auto; min-width: 0; align-self: stretch; align-items: center;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity; scroll-padding-inline: 28px;
+}
+nav.tabs::-webkit-scrollbar { height: 0; width: 0; }
+/* Fondu aux bords quand des onglets sortent du cadre : on voit qu'il y a
+   la suite. L'attribut est pose par nav.js au chargement et au defilement. */
+nav.tabs[data-defile="droite"] {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+}
+nav.tabs[data-defile="gauche"] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 26px);
+}
+nav.tabs[data-defile="deux"] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+}
+nav.tabs button, nav.tabs > a.entree {
+  border: 0; background: none; color: var(--muted); position: relative;
+  padding: 9px 14px; border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: 14.5px; font-weight: 500;
+  flex: none; white-space: nowrap; scroll-snap-align: center;
+  transition: color .18s, background .18s;
+}
+nav.tabs button:hover, nav.tabs > a.entree:hover { color: var(--text); background: var(--surface-2); }
+nav.tabs button[aria-current="page"],
+nav.tabs button.grp-btn.actif {
+  color: var(--accent); font-weight: 600; background: var(--accent-soft);
+}
+
+/* Familles de sections. Le chevron dit qu'il y a un menu dessous, et il
+   pivote quand il est ouvert : sans ce signe, un bouton qui n'ouvre pas la
+   page qu'on attend se lit comme une panne. */
+.grp { position: relative; flex: none; display: flex; align-items: center; }
+nav.tabs button.grp-btn { display: inline-flex; align-items: center; gap: 7px; }
+.chev {
+  width: 7px; height: 7px; flex: none; opacity: .6;
+  border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); transition: transform .18s;
+}
+nav.tabs button.grp-btn[aria-expanded="true"] .chev { transform: translateY(1px) rotate(225deg); }
+
+/* Le menu est en position fixe et non absolue : la bande de sections defile
+   horizontalement sur telephone, un menu pose dedans y serait coupe. Sa place
+   exacte est calculee a l'ouverture, sous le bouton de sa famille. */
+.menu {
+  position: fixed; z-index: 70; min-width: 264px; max-width: min(92vw, 380px);
+  background: var(--surface); border: 1px solid var(--border-fort);
+  border-radius: 15px; box-shadow: 0 14px 38px rgba(11, 15, 22, .17);
+  padding: 6px; display: grid; gap: 2px;
+}
+.menu[hidden] { display: none; }
+nav.tabs .menu a { text-decoration: none; font: inherit; }
+nav.tabs .menu button, nav.tabs .menu a {
+  display: block; width: 100%; text-align: left; white-space: normal;
+  padding: 9px 11px; border-radius: 11px; color: var(--text-2);
+  scroll-snap-align: none;
+}
+nav.tabs .menu button b, nav.tabs .menu a b { display: block; font-size: 14.5px; font-weight: 600; color: var(--text); }
+nav.tabs .menu button i, nav.tabs .menu a i {
+  display: block; font-style: normal; font-size: 12.5px; line-height: 1.4;
+  color: var(--muted); margin-top: 2px;
+}
+nav.tabs .menu button:hover, nav.tabs .menu a:hover,
+nav.tabs .menu a:focus-visible { background: var(--surface-2); }
+nav.tabs .menu button[aria-current="page"] { background: var(--accent-soft); }
+nav.tabs .menu button[aria-current="page"] b { color: var(--accent); }
+
+/* L'assistant n'est pas une page de plus, c'est quelqu'un qui attend. Un point
+   qui respire le signale, discretement : pas de couleur criarde, pas de
+   mouvement dans le texte, et rien du tout si le systeme demande le calme. */
+nav.tabs button.tab-assistant { display: inline-flex; align-items: center; gap: 7px; }
+.tab-pt {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--accent-2, var(--accent));
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2, var(--accent)) 55%, transparent);
+  animation: respire 2.8s ease-in-out infinite;
+}
+@keyframes respire {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2, var(--accent)) 50%, transparent); }
+  50%      { transform: scale(1.18); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent-2, var(--accent)) 0%, transparent); }
+}
+nav.tabs button.tab-assistant[aria-selected="true"] .tab-pt { animation: none; transform: scale(1); }
+@media (prefers-reduced-motion: reduce) { .tab-pt { animation: none; } }
+
+.brand:focus-visible, nav.tabs button:focus-visible, .outil:focus-visible { outline-offset: 3px; }
+
+/* L'assistant d'une rubrique s'ouvre en volet, sans changer de page : son
+   bouton reste marque tant que le volet est ouvert. */
+nav.tabs button.tab-assistant[aria-expanded="true"] {
+  color: var(--accent); font-weight: 600; background: var(--accent-soft);
+}
+nav.tabs button.tab-assistant[aria-expanded="true"] .tab-pt { animation: none; }
+
+/* Palier 2 : les sections se resserrent. Le nom du site reste, il n'a pas
+   besoin de disparaitre ici, c'est la respiration des onglets qui manque. */
+@media (max-width: 1099px) {
+  :root { --h-top: 62px; }
+  .top-in { gap: 12px; }
+  nav.tabs button, nav.tabs > a.entree { padding: 8px 11px; font-size: 13.5px; }
+  .top-outils { margin-left: 2px; }
+}
+
+/* Le cartouche tient partout : le nom complet ne disparait a aucune largeur,
+   et le logo ne se reduit jamais a une marque muette. */
+@media (max-width: 1039px) {
+  :root { --h-top: 60px; }
+  .brand .mark { width: 30px; height: 30px; }
+  .brand .mark svg { width: 18px; height: 18px; }
+  .brand-txt { font-size: 17.5px; }
+  .brand-desc { font-size: 9px; letter-spacing: 1.5px; }
+}
+
+/* Palier 3 : l'en-tete se resserre encore, ce qui garde les huit sections
+   visibles jusque vers 760 px au lieu de 790. Les marges suivent l'encoche en
+   paysage. Ce palier ne concerne que l'en-tete : la mise en page du contenu a
+   son propre seuil plus bas, une tablette de 780 px n'est pas un telephone. */
+@media (max-width: 879px) {
+  .top-in {
+    gap: 10px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+  nav.tabs { margin-left: 8px; }
+  nav.tabs button, nav.tabs > a.entree { padding: 8px 8px; }
+  .top-outils { gap: 5px; margin-left: 0; }
+}
+
+@media (pointer: coarse) {
+  nav.tabs button, nav.tabs > a.entree { min-height: 44px; }
+  .outil { width: 42px; height: 42px; }
+  .brand .mark { width: 34px; height: 34px; }
+}

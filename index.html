@@ -4,102 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=43">
+<link rel="stylesheet" href="app/styles.css?v=44">
 <link rel="stylesheet" href="app/guide.css?v=3">
+<link rel="stylesheet" href="app/entete.css?v=1">
 </head>
 <body>
 
-<header class="top">
-  <div class="top-in">
-    <button class="brand" id="brand" title="Vivre au Luxembourg. Revenir à l'accueil" aria-label="Vivre au Luxembourg, revenir à l'accueil">
-      <!-- Une boussole : s'orienter, etre guide. La maison disait « s'installer »,
-           et le site parle maintenant de toute la vie ici. Le blason de l'Etat
-           a ete ecarte : l'article 232bis du Code penal en reserve l'usage
-           professionnel ou publicitaire a une autorisation du gouvernement, et
-           il ferait passer le site pour une page officielle. -->
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" focusable="false">
-          <circle cx="12" cy="12" r="9"/>
-          <path d="M15.6 8.4 13.4 13.4 8.4 15.6 10.6 10.6z" fill="currentColor"/>
-        </svg>
-      </span>
-      <span class="brand-lock">
-        <span class="brand-txt">Vivre</span>
-        <span class="brand-desc">au Luxembourg</span>
-      </span>
-    </button>
-    <!-- Dix sections alignees, c'etait une liste a lire en entier avant de
-         choisir. Elles sont rangees en trois familles : ce qu'il faut savoir,
-         ce que ca coute, ou habiter. L'accueil et l'assistant restent directs,
-         ce sont les deux entrees qu'on prend sans reflechir. -->
-    <nav class="tabs" id="tabs" aria-label="Sections du guide">
-      <button id="tab-accueil" data-panel="accueil" aria-controls="panel-accueil">Accueil</button>
-
-      <div class="grp">
-        <button class="grp-btn" id="grp-guide" aria-haspopup="true" aria-expanded="false" aria-controls="menu-guide">Guide d'installation<span class="chev" aria-hidden="true"></span></button>
-        <div class="menu" id="menu-guide" role="menu" aria-labelledby="grp-guide" hidden>
-          <button role="menuitem" id="tab-fiches" data-panel="fiches" aria-controls="panel-fiches">
-            <b id="nom-fiches">Fiches pratiques</b><i>Chaque fiche est autonome, avec ses sources officielles</i>
-          </button>
-          <button role="menuitem" id="tab-parcours" data-panel="parcours" aria-controls="panel-parcours">
-            <b id="nom-parcours">Parcours d'installation</b><i>Les démarches dans l'ordre, celles qui conditionnent les autres d'abord</i>
-          </button>
-          <button role="menuitem" id="tab-faq" data-panel="faq" aria-controls="panel-faq">
-            <b id="nom-faq">Questions et réponses</b><i>Toutes les questions recensées, chaque réponse adossée à une fiche</i>
-          </button>
-        </div>
-      </div>
-
-      <div class="grp">
-        <button class="grp-btn" id="grp-budget" aria-haspopup="true" aria-expanded="false" aria-controls="menu-budget">Budget<span class="chev" aria-hidden="true"></span></button>
-        <div class="menu" id="menu-budget" role="menu" aria-labelledby="grp-budget" hidden>
-          <button role="menuitem" id="tab-simulateur" data-panel="simulateur" aria-controls="panel-simulateur">
-            <b id="nom-simulateur">Simulateur</b><i>Salaire net, capacité d'emprunt, classe d'impôt</i>
-          </button>
-          <button role="menuitem" id="tab-comparateur" data-panel="comparateur" aria-controls="panel-comparateur">
-            <b id="nom-comparateur">Comparateur</b><i>Habitation, auto, mobile et électricité, critère par critère</i>
-          </button>
-          <button role="menuitem" id="tab-avantages" data-panel="avantages" aria-controls="panel-avantages">
-            <b id="nom-avantages">Économies et avantages fiscaux</b><i>Ce que l'État rend ou ne prélève pas, et s'il faut le demander</i>
-          </button>
-          <!-- Un lien et non une section : l'epargne et la retraite ont leurs
-               propres pages. data-lien le fait entrer dans la navigation au
-               clavier du menu, comme les sections. -->
-          <a role="menuitem" data-lien href="prevoyance/">
-            <b>Épargne et retraite</b><i>La déduction 111bis et les autres postes, chiffrée sur votre situation</i>
-          </a>
-        </div>
-      </div>
-
-      <div class="grp">
-        <button class="grp-btn" id="grp-lieu" aria-haspopup="true" aria-expanded="false" aria-controls="menu-lieu">Où habiter<span class="chev" aria-hidden="true"></span></button>
-        <div class="menu" id="menu-lieu" role="menu" aria-labelledby="grp-lieu" hidden>
-          <button role="menuitem" id="tab-carte" data-panel="carte" aria-controls="panel-carte">
-            <b id="nom-carte">Comparer des logements</b><i>Écoles, crèches et transports autour de chaque adresse</i>
-          </button>
-          <button role="menuitem" id="tab-lignes" data-panel="lignes" aria-controls="panel-lignes">
-            <b id="nom-lignes">Bus, tram et train</b><i>Les arrêts d'où l'on rejoint le travail sans changement</i>
-          </button>
-          <button role="menuitem" id="tab-cartes" data-panel="cartes" aria-controls="panel-cartes">
-            <b id="nom-cartes">Les communes, chiffre par chiffre</b><i>Loyers, salaires, écoles et nationalités, au Luxembourg et chez les trois voisins</i>
-          </button>
-        </div>
-      </div>
-
-      <button id="tab-assistant" data-panel="assistant" aria-controls="panel-assistant" class="tab-assistant">
-        <span class="tab-pt" aria-hidden="true"></span>Assistant
-      </button>
-    </nav>
-    <div class="top-outils">
-      <button id="admin-btn" class="outil" data-panel="admin" title="Paramètres" aria-label="Paramètres">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">
-          <circle cx="12" cy="12" r="3.1"/>
-          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.56-1.1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6h.08A1.7 1.7 0 0 0 10.13 3V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.05 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.08a1.7 1.7 0 0 0 1.56 1.05H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</header>
+<!-- La barre, ses menus et leur comportement sont communs a tout le site :
+     app/entete.js les ecrit ici, avant que les autres scripts ne les cherchent. -->
+<header class="top" id="entete" data-racine=""></header>
+<script src="app/entete.js?v=2"></script>
 
 <main>
 
@@ -752,6 +666,9 @@
   </section>
 
   <!-- Lignes : tout ce qui arrive a une adresse sans changement -->
+  <!-- Où jouer : le module app/jeux.js écrit ce panneau au premier affichage. -->
+  <section class="panel" role="region" aria-label="Où jouer avec les enfants" id="panel-jeux" hidden></section>
+
   <section class="panel" role="region" aria-labelledby="nom-lignes" id="panel-lignes" hidden>
     <h1>Chercher un logement sur une ligne de bus, de tram ou de train</h1>
     <p class="lead">
@@ -1120,9 +1037,10 @@
 <script src="comparateur/offres_kb.js?v=39"></script>
 <script src="app/chat.js?v=39"></script>
 <script src="app/avantages.js?v=2"></script>
-<script src="app/ui.js?v=43"></script>
+<script src="app/ui.js?v=45"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=14"></script>
+<script src="app/jeux.js?v=1"></script>
 <script src="app/communaute.js?v=39"></script>
 <script src="app/communaute.js"></script>
 </body>

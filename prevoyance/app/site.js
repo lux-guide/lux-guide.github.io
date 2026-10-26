@@ -155,10 +155,14 @@
     return e;
   }
 
-  // Une echelle sequentielle tiree de la charte, du plus clair au plus fonce :
-  // le taux le plus eleve porte la couleur la plus dense, ce qui se lit sans
-  // legende.
-  var TEINTES = ["#a9bce9", "#7c9ade", "#2957c8", "#041d58"];
+  // Une echelle sequentielle, du plus clair au plus dense : le taux le plus
+  // eleve porte la couleur la plus dense, ce qui se lit sans legende. Elle vient
+  // des jetons --serie-1 a --serie-4 de la feuille, pour suivre le theme du
+  // site : en sombre, la couleur la plus dense est la plus claire.
+  function teinte(i) {
+    var s = getComputedStyle(document.documentElement);
+    return s.getPropertyValue("--serie-" + (i % 4 + 1)).trim() || "#0a4fa8";
+  }
 
   // Un axe qui monte jusqu'au maximum exact donne des graduations illisibles
   // (3 217, 6 434...). On arrondit vers le haut au pas rond superieur.
@@ -193,7 +197,7 @@
       var l = Math.min(74, large * 0.5);
       var x = mg + large * i + (large - l) / 2;
       s.appendChild(n("rect", { x: x, y: y(v), width: l, height: Math.max(1, y(0) - y(v)),
-                                rx: 3, fill: TEINTES[i % TEINTES.length] }));
+                                rx: 3, fill: teinte(i) }));
       s.appendChild(n("text", { x: x + l / 2, y: y(v) - 9, class: "g-lab g-val" }, eur(v)));
       s.appendChild(n("text", { x: x + l / 2, y: H - 11, class: "g-lab" }, libelles[i]));
     });
@@ -222,10 +226,10 @@
 
     series.forEach(function (se, k) {
       var d = se.map(function (v, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
-      s.appendChild(n("path", { d: d, fill: "none", stroke: TEINTES[k % TEINTES.length],
+      s.appendChild(n("path", { d: d, fill: "none", stroke: teinte(k),
                                 "stroke-width": 2.4, "stroke-linecap": "round", "stroke-linejoin": "round" }));
       var fin = se[se.length - 1];
-      s.appendChild(n("circle", { cx: x(ans - 1), cy: y(fin), r: 3.4, fill: TEINTES[k % TEINTES.length] }));
+      s.appendChild(n("circle", { cx: x(ans - 1), cy: y(fin), r: 3.4, fill: teinte(k) }));
       // L'etiquette reste dans la couleur du texte : la teinte la plus claire
       // de l'echelle rend 1.9 sur blanc, illisible des qu'elle sert a ecrire.
       // C'est le point qui relie la ligne a son etiquette, pas la couleur des

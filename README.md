@@ -47,6 +47,24 @@ Le serveur lit `API_KEY`, `BASE_URL` et `MODEL_CHAT` dans le `.env` à la racine
 
 ---
 
+## Une barre pour tout le site
+
+La barre n'est écrite dans aucune page. `app/entete.js` l'écrit depuis une seule liste d'entrées, avec ses trois familles et leurs menus, et porte son comportement : ouverture des menus, clavier, fondu quand elle défile, molette. `app/entete.css` porte son apparence. Ajouter ou renommer une entrée se fait donc à un seul endroit, et vaut pour toutes les pages.
+
+Chaque page dit à la barre où elle se trouve, par les attributs de `<header id="entete">` :
+
+1. **Le guide** (`data-racine=""`) est une application à panneaux : ses entrées sont des boutons, que `ui.js` relie à ses panneaux.
+2. **Une rubrique dans sa propre page**, comme Épargne et retraite (`data-racine="../" data-courant="epargne" data-assistant="panneau"`), reçoit les mêmes entrées en liens vers le guide, `../#fiches` par exemple. Sa famille et son entrée sont marquées, et l'entrée Assistant ouvre l'assistant de la rubrique.
+
+Une rubrique vit dans sa propre page quand son code est lourd et ne sert qu'à elle : il ne se charge alors que si on l'ouvre. La place de la barre reste l'affaire de chaque page, fixe dans le guide, collante en haut de la colonne dans une page à volet.
+
+```bash
+python -m http.server 8941 --directory lux_guide
+python lux_guide/test_entete.py
+```
+
+---
+
 ## Ce que contient l'application
 
 Les sections sont dix, et dix noms alignés dans une barre ne se lisent plus : on les
@@ -189,13 +207,26 @@ Trois autres paliers de mise en page :
 
 Règle tenue partout : aucun élément ne pousse la page horizontalement. Ce qui est plus large que l'écran défile à l'intérieur de son conteneur.
 
-Une copie statique de démonstration est publiée sur https://lux-guide.github.io (dépôt `lux-guide/lux-guide.github.io`). Ce dossier fait foi : on modifie ici, puis on recopie `index.html`, `app/`, `assets/` et `comparateur/` dans le dépôt de démo.
+## Où vit le site, et comment il se publie
 
-Trois choses ne se recopient jamais, et la raison n'est pas la même :
+Ce dossier, `foyer/lux_guide`, est la source. Le site public https://lux-guide.github.io (dépôt `lux-guide/lux-guide.github.io`) n'en est qu'une copie, et **ce dépôt publié ne se modifie jamais à la main**. On modifie ici, on commite, puis :
 
-1. `server/`, qui est un serveur de développement et n'a rien à faire sur un site statique.
-2. `comparateur/gen_contrats_kb.py` et `comparateur/gen_mrh_kb.py`, qui portent en clair la table de correspondance entre les assureurs anonymisés et leurs vrais noms. Les publier annulerait l'anonymisation que le reste du travail respecte. C'est le point à vérifier après chaque synchronisation en miroir, qui les emporterait sinon avec le reste du dossier.
-3. Le second site, `prevoyance/`, qui vit à côté du guide dans le dépôt et se recopie séparément dans `prevoyance/` du dépôt de démo. Une synchronisation en miroir de la racine l'effacerait s'il n'était pas exclu.
+```bash
+python lux_guide/publier.py --essai   # montre ce qui changerait en ligne, ne pousse rien
+python lux_guide/publier.py           # publie
+```
+
+Le script recopie la version commitée de ce dossier, pas le disque, dans le clone du dépôt publié posé à côté de `foyer`, puis commite et pousse. Un fichier retiré ici disparaît aussi en ligne. Il refuse de partir si ce dossier a du travail non commité, ou si le clone porte une modification faite à la main.
+
+Entre le 13 septembre et le 12 octobre 2026, le site a été modifié directement dans le dépôt publié, et cette source a pris plusieurs centaines de lignes de retard. Elle l'a rattrapé le 12 octobre, et le ticket qui décrivait l'écart est fermé, `_tickets/done/2026-09-18-copie-du-guide-dans-foyer.md`.
+
+Ce qui ne se publie jamais, et pourquoi :
+
+1. **Tous les scripts Python**, dont `comparateur/gen_contrats_kb.py` et `comparateur/gen_mrh_kb.py`, qui portent en clair la table de correspondance entre les assureurs anonymisés et leurs vrais noms. Les publier annulerait l'anonymisation que le reste du travail respecte. Les générateurs des cartes et des lignes restent ici pour la même raison de principe : un site public porte le site, pas ce qui le fabrique.
+2. `server/`, le serveur de développement.
+3. `_tickets/` et `SUITE.md`, le suivi du travail.
+
+L'épargne-retraite vit dans `prevoyance/`, sous ce dossier, exactement comme en ligne : `https://lux-guide.github.io/prevoyance/`. Elle se publie avec le reste.
 
 ---
 
@@ -668,9 +699,12 @@ le 3 octobre 2026 : « Immatriculer son véhicule ».
 
 ```
 lux_guide/
-  index.html            page unique
+  index.html            la page du guide, une application a panneaux
+  prevoyance/           la rubrique Epargne et retraite, dans sa propre page (son README)
   assets/               photographies sous licence libre, et CREDITS.json
   app/
+    entete.js           la barre du site, ses menus et leur comportement, pour toutes les pages
+    entete.css          son apparence
     bareme.js           barème officiel ACD, extrait de la source
     kb.js               base de connaissances, fiches et questions
     fiches/             fiches guidées, une par fichier, reprises par kb.js
@@ -679,14 +713,16 @@ lux_guide/
     communaute.js       astuces de la communauté, autonome, une entrée par fiche
     simulateur.js       calcul du net et de la capacité d'emprunt
     chat.js             profil, recherche, appel au modèle
-    ui.js               rendu, comparateur, carte, widget, administration
-    styles.css          thème clair et sombre
+    ui.js               rendu des panneaux, comparateur, carte, widget, administration
+    styles.css          thème clair et sombre, mise en page du guide
   comparateur/
     contrats_kb.js      verdicts par sinistre, généré depuis le dépôt rag
     mrh_kb.js           matrice de couverture, constats, situations, généré aussi
     offres_kb.js        comparaisons de démonstration (auto, télécom, électricité)
   server/
     server.js           serveur statique et relais vers le modèle
+  publier.py            recopie la version commitée vers le site public
+  test_entete.py        la même barre, et le même comportement, sur le guide et la rubrique
 ```
 
 ---
