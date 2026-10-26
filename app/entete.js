@@ -24,6 +24,9 @@
   // coute, ou habiter. L'accueil et l'assistant restent directs, ce sont les
   // deux entrees qu'on prend sans reflechir. Le menu a la place d'ecrire ce que
   // contient chaque section, ce que l'onglet nu ne pouvait pas faire.
+  // « Où vivre » et non « Où habiter » : la famille tenait déjà les cartes du
+  // pays, elle tient aussi ce qu'on y fait une fois installé. Une famille de
+  // plus pour une seule entrée aurait allongé la barre sans rien ranger.
   var FAMILLES = [
     { id: "guide", libelle: "Guide d'installation", items: [
       { panneau: "fiches", nom: "Fiches pratiques", aide: "Chaque fiche est autonome, avec ses sources officielles" },
@@ -38,13 +41,11 @@
       // charge que si on l'ouvre.
       { rubrique: "epargne", page: "prevoyance/", nom: "Épargne et retraite", aide: "La déduction 111bis et les autres postes, chiffrée sur votre situation" }
     ] },
-    { id: "lieu", libelle: "Où habiter", items: [
+    { id: "lieu", libelle: "Où vivre", items: [
       { panneau: "carte", nom: "Comparer des logements", aide: "Écoles, crèches et transports autour de chaque adresse" },
       { panneau: "lignes", nom: "Bus, tram et train", aide: "Les arrêts d'où l'on rejoint le travail sans changement" },
-      { panneau: "cartes", nom: "Les communes, chiffre par chiffre", aide: "Loyers, salaires, écoles et nationalités, au Luxembourg et chez les trois voisins" }
-    ] },
-    { id: "enfants", libelle: "Enfants", items: [
-      { panneau: "jeux", nom: "Où jouer", aide: "Les aires de jeux couvertes, filtrées par l'âge de l'enfant" }
+      { panneau: "cartes", nom: "Les communes, chiffre par chiffre", aide: "Loyers, salaires, écoles et nationalités, au Luxembourg et chez les trois voisins" },
+      { panneau: "jeux", nom: "Où jouer avec les enfants", aide: "Aires de jeux couvertes et parcs, filtrés par l'âge de l'enfant" }
     ] }
   ];
 
