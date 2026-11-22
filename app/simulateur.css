@@ -1,0 +1,110 @@
+/* La rubrique Simulateurs : sa tête, et le parcours de la capacité d'emprunt.
+   Les jetons, les cartes, les champs et les chiffres viennent de styles.css ;
+   cette feuille ne porte que ce qui est propre à la rubrique.
+
+   Le principe de la tête : un outil ouvert doit montrer son premier champ sans
+   défiler, à 1271 x 637. Le titre, la rangée d'onglets, puis l'outil. */
+
+/* ---------- La tête ---------- */
+.sim-tete {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 4px 24px; margin: 0 0 14px;
+}
+.sim-tete h1 { margin: 0; font-size: clamp(30px, 3.6vw, 42px); }
+.sim-note { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* Le choix de l'outil : une barre d'onglets soulignée, pas des boîtes. La frise
+   des étapes, juste dessous, est faite de boîtes : deux rangées de boîtes de
+   suite se lisaient comme une seule grille. Ce que fait chaque outil se lit
+   dans son infobulle, et dans l'outil une fois ouvert. */
+.sim-choix {
+  display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 0 18px; border-bottom: 1px solid var(--border-fort);
+}
+.sim-choix::-webkit-scrollbar { display: none; }
+.sim-choix button {
+  font: inherit; cursor: pointer; white-space: nowrap;
+  padding: 9px 16px 11px; margin-bottom: -1px;
+  border: 0; border-bottom: 3px solid transparent; background: none; color: var(--text-2);
+  transition: color .16s, border-color .16s;
+}
+.sim-choix button b { font-size: 15.5px; font-weight: 500; }
+.sim-choix button:hover { color: var(--accent); }
+.sim-choix button.actif { color: var(--accent); border-bottom-color: var(--accent); }
+.sim-choix button.actif b { font-weight: 600; }
+
+/* ---------- La frise des étapes ----------
+   Quatre pas d'égale largeur. Chacun dit son numéro, son nom, et en dessous
+   ce qui y est déjà saisi : la frise est aussi le récapitulatif. */
+.emp-frise {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.emp-pas {
+  width: 100%; height: 100%; font: inherit; cursor: pointer; text-align: left;
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  transition: border-color .16s, background .16s;
+}
+.emp-pas:hover { border-color: var(--accent); }
+.emp-num {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+  background: var(--surface-2); color: var(--muted); border: 1px solid var(--border-fort);
+}
+.emp-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.emp-txt b { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.emp-txt i {
+  font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.emp-pas.fait .emp-num { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.emp-pas.actif { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.emp-pas.actif .emp-num { background: var(--accent); color: #fff; border-color: var(--accent); }
+.emp-pas.actif .emp-txt b { color: var(--accent); }
+
+/* Les quatre chiffres sous la frise, à toutes les étapes : une saisie montre
+   son effet sans changer d'écran. Une seule bande, ses cellules séparées par
+   un filet : quatre cartes de plus auraient fait une troisième grille. */
+.emp-kpis {
+  display: grid; gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 10px 0 14px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+}
+.emp-kpis .kpi {
+  padding: 9px 16px 10px; background: none; border: 0; border-radius: 0; box-shadow: none;
+  border-left: 1px solid var(--border);
+}
+.emp-kpis .kpi:first-child { border-left: 0; }
+.emp-kpis .kpi .k { letter-spacing: .6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.emp-kpis .kpi .v { font-size: 23px; margin-top: 2px; }
+.emp-kpis .kpi.hl { background: var(--accent-soft); }
+
+/* ---------- Une étape ---------- */
+.emp-etape.card { margin: 0; }
+.emp-etape .e-personnes { margin-top: 16px; }
+.emp-etape h3:not(.premier) { margin-top: 26px; }
+.row-trois { grid-template-columns: repeat(3, minmax(170px, 1fr)); }
+.row-quatre { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
+
+/* Le résultat a ses onglets : ils suivent tout de suite les chiffres. */
+.emp-resultat .onglets-internes { margin-top: 0; }
+
+.emp-nav { display: flex; justify-content: space-between; gap: 12px; margin: 16px 0 0; }
+/* Seul, le bouton suivant reste à droite : c'est là qu'on le cherche. */
+.emp-nav .btn:only-child, .emp-nav .btn[hidden] + .btn { margin-left: auto; }
+
+@media (max-width: 1000px) {
+  .emp-frise, .emp-kpis { grid-template-columns: 1fr 1fr; }
+  .emp-kpis .kpi:nth-child(odd) { border-left: 0; }
+  .emp-kpis .kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
+  .row-trois, .row-quatre { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+}
+@media (max-width: 520px) {
+  .emp-frise, .emp-kpis, .row-trois, .row-quatre { grid-template-columns: 1fr; }
+  .emp-kpis .kpi { border-left: 0; }
+  .emp-kpis .kpi + .kpi { border-top: 1px solid var(--border); }
+  .emp-txt i { white-space: normal; }
+}

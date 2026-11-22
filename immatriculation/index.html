@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documents d'immatriculation · Vivre au Luxembourg</title>
+<meta name="description" content="Le dossier à déposer à la SNCA et l'acte de vente d'un véhicule d'occasion, à remplir et à imprimer. Sans acte de vente, le certificat dit que vous n'êtes pas identifié comme propriétaire.">
+<link rel="stylesheet" href="../app/styles.css?v=45">
+<link rel="stylesheet" href="../app/entete.css?v=1">
+<link rel="stylesheet" href="document.css?v=1">
+</head>
+<body>
+
+<header class="top" id="entete" data-racine="../"></header>
+<script src="../app/entete.js?v=1"></script>
+
+<main class="doc">
+
+  <!-- La barre ne s'imprime pas : elle sert à remplir, puis à lancer l'impression. -->
+  <div class="doc-outils">
+    <div class="doc-intro">
+      <h1>Documents d'immatriculation</h1>
+      <p>Deux feuilles à emporter : le dossier à déposer à la SNCA, et l'acte de vente à faire signer par le vendeur. Les champs se remplissent ici, ou à la main après impression.</p>
+    </div>
+    <div class="doc-actions">
+      <button type="button" class="btn" id="imprimer">Imprimer</button>
+      <button type="button" class="btn ghost" id="vider">Vider les champs</button>
+      <a href="../#fiche/vehicule">Fiche Immatriculer son véhicule</a>
+    </div>
+    <p class="doc-note">Ce qui est tapé reste dans ce navigateur, et sert la prochaine fois. Rien n'est envoyé. D'autres modèles d'acte existent, en plusieurs langues, chez l'<a href="https://www.acl.lu/fr/resources/sales-contract/" target="_blank" rel="noopener">Automobile Club</a> et l'<a href="https://www.ulc.lu/fr/telechargements/telechargements/gestion-des-telechargements/contrat-type-de-vente-de-voiture-doccasion/" target="_blank" rel="noopener">Union luxembourgeoise des consommateurs</a>.</p>
+  </div>
+
+  <section class="feuille" id="feuille-dossier" aria-labelledby="t-dossier">
+    <p class="f-sur">Feuille 1</p>
+    <h2 id="t-dossier">Dossier d'immatriculation</h2>
+    <p class="f-lead">À déposer à la SNCA, sur rendez-vous, les plaques luxembourgeoises déjà fabriquées. Le délai est de six mois après la déclaration d'arrivée à la commune.</p>
+
+    <div class="f-cle">
+      <h3>L'acte de vente décide de ce que dit votre certificat</h3>
+      <p>La SNCA demande une facture ou un contrat de vente. Sans cette pièce, elle vous inscrit comme titulaire, et le certificat d'immatriculation porte la mention que vous n'êtes pas identifié comme propriétaire. Vous roulez, vous assurez et vous payez la taxe, mais la revente et les litiges se compliquent.</p>
+      <p>Un acte qui remplit son rôle porte la date, le prix, le numéro de châssis et la signature des deux parties. C'est la feuille 2 de ce document. Si le certificat du vendeur est au nom d'une autre personne, la chaîne complète se demande : l'acte entre la personne inscrite et votre vendeur, puis le vôtre.</p>
+      <p>En France, le certificat de cession Cerfa 15776 est à remplir en plus, et ne remplace pas l'acte de vente : il ne porte aucun prix, et il sert au vendeur à déclarer la cession dans les quinze jours.</p>
+    </div>
+
+    <h3 class="f-h">Les pièces</h3>
+    <ul class="f-pieces" id="pieces"></ul>
+
+    <h3 class="f-h">L'ordre des étapes</h3>
+    <ol class="f-etapes" id="etapes"></ol>
+
+    <p class="f-source">Chaque étape donne une pièce que la suivante demande. Le détail, les adresses, les montants et les sources officielles sont sur la fiche « Immatriculer son véhicule » du guide, lux-guide.github.io, onglet Fiches pratiques.</p>
+  </section>
+
+  <section class="feuille" id="feuille-acte" aria-labelledby="t-acte">
+    <p class="f-sur">Feuille 2</p>
+    <h2 id="t-acte">Acte de vente d'un véhicule d'occasion</h2>
+    <p class="f-lead">Entre particuliers. Deux exemplaires signés, un pour chaque partie.</p>
+
+    <div class="f-duo">
+      <div class="f-bloc">
+        <h3>Le vendeur</h3>
+        <p class="f-champ"><label for="v-nom">Nom et prénom</label><input type="text" id="v-nom" data-c="v-nom" autocomplete="off"></p>
+        <p class="f-champ"><label for="v-adresse">Adresse</label><input type="text" id="v-adresse" data-c="v-adresse" autocomplete="off"></p>
+        <p class="f-champ"><label for="v-localite">Code postal et localité</label><input type="text" id="v-localite" data-c="v-localite" autocomplete="off"></p>
+        <p class="f-champ"><label for="v-pays">Pays</label><input type="text" id="v-pays" data-c="v-pays" autocomplete="off"></p>
+        <p class="f-champ"><label for="v-tel">Téléphone</label><input type="text" id="v-tel" data-c="v-tel" autocomplete="off"></p>
+      </div>
+      <div class="f-bloc">
+        <h3>L'acheteur</h3>
+        <p class="f-champ"><label for="a-nom">Nom et prénom</label><input type="text" id="a-nom" data-c="a-nom" autocomplete="off"></p>
+        <p class="f-champ"><label for="a-adresse">Adresse</label><input type="text" id="a-adresse" data-c="a-adresse" autocomplete="off"></p>
+        <p class="f-champ"><label for="a-localite">Code postal et localité</label><input type="text" id="a-localite" data-c="a-localite" autocomplete="off"></p>
+        <p class="f-champ"><label for="a-pays">Pays</label><input type="text" id="a-pays" data-c="a-pays" autocomplete="off"></p>
+        <p class="f-champ"><label for="a-tel">Téléphone</label><input type="text" id="a-tel" data-c="a-tel" autocomplete="off"></p>
+      </div>
+    </div>
+
+    <div class="f-bloc">
+      <h3>Le véhicule</h3>
+      <div class="f-duo">
+        <p class="f-champ"><label for="ve-marque">Marque</label><input type="text" id="ve-marque" data-c="ve-marque" autocomplete="off"></p>
+        <p class="f-champ"><label for="ve-modele">Modèle et version</label><input type="text" id="ve-modele" data-c="ve-modele" autocomplete="off"></p>
+      </div>
+      <p class="f-champ"><label for="ve-chassis">Numéro de châssis, case E du certificat d'immatriculation</label><input type="text" id="ve-chassis" data-c="ve-chassis" autocomplete="off"></p>
+      <div class="f-trio">
+        <p class="f-champ"><label for="ve-immat">Numéro d'immatriculation</label><input type="text" id="ve-immat" data-c="ve-immat" autocomplete="off"></p>
+        <p class="f-champ"><label for="ve-mec">Première mise en circulation, case B</label><input type="text" id="ve-mec" data-c="ve-mec" autocomplete="off"></p>
+        <p class="f-champ"><label for="ve-km">Kilométrage au compteur</label><input type="text" id="ve-km" data-c="ve-km" autocomplete="off"></p>
+      </div>
+    </div>
+
+    <div class="f-bloc">
+      <h3>Le prix</h3>
+      <div class="f-duo">
+        <p class="f-champ"><label for="pr-chiffres">Prix en chiffres, en euros</label><input type="text" id="pr-chiffres" data-c="pr-chiffres" autocomplete="off"></p>
+        <p class="f-champ"><label for="pr-lettres">Prix en lettres</label><input type="text" id="pr-lettres" data-c="pr-lettres" autocomplete="off"></p>
+      </div>
+      <div class="f-duo">
+        <p class="f-champ"><label for="pr-moyen">Moyen de paiement</label><input type="text" id="pr-moyen" data-c="pr-moyen" autocomplete="off"></p>
+        <p class="f-champ"><label for="pr-date">Date du paiement</label><input type="text" id="pr-date" data-c="pr-date" autocomplete="off"></p>
+      </div>
+    </div>
+
+    <div class="f-bloc">
+      <h3>Les pièces remises avec le véhicule</h3>
+      <ul class="f-cases">
+        <li><label><input type="checkbox" data-c="p-certificat"><span>Certificat d'immatriculation, complet, ses deux parties quand il en a deux</span></label></li>
+        <li><label><input type="checkbox" data-c="p-conformite"><span>Certificat de conformité européen</span></label></li>
+        <li><label><input type="checkbox" data-c="p-technique"><span>Procès-verbal du dernier contrôle technique</span></label></li>
+        <li><label><input type="checkbox" data-c="p-entretien"><span>Carnet d'entretien et doubles des clés</span></label></li>
+        <li><label><input type="checkbox" data-c="p-cession"><span>Vendeur français : certificat de cession Cerfa 15776, code de cession, certificat de situation administrative</span></label></li>
+        <li><label><input type="checkbox" data-c="p-carpass"><span>Vendeur belge : Car-Pass</span></label></li>
+      </ul>
+    </div>
+
+    <div class="f-bloc">
+      <h3>Ce que les deux parties déclarent</h3>
+      <ol class="f-decl">
+        <li>Le vendeur est le propriétaire du véhicule désigné ci-dessus et peut en disposer.</li>
+        <li>Le kilométrage inscrit est celui affiché au compteur le jour de la vente.</li>
+        <li>L'acheteur a examiné le véhicule et l'achète dans l'état où il se trouve.</li>
+        <li>Le véhicule et ses documents sont remis à l'acheteur contre le paiement du prix.</li>
+        <li>Si le certificat d'immatriculation n'est pas au nom du vendeur, les actes de vente antérieurs sont joints à celui-ci.</li>
+      </ol>
+    </div>
+
+    <!-- Le lieu, la date et les deux signatures : empilés à l'écran, sur une
+         seule rangée à l'impression, pour que l'acte tienne sur une page. -->
+    <div class="f-fin">
+      <div class="f-duo f-lieu">
+        <p class="f-champ"><label for="li-lieu">Fait à</label><input type="text" id="li-lieu" data-c="li-lieu" autocomplete="off"></p>
+        <p class="f-champ"><label for="li-date">Le</label><input type="text" id="li-date" data-c="li-date" autocomplete="off"></p>
+      </div>
+
+      <div class="f-duo f-signatures">
+        <div class="f-signe">
+          <p class="f-signe-qui">Le vendeur</p>
+          <p class="f-signe-quoi">Signature précédée de la mention « lu et approuvé »</p>
+        </div>
+        <div class="f-signe">
+          <p class="f-signe-qui">L'acheteur</p>
+          <p class="f-signe-quoi">Signature précédée de la mention « lu et approuvé »</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="f-source">Aucun formulaire officiel n'existe pour ce document : la SNCA demande une facture ou un contrat de vente, sans modèle imposé.</p>
+  </section>
+
+</main>
+
+<script src="../app/fiches/vehicule.js?v=1"></script>
+<script src="page.js?v=1"></script>
+</body>
+</html>

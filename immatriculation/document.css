@@ -1,0 +1,169 @@
+/* Les deux feuilles d'immatriculation : le dossier et l'acte de vente.
+   La page reprend les jetons et la typographie du guide (../app/styles.css) et
+   n'ajoute que la mise en feuille, les champs à remplir, et l'impression.
+
+   Deux états à tenir, et ils ne se ressemblent pas : à l'écran une feuille
+   posée sur le fond du site, qui suit le thème clair ou sombre ; à l'impression
+   du noir sur blanc, une feuille par page A4, sans barre ni bouton. */
+
+.doc { max-width: 1000px; margin: 0 auto; padding: 26px 24px 90px; }
+
+/* La barre de travail : remplir, vider, imprimer, revenir à la fiche. */
+.doc-outils {
+  display: flex; flex-wrap: wrap; gap: 18px 26px;
+  align-items: flex-end; justify-content: space-between;
+}
+.doc-intro { flex: 1 1 420px; }
+.doc-intro h1 { margin: 0 0 6px; }
+.doc-intro p { margin: 0; color: var(--text-2); }
+.doc-actions { flex: 0 1 300px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.doc-actions a { font-size: 14px; }
+.doc-note { flex: 1 0 100%; margin: 0; font-size: 12.5px; color: var(--muted); }
+
+/* ---------- La feuille ---------- */
+.feuille {
+  margin-top: 24px; padding: 30px 32px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); box-shadow: var(--ombre-s);
+}
+.f-sur {
+  margin: 0 0 4px; font-size: var(--micro); letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted);
+}
+.feuille h2 { margin: 0 0 6px; }
+.f-lead { margin: 0 0 20px; color: var(--text-2); }
+.f-h { margin: 24px 0 10px; font-size: 16px; }
+.feuille h3 { margin: 0 0 10px; font-size: 15px; }
+
+/* Ce qui décide du certificat ne se lit pas comme le reste. */
+.f-cle {
+  margin: 0 0 22px; padding: 16px 18px;
+  background: var(--warn-soft); border: 1px solid var(--warn);
+  border-left-width: 4px; border-radius: 12px;
+}
+.f-cle h3 { color: var(--warn); }
+.f-cle p { margin: 0 0 8px; }
+.f-cle p:last-child { margin-bottom: 0; }
+
+/* Les pièces : une case à cocher au stylo, pas à l'écran. L'onglet Dossier de
+   la fiche tient la version cochable, celle-ci part au rendez-vous. */
+.f-pieces { list-style: none; margin: 0; padding: 0; }
+.f-pieces li { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.f-pieces li:last-child { border-bottom: 0; }
+.f-pieces .case {
+  flex: 0 0 auto; width: 14px; height: 14px; margin-top: 5px;
+  border: 1.5px solid var(--border-fort); border-radius: 3px;
+}
+.f-pieces .quoi b { font-weight: 600; }
+.f-pieces .quoi i { display: block; font-style: normal; font-size: 13.5px; color: var(--muted); }
+
+.f-etapes { margin: 0; padding-left: 22px; }
+.f-etapes li { padding: 3px 0; }
+.f-etapes li b { font-weight: 600; }
+.f-etapes li i { display: block; font-style: normal; font-size: 13.5px; color: var(--muted); }
+
+.f-source {
+  margin: 20px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--muted);
+}
+
+/* ---------- Les champs à remplir ---------- */
+.f-bloc { margin: 0 0 20px; }
+.f-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+.f-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 24px; }
+.f-champ { display: grid; gap: 4px; margin: 0 0 12px; }
+.f-champ label { font-size: 12.5px; color: var(--muted); }
+.f-champ input {
+  width: 100%; box-sizing: border-box; padding: 8px 10px;
+  font: inherit; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border-fort); border-radius: 8px;
+}
+.f-champ input:focus-visible { border-color: var(--accent); }
+
+.f-cases { list-style: none; margin: 0; padding: 0; }
+.f-cases li { padding: 4px 0; }
+/* styles.css donne à tout label le gris des formulaires du guide. Ici le texte
+   d'une case est une phrase du document, pas l'intitulé d'un champ. */
+.f-cases label {
+  display: flex; gap: 10px; align-items: flex-start; cursor: pointer;
+  margin: 0; font-size: inherit; font-weight: 400; letter-spacing: 0; color: var(--text);
+}
+.f-cases input {
+  flex: 0 0 auto; width: 15px; height: 15px; min-width: 0; margin: 5px 0 0; padding: 0;
+  accent-color: var(--accent);
+}
+
+.f-decl { margin: 0; padding-left: 22px; }
+.f-decl li { padding: 3px 0; }
+
+.f-lieu { max-width: 520px; }
+.f-signatures { gap: 0 24px; margin-top: 10px; }
+.f-signe {
+  min-height: 96px; padding: 10px 14px;
+  border: 1px dashed var(--border-fort); border-radius: 12px;
+}
+.f-signe-qui { margin: 0; font-weight: 600; }
+.f-signe-quoi { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+
+/* En « screen and » et non en largeur seule : la page imprimée fait 184 mm de
+   large, soit 695 px, donc une règle en max-width 760px s'appliquait aussi à
+   l'impression et empilait toutes les colonnes. L'acte tenait alors sur deux
+   pages au lieu d'une. */
+@media screen and (max-width: 760px) {
+  .feuille { padding: 22px 18px; }
+  .f-duo, .f-trio { grid-template-columns: 1fr; }
+}
+
+/* ---------- L'impression ----------
+   Une feuille par page, du noir sur blanc, et rien de l'application. */
+@media print {
+  @page { size: A4 portrait; margin: 12mm 13mm; }
+  html, body { background: #fff; color: #000; padding-top: 0; font-size: 9.3pt; line-height: 1.35; }
+  #entete, .doc-outils { display: none !important; }
+  .doc { max-width: none; margin: 0; padding: 0; }
+  .feuille {
+    margin: 0; padding: 0; background: #fff;
+    border: 0; border-radius: 0; box-shadow: none;
+  }
+  #feuille-acte { break-before: page; page-break-before: always; }
+  .feuille h2 { font-size: 15pt; margin-bottom: 2px; }
+  .feuille h3, .f-h { font-size: 10.2pt; margin: 10px 0 5px; }
+  .f-sur, .f-lead, .f-source, .f-champ label, .f-signe-quoi,
+  .f-pieces .quoi i, .f-etapes li i { color: #000; }
+  .f-pieces .quoi i, .f-etapes li i { font-size: 8.4pt; }
+  .f-lead { margin-bottom: 8px; }
+  .f-cle {
+    margin-bottom: 12px; padding: 8px 10px;
+    background: #fff; border: 1px solid #000; border-left-width: 3px; border-radius: 0;
+  }
+  .f-cle h3 { color: #000; }
+  .f-bloc { margin-bottom: 7px; break-inside: avoid; }
+  .f-champ { margin-bottom: 3px; gap: 0; }
+  /* Les pièces remises tiennent en deux colonnes : l'acte garde sa page. */
+  .f-cases { columns: 2; column-gap: 18px; }
+  .f-cases li { break-inside: avoid; padding: 1.5px 0; }
+  .f-decl { font-size: 9pt; }
+  .f-decl li { padding: 1px 0; }
+  /* L'interligne du corps, 1,35, laissait 4 px de vide autour de chaque
+     intitulé : seize champs, soit la moitié d'une page. */
+  .f-champ label { font-size: 7.6pt; line-height: 1.15; }
+  .f-champ input {
+    padding: 1px 2px; background: #fff; color: #000;
+    border: 0; border-bottom: .6pt solid #000; border-radius: 0;
+  }
+  .f-pieces li { padding: 2.5px 0; border-bottom: 0; }
+  .f-pieces .case { border: .8pt solid #000; width: 10px; height: 10px; margin-top: 3px; }
+  .f-cases input {
+    appearance: none; -webkit-appearance: none;
+    flex: 0 0 auto; width: 10px; height: 10px; min-width: 0; padding: 0;
+    margin: 3px 0 0; border: .8pt solid #000; border-radius: 0;
+  }
+  .f-cases input:checked { background: #000; }
+  /* Le lieu, la date et les deux signatures sur une rangée : display contents
+     fait des deux cadres de signature les colonnes 2 et 3 de cette rangée. */
+  .f-fin { display: grid; grid-template-columns: .8fr 1fr 1fr; gap: 0 16px; align-items: start; }
+  .f-fin .f-lieu { grid-template-columns: 1fr; max-width: none; }
+  .f-fin .f-signatures { display: contents; }
+  .f-signe { min-height: 15mm; border-color: #000; border-radius: 0; }
+  .f-source { margin-top: 10px; padding-top: 6px; border-top: .6pt solid #000; font-size: 7.8pt; }
+}

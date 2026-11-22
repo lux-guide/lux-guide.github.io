@@ -44,7 +44,8 @@ window.FICHES.vehicule = {
               d: "Numéro de la série courante ou numéro personnalisé. Dès la confirmation, faites fabriquer les plaques chez un fabricant agréé au Luxembourg : elles sont demandées au rendez-vous.",
               ou: ["En ligne sur MyGuichet.lu", "Ou nplaques@snca.lu, (+352) 26 62 64 00"],
               cout: "Sans supplément en série courante, 200 € pour un numéro personnalisé",
-              obtenez: "La réservation du numéro, puis les plaques"
+              obtenez: "La réservation du numéro, puis les plaques",
+              lien: { t: "Les fabricants de plaques agréés, liste de la SNCA", u: "https://snca.public.lu/fr/support/liens/fabricants-plaques.html" }
             },
             {
               t: "Assurer le véhicule",
@@ -54,7 +55,7 @@ window.FICHES.vehicule = {
             },
             {
               t: "Payer le droit de chancellerie",
-              d: "Au guichet de l'Administration de l'enregistrement, des domaines et de la TVA, ou par virement. Le timbre se vend aussi à la SNCA, avec 3 € de frais.",
+              d: "Au guichet de l'Administration de l'enregistrement, des domaines et de la TVA, ou par virement. Le timbre se vend aussi à la SNCA, avec 3 € de frais. Le libellé du virement porte cinq informations, et beaucoup de banques coupent ce champ vers cinquante caractères : écrivez-le sans mot inutile, par exemple NOM PRENOM TIMBRE IMMAT puis le numéro d'immatriculation et le numéro de châssis.",
               ou: ["Virement à AED-GUICHET UNIQUE-TIMBRES", "IBAN LU76 0019 5955 4404 7000, BIC BCEELULL"],
               cout: "50 €",
               obtenez: "Le timbre, ou la preuve de virement avec nom, prénom, motif, numéro d'immatriculation et numéro de châssis"
@@ -86,6 +87,7 @@ window.FICHES.vehicule = {
       {
         id: "dossier", titre: "Dossier",
         blocs: [
+          { note: "Une pièce décide de ce que dira votre certificat : la facture ou l'acte de vente. Sans elle, vous êtes inscrit titulaire et non propriétaire. Le dossier à cocher et un acte de vente à remplir s'impriment depuis le document du guide." },
           { cocher: "dossier", items: [
             { t: "Formulaire « Demande en obtention d'un certificat d'immatriculation », signé",
               lien: { t: "Sur Guichet.lu", u: "https://guichet.public.lu/fr/citoyens/transport/transports-individuels/vehicule-motorise/immatriculer-vehicule/vehicule-demenagement-transfrontalier.html" } },
@@ -95,7 +97,8 @@ window.FICHES.vehicule = {
             { t: "Certificat d'immatriculation étranger, complet", d: "Dans l'Union, il a en général deux parties." },
             { t: "Certificat de conformité européen", d: "Si la première immatriculation date d'après le 1er février 2016." },
             { t: "Certificat de contrôle technique valable", d: "Si le véhicule y est soumis. Voir Cas particuliers." },
-            { t: "Facture ou contrat de vente", d: "Sans lui, vous êtes inscrit titulaire, pas propriétaire." },
+            { t: "Facture ou contrat de vente", d: "Sans lui, vous êtes inscrit titulaire, pas propriétaire.",
+              lien: { t: "Acte de vente à remplir et à imprimer", u: "immatriculation/" } },
             { t: "Pièce d'identité", d: "Quelqu'un dépose pour vous : un mandat et une copie de votre pièce d'identité." },
             { t: "Plaques luxembourgeoises", d: "Fabriquées avant le rendez-vous." }
           ] }

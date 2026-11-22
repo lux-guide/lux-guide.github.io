@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vivre au Luxembourg</title>
-<link rel="stylesheet" href="app/styles.css?v=44">
+<link rel="stylesheet" href="app/styles.css?v=45">
 <link rel="stylesheet" href="app/guide.css?v=3">
+<link rel="stylesheet" href="app/simulateur.css?v=1">
 <link rel="stylesheet" href="app/entete.css?v=1">
 </head>
 <body>
@@ -144,24 +145,23 @@
 
   <!-- Simulateur -->
   <section class="panel" role="region" aria-labelledby="nom-simulateur" id="panel-simulateur" hidden>
-    <h1>Simulateurs</h1>
-    <p class="lead">
-      Ce que le brut laisse en net, ce que ce net permet d'emprunter, la classe d'impôt qui
-      s'applique, et les calculateurs officiels pour tout le reste. Les montants saisis restent dans ce navigateur d'une visite à l'autre.
-    </p>
+    <div class="sim-tete">
+      <h1>Simulateurs</h1>
+      <p class="sim-note">Les montants saisis restent dans ce navigateur d'une visite à l'autre.</p>
+    </div>
 
     <div class="sim-choix" id="sim-tabs" role="tablist" aria-label="Choisir un outil">
-      <button role="tab" data-sim="salaire" class="actif" aria-selected="true">
-        <b>Salaire net</b><i>Du brut annuel au net mensuel, avec le barème officiel</i>
+      <button role="tab" data-sim="salaire" class="actif" aria-selected="true" title="Du brut annuel au net mensuel, avec le barème officiel">
+        <b>Salaire net</b>
       </button>
-      <button role="tab" data-sim="emprunt" aria-selected="false">
-        <b>Capacité d'emprunt</b><i>Du net au prix d'achat, frais d'acte et aides de l'État</i>
+      <button role="tab" data-sim="emprunt" aria-selected="false" title="Du net au prix d'achat, frais d'acte et aides de l'État">
+        <b>Capacité d'emprunt</b>
       </button>
-      <button role="tab" data-sim="classe" aria-selected="false">
-        <b>Ma classe d'impôt</b><i>Quelques questions, et les deux cas où l'on se trompe</i>
+      <button role="tab" data-sim="classe" aria-selected="false" title="Quelques questions, et les deux cas où l'on se trompe">
+        <b>Ma classe d'impôt</b>
       </button>
-      <button role="tab" data-sim="officiels" aria-selected="false">
-        <b>Calculateurs officiels</b><i>Onze outils des administrations, testés</i>
+      <button role="tab" data-sim="officiels" aria-selected="false" title="Les outils des administrations, testés un par un">
+        <b>Calculateurs officiels</b>
       </button>
     </div>
 
@@ -246,16 +246,13 @@
     </div>
 
     <div id="sim-emprunt" hidden>
-    <h2 class="sim-titre">Du salaire net au prix d'achat</h2>
-    <p class="lead small">
-      La banque raisonne sur le net qui arrive sur le compte, après cotisations et retenue
-      d'impôt, jamais sur le brut. Elle en accepte 33 à 45 % en mensualités selon l'établissement,
-      le reste à vivre et la solidité du dossier, puis vérifie que le prêt ne dépasse pas la part du
-      prix que la CSSF autorise. Ce plan enchaîne les trois étapes : la mensualité, le capital,
-      puis le prix d'achat une fois les frais d'acte payés.
-    </p>
-    <div class="card">
-      <h3 class="premier">Qui achète</h3>
+      <!-- Quatre etapes. app/emprunt_etapes.js ecrit la frise et les boutons
+           depuis les sections ci-dessous : en ajouter une se fait ici seulement. -->
+      <ol class="emp-frise" id="emp-frise" aria-label="Étapes de la capacité d'emprunt"></ol>
+      <div class="kpis emp-kpis" id="e-kpis"></div>
+
+      <section class="card emp-etape" data-etape="emprunteurs" data-titre="Emprunteurs">
+        <h3 class="premier">Qui achète</h3>
       <div class="e-qui" role="radiogroup" aria-label="Qui achète">
         <label class="e-qui-choix"><input type="radio" name="e-qui" value="1" checked> <span><b>J'achète seul</b><i>Une personne sur l'acte et sur le prêt</i></span></label>
         <label class="e-qui-choix"><input type="radio" name="e-qui" value="2"> <span><b>Nous achetons à deux</b><i>Deux personnes sur l'acte, les deux revenus comptent</i></span></label>
@@ -265,8 +262,6 @@
         <option value="2">Deux personnes</option>
       </select>
       <p class="aide-champ">Le Bëllegen Akt, les plafonds des aides et la part des revenus que la banque retient se comptent par personne inscrite sur l'acte.</p>
-
-      <h3>Ce que le ménage gagne, et ce qu'il rembourse déjà</h3>
       <div class="e-personnes">
         <div class="e-personne">
           <h4 id="e-titre1">Vous</h4>
@@ -338,98 +333,105 @@
         <button type="button" class="btn ghost petit" id="e-reprendre">Remplir avec le net calculé</button>
         <span class="aide-champ" id="e-reprendre-info">Copie ici le net de l'onglet Salaire net, pour ne pas le retaper.</span>
       </p>
-      <h4 class="e-sous">Les autres revenus du ménage, par mois</h4>
-      <div class="row row-autres avec-aides">
-        <div>
-          <label for="e-loyers">Loyers perçus</label>
-          <input type="number" id="e-loyers" value="0" min="0" step="50">
-          <p class="aide-champ">Hors charges : les charges que paie le locataire ne sont pas un revenu. Le crédit de ce logement va dans les crédits en cours.</p>
-        </div>
-        <div>
-          <label for="e-variables">Primes et bonus, moyenne mensuelle</label>
-          <input type="number" id="e-variables" value="0" min="0" step="50">
-          <p class="aide-champ">La moyenne annuelle des dernières années, divisée par 12. La banque regarde s'ils reviennent chaque année.</p>
-        </div>
-        <div>
-          <label for="e-autres">Allocations et autres revenus réguliers</label>
-          <input type="number" id="e-autres" value="0" min="0" step="50">
-          <p class="aide-champ">Allocations familiales, pension alimentaire reçue, rente. Pas les chèques-repas ni les remboursements de frais.</p>
-        </div>
-        <div>
-          <label for="e-part">Part des loyers et des primes que la banque retient</label>
-          <select id="e-part">
-            <option value="1">100 %, tout compte</option>
-            <option value="0.8" selected>80 %, le plus courant</option>
-            <option value="0.7">70 %, prudent</option>
-          </select>
-          <p class="aide-champ">Ils peuvent baisser : un locataire part, une prime saute. 70 % est l'usage le plus cité pour les loyers.</p>
-        </div>
-      </div>
-      <h4 class="e-sous">Ce que le ménage rembourse déjà, par mois</h4>
-      <div class="row row-charges avec-aides">
-        <div>
-          <label for="e-charges">Crédits en cours</label>
-          <input type="number" id="e-charges" value="0" min="0" step="50">
-          <p class="aide-champ">Les mensualités, pas le capital : voiture, consommation, un autre logement. Un crédit soldé à l'achat ne compte pas.</p>
-        </div>
-        <div>
-          <label for="e-reste">Il leur reste, en mois</label>
-          <input type="number" id="e-reste" value="0" min="0" step="1" placeholder="ex. 36">
-          <p class="aide-champ">Moins de 12 mois : beaucoup de banques ne le comptent plus. Le plan chiffre aussi un remboursement anticipé.</p>
-        </div>
-        <div>
-          <label for="e-charges2">Pension versée, leasing, autres charges fixes</label>
-          <input type="number" id="e-charges2" value="0" min="0" step="50">
-          <p class="aide-champ">Pension alimentaire versée, leasing auto, loyer d'un logement conservé. Pas les dépenses courantes.</p>
-        </div>
-        <div>
-          <label for="e-effort">Part des revenus que la banque accepte</label>
-          <select id="e-effort">
-            <option value="0.33">33 %, la plus prudente</option>
-            <option value="0.35">35 %, la moyenne observée</option>
-            <option value="0.40" selected>40 %, la plus courante</option>
-            <option value="0.45">45 %, le plus haut pratiqué</option>
-          </select>
-          <p class="aide-champ">Aucune règle légale : chaque banque décide selon le reste à vivre.</p>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h3 class="premier">Le prêt et l'achat</h3>
-      <div class="row row-pret avec-aides">
-        <div>
-          <label for="e-taux">Taux annuel (%)</label>
-          <input type="number" id="e-taux" value="3.9" min="0" step="0.1">
-          <p class="aide-champ">Taux fixes affichés en septembre 2026 : 3,77 à 4,16 %.</p>
-        </div>
-        <div>
-          <label for="e-duree">Durée (années)</label>
-          <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
-          <p class="aide-champ">35 ans au plus chez Spuerkeess et la BIL, 30 chez BGL et Raiffeisen.</p>
-        </div>
-        <div>
-          <label for="e-apport">Fonds propres (EUR)</label>
-          <input type="number" id="e-apport" value="50000" min="0" step="5000">
-          <p class="aide-champ">Épargne, donation, vente d'un bien. Les frais d'acte se paient avec, jamais avec le prêt.</p>
-        </div>
-        <div>
-          <label for="e-situation">Ce que vous achetez</label>
-          <select id="e-situation">
-            <option value="primo" selected>Premier logement, résidence principale</option>
-            <option value="autre">Résidence principale, déjà propriétaire</option>
-            <option value="locatif">Investissement locatif</option>
-          </select>
-          <p class="aide-champ">Fixe la part du prix que le prêt peut couvrir : 100, 90 ou 80 %.</p>
-        </div>
-        <div>
-          <label for="e-enfants">Enfants à charge</label>
-          <input type="number" id="e-enfants" value="0" min="0" max="10" step="1">
-          <p class="aide-champ">Ils relèvent les plafonds de la prime et de la subvention d'intérêt.</p>
-        </div>
-      </div>
-    </div>
-    <div class="kpis" id="e-kpis"></div>
+      </section>
 
+      <section class="card emp-etape" data-etape="revenus" data-titre="Revenus et charges" hidden>
+        <h3 class="premier">Autres revenus, par mois</h3>
+        <div class="row row-trois avec-aides">
+          <div>
+            <label for="e-loyers">Loyers perçus</label>
+            <input type="number" id="e-loyers" value="0" min="0" step="50">
+            <p class="aide-champ">Hors charges : les charges que paie le locataire ne sont pas un revenu. Le crédit de ce logement va dans les crédits en cours.</p>
+          </div>
+          <div>
+            <label for="e-variables">Primes et bonus, moyenne mensuelle</label>
+            <input type="number" id="e-variables" value="0" min="0" step="50">
+            <p class="aide-champ">La moyenne annuelle des dernières années, divisée par 12. La banque regarde s'ils reviennent chaque année.</p>
+          </div>
+          <div>
+            <label for="e-autres">Allocations et autres revenus réguliers</label>
+            <input type="number" id="e-autres" value="0" min="0" step="50">
+            <p class="aide-champ">Allocations familiales, pension alimentaire reçue, rente. Pas les chèques-repas ni les remboursements de frais.</p>
+          </div>
+        </div>
+        <h3>Remboursements en cours, par mois</h3>
+        <div class="row row-trois avec-aides">
+          <div>
+            <label for="e-charges">Crédits en cours</label>
+            <input type="number" id="e-charges" value="0" min="0" step="50">
+            <p class="aide-champ">Les mensualités, pas le capital : voiture, consommation, un autre logement. Un crédit soldé à l'achat ne compte pas.</p>
+          </div>
+          <div>
+            <label for="e-reste">Il leur reste, en mois</label>
+            <input type="number" id="e-reste" value="0" min="0" step="1" placeholder="ex. 36">
+            <p class="aide-champ">Moins de 12 mois : beaucoup de banques ne le comptent plus. Le plan chiffre aussi un remboursement anticipé.</p>
+          </div>
+          <div>
+            <label for="e-charges2">Pension versée, leasing, autres charges fixes</label>
+            <input type="number" id="e-charges2" value="0" min="0" step="50">
+            <p class="aide-champ">Pension alimentaire versée, leasing auto, loyer d'un logement conservé. Pas les dépenses courantes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card emp-etape" data-etape="projet" data-titre="Projet et prêt" hidden>
+        <h3 class="premier">Logement</h3>
+        <div class="row row-trois avec-aides">
+          <div>
+            <label for="e-situation">Ce que vous achetez</label>
+            <select id="e-situation">
+              <option value="primo" selected>Premier logement, résidence principale</option>
+              <option value="autre">Résidence principale, déjà propriétaire</option>
+              <option value="locatif">Investissement locatif</option>
+            </select>
+            <p class="aide-champ">Fixe la part du prix que le prêt peut couvrir : 100, 90 ou 80 %.</p>
+          </div>
+          <div>
+            <label for="e-apport">Fonds propres (EUR)</label>
+            <input type="number" id="e-apport" value="50000" min="0" step="5000">
+            <p class="aide-champ">Épargne, donation, vente d'un bien. Les frais d'acte se paient avec, jamais avec le prêt.</p>
+          </div>
+          <div>
+            <label for="e-enfants">Enfants à charge</label>
+            <input type="number" id="e-enfants" value="0" min="0" max="10" step="1">
+            <p class="aide-champ">Ils relèvent les plafonds de la prime et de la subvention d'intérêt.</p>
+          </div>
+        </div>
+        <h3>Prêt, et ce que la banque retient</h3>
+        <div class="row row-quatre avec-aides">
+          <div>
+            <label for="e-taux">Taux annuel (%)</label>
+            <input type="number" id="e-taux" value="3.9" min="0" step="0.1">
+            <p class="aide-champ">Taux fixes affichés en septembre 2026 : 3,77 à 4,16 %.</p>
+          </div>
+          <div>
+            <label for="e-duree">Durée (années)</label>
+            <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
+            <p class="aide-champ">35 ans au plus chez Spuerkeess et la BIL, 30 chez BGL et Raiffeisen.</p>
+          </div>
+          <div>
+            <label for="e-effort">Part des revenus en mensualités</label>
+            <select id="e-effort">
+              <option value="0.33">33 %, la plus prudente</option>
+              <option value="0.35">35 %, la moyenne observée</option>
+              <option value="0.40" selected>40 %, la plus courante</option>
+              <option value="0.45">45 %, le plus haut pratiqué</option>
+            </select>
+            <p class="aide-champ">Aucune règle légale : chaque banque décide selon le reste à vivre.</p>
+          </div>
+          <div>
+            <label for="e-part">Part des loyers et primes retenue</label>
+            <select id="e-part">
+              <option value="1">100 %, tout compte</option>
+              <option value="0.8" selected>80 %, le plus courant</option>
+              <option value="0.7">70 %, prudent</option>
+            </select>
+            <p class="aide-champ">Ils peuvent baisser : un locataire part, une prime saute. 70 % est l'usage le plus cité pour les loyers.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="emp-etape emp-resultat" data-etape="resultat" data-titre="Résultat" hidden>
     <div class="onglets-internes" role="tablist" aria-label="Sections de la capacité d'emprunt">
       <button role="tab" data-vue="plan" class="actif" aria-selected="true">Le plan de financement</button>
       <button role="tab" data-vue="surface" aria-selected="false">Ce que ça achète</button>
@@ -456,6 +458,9 @@
       <div id="e-dossier"></div>
       <div class="notice small" id="e-sources"></div>
     </div>
+      </section>
+
+      <div class="emp-nav" id="emp-nav"></div>
     </div>
 
     <!-- Quelle classe d'impot : un arbre de decision, pas un calcul -->
@@ -1028,7 +1033,7 @@
 <button id="widget-btn" title="Ouvrir l'assistant" aria-label="Ouvrir l'assistant">💬</button>
 
 <script src="app/bareme.js?v=39"></script>
-<script src="app/fiches/vehicule.js?v=1"></script>
+<script src="app/fiches/vehicule.js?v=3"></script>
 <script src="app/kb.js?v=42"></script>
 <script src="app/guide.js?v=2"></script>
 <script src="app/simulateur.js?v=40"></script>
@@ -1038,6 +1043,7 @@
 <script src="app/chat.js?v=39"></script>
 <script src="app/avantages.js?v=2"></script>
 <script src="app/ui.js?v=45"></script>
+<script src="app/emprunt_etapes.js?v=1"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=14"></script>
 <script src="app/jeux.js?v=2"></script>

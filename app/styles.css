@@ -408,8 +408,6 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 .e-personne h4, .e-sous { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
 .e-sous { margin-top: 22px; }
 .row-personne { gap: 14px; grid-template-columns: minmax(150px, 1fr) minmax(190px, 1.1fr) minmax(210px, 1.2fr) minmax(90px, .55fr); }
-.row-autres { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
-.row-charges { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
 
 /* Une aide sous chaque champ. Les rangees passent en sous-grille : les
    etiquettes, les champs et les aides s'alignent chacun sur leur ligne, quelle
@@ -423,13 +421,12 @@ textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 #e-etranger ol { margin: 8px 0 6px; padding-left: 20px; }
 #e-etranger li { margin: 4px 0; }
 #e-etranger p { margin: 6px 0 0; }
-.row-pret { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 @media (max-width: 1000px) {
   .e-personnes { grid-template-columns: 1fr; }
-  .row-autres, .row-charges, .row-personne { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .row-personne { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 }
 @media (max-width: 520px) {
-  .row-personne, .row-autres, .row-charges { grid-template-columns: 1fr; }
+  .row-personne { grid-template-columns: 1fr; }
 }
 h3.premier { margin-top: 0; }
 .btn.petit { padding: 8px 14px; font-size: 13.5px; border-radius: 9px; }
@@ -762,23 +759,8 @@ details.e-autres summary { cursor: pointer; color: var(--accent); font-weight: 6
   background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600;
 }
 
-/* Le panneau Simulateur : quatre outils presentes comme des cartes, pas
-   comme des pastilles, parce que chacun est une page a part entiere. */
-.sim-choix { display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); margin: 0 0 30px; }
-.sim-choix button {
-  font: inherit; cursor: pointer; text-align: left;
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 14px 16px; border-radius: 14px;
-  border: 1px solid var(--border-fort); background: var(--surface); color: var(--text-2);
-  transition: border-color .16s, box-shadow .16s, transform .16s;
-}
-.sim-choix button:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--ombre-m); }
-.sim-choix button b { font-size: 15px; color: var(--text); }
-.sim-choix button i { font-style: normal; font-size: 13px; color: var(--muted); line-height: 1.4; }
-.sim-choix button.actif { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-.sim-choix button.actif b { color: var(--accent); }
-@media (max-width: 1000px) { .sim-choix { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 520px) { .sim-choix { grid-template-columns: 1fr; } }
+/* Le panneau Simulateur : sa tete et son parcours d'emprunt sont dans
+   app/simulateur.css. */
 h2.sim-titre { margin-top: 0; }
 
 /* Onglets internes : une barre soulignee, collee sous l'en-tete, qui decoupe

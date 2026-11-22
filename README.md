@@ -712,9 +712,12 @@ lux_guide/
     guide.css           styles de ces fiches
     communaute.js       astuces de la communauté, autonome, une entrée par fiche
     simulateur.js       calcul du net et de la capacité d'emprunt
+    emprunt_etapes.js   le parcours en étapes de la capacité d'emprunt : frise, boutons, résumés
+    simulateur.css      la tête de la rubrique Simulateurs et ce parcours
     chat.js             profil, recherche, appel au modèle
     ui.js               rendu des panneaux, comparateur, carte, widget, administration
     styles.css          thème clair et sombre, mise en page du guide
+  immatriculation/      le dossier d'immatriculation et l'acte de vente, à imprimer
   comparateur/
     contrats_kb.js      verdicts par sinistre, généré depuis le dépôt rag
     mrh_kb.js           matrice de couverture, constats, situations, généré aussi
