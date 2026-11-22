@@ -713,6 +713,7 @@ lux_guide/
     communaute.js       astuces de la communauté, autonome, une entrée par fiche
     simulateur.js       calcul du net et de la capacité d'emprunt
     emprunt_etapes.js   le parcours en étapes de la capacité d'emprunt : frise, boutons, résumés
+    emprunt_bilan.js    son panneau de résultat : le prix, ce qu'il coûte, qui le paie, la mensualité
     simulateur.css      la tête de la rubrique Simulateurs et ce parcours
     chat.js             profil, recherche, appel au modèle
     ui.js               rendu des panneaux, comparateur, carte, widget, administration

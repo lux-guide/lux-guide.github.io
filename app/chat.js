@@ -192,10 +192,10 @@ window.CHAT = (function () {
         if (brut >= 10000 && brut <= 2000000) {
           var comp = window.SIM.comparatif(brut, 12);
           var lignes = comp.map(function (c) {
-            return c.label + " : " + Math.round(c.res.netMensuel).toLocaleString("fr-FR") + " EUR net par mois";
+            return c.label + " : " + Math.round(c.res.netMensuel).toLocaleString("fr-FR") + " € net par mois";
           });
           return {
-            texte: "Pour " + brut.toLocaleString("fr-FR") + " EUR brut par an, sur 12 mois :\n\n" +
+            texte: "Pour " + brut.toLocaleString("fr-FR") + " € brut par an, sur 12 mois :\n\n" +
               lignes.join("\n") + "\n\nCes montants correspondent à la retenue sur le seul salaire. " +
               "L'onglet Simulateur permet d'ajuster le nombre de mois, le régime des impatriés et les forfaits.",
             sources: [{ t: "Barème officiel ACD", u: "https://impotsdirects.public.lu/fr/baremes.html" }],

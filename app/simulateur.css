@@ -1,9 +1,15 @@
 /* La rubrique Simulateurs : sa tête, et le parcours de la capacité d'emprunt.
-   Les jetons, les cartes, les champs et les chiffres viennent de styles.css ;
+   Les jetons, les cartes, les champs et les tableaux viennent de styles.css ;
    cette feuille ne porte que ce qui est propre à la rubrique.
 
-   Le principe de la tête : un outil ouvert doit montrer son premier champ sans
-   défiler, à 1271 x 637. Le titre, la rangée d'onglets, puis l'outil. */
+   Trois principes.
+   1. Un outil ouvert montre son premier champ sans défiler, à 1271 x 637 : le
+      titre, la barre d'onglets, puis l'outil.
+   2. Une seule chose attire l'œil, le panneau de résultat et ses barres. La
+      frise, les étapes et les champs restent calmes autour.
+   3. Trois formes pour trois rôles : des onglets soulignés pour choisir
+      l'outil, une ligne à points pour avancer, un panneau pour le résultat.
+      Trois rangées de boîtes se lisaient comme une seule grille. */
 
 /* ---------- La tête ---------- */
 .sim-tete {
@@ -13,13 +19,9 @@
 .sim-tete h1 { margin: 0; font-size: clamp(30px, 3.6vw, 42px); }
 .sim-note { margin: 0; font-size: 13px; color: var(--muted); }
 
-/* Le choix de l'outil : une barre d'onglets soulignée, pas des boîtes. La frise
-   des étapes, juste dessous, est faite de boîtes : deux rangées de boîtes de
-   suite se lisaient comme une seule grille. Ce que fait chaque outil se lit
-   dans son infobulle, et dans l'outil une fois ouvert. */
 .sim-choix {
   display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
-  margin: 0 0 18px; border-bottom: 1px solid var(--border-fort);
+  margin: 0 0 22px; border-bottom: 1px solid var(--border-fort);
 }
 .sim-choix::-webkit-scrollbar { display: none; }
 .sim-choix button {
@@ -33,78 +35,167 @@
 .sim-choix button.actif { color: var(--accent); border-bottom-color: var(--accent); }
 .sim-choix button.actif b { font-weight: 600; }
 
-/* ---------- La frise des étapes ----------
-   Quatre pas d'égale largeur. Chacun dit son numéro, son nom, et en dessous
-   ce qui y est déjà saisi : la frise est aussi le récapitulatif. */
+/* ---------- La frise : une ligne, quatre points ----------
+   Le trait relie chaque point au suivant et se colore quand l'étape est
+   passée. Sous le point, le nom de l'étape et ce qui y est saisi : la frise
+   est aussi le récapitulatif. */
 .emp-frise {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none; margin: 0 0 20px; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+.emp-frise li { position: relative; }
+.emp-frise li:not(:last-child)::after {
+  content: ""; position: absolute; top: 13px; left: 36px; right: 8px; height: 2px;
+  border-radius: 2px; background: var(--border-fort);
+}
+.emp-frise li:has(.fait)::after { background: var(--accent); }
 .emp-pas {
-  width: 100%; height: 100%; font: inherit; cursor: pointer; text-align: left;
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 10px 12px; border-radius: 12px;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
-  transition: border-color .16s, background .16s;
+  width: 100%; font: inherit; cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+  padding: 0 14px 0 0; border: 0; background: none; color: var(--text-2);
 }
-.emp-pas:hover { border-color: var(--accent); }
 .emp-num {
-  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  width: 28px; height: 28px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums;
-  background: var(--surface-2); color: var(--muted); border: 1px solid var(--border-fort);
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+  background: var(--bg); color: var(--muted); border: 2px solid var(--border-fort);
+  transition: background .16s, border-color .16s, color .16s;
 }
-.emp-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.emp-txt b { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.emp-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; max-width: 100%; }
+.emp-txt b { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
 .emp-txt i {
   font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.emp-pas.fait .emp-num { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.emp-pas.actif { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.emp-pas:hover .emp-num { border-color: var(--accent); color: var(--accent); }
+.emp-pas.fait .emp-num { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .emp-pas.actif .emp-num { background: var(--accent); color: #fff; border-color: var(--accent); }
 .emp-pas.actif .emp-txt b { color: var(--accent); }
+.emp-pas.fait .emp-txt b { color: var(--text); }
 
-/* Les quatre chiffres sous la frise, à toutes les étapes : une saisie montre
-   son effet sans changer d'écran. Une seule bande, ses cellules séparées par
-   un filet : quatre cartes de plus auraient fait une troisième grille. */
-.emp-kpis {
-  display: grid; gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 10px 0 14px; overflow: hidden;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-}
-.emp-kpis .kpi {
-  padding: 9px 16px 10px; background: none; border: 0; border-radius: 0; box-shadow: none;
-  border-left: 1px solid var(--border);
-}
-.emp-kpis .kpi:first-child { border-left: 0; }
-.emp-kpis .kpi .k { letter-spacing: .6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.emp-kpis .kpi .v { font-size: 23px; margin-top: 2px; }
-.emp-kpis .kpi.hl { background: var(--accent-soft); }
+/* ---------- Deux colonnes : l'étape, et le résultat qui reste ---------- */
+.emp-corps { display: grid; grid-template-columns: minmax(0, 1fr) 368px; gap: 22px; align-items: start; }
+.emp-gauche { min-width: 0; }
 
-/* ---------- Une étape ---------- */
 .emp-etape.card { margin: 0; }
-.emp-etape .e-personnes { margin-top: 16px; }
-.emp-etape h3:not(.premier) { margin-top: 26px; }
-.row-trois { grid-template-columns: repeat(3, minmax(170px, 1fr)); }
-.row-quatre { grid-template-columns: repeat(4, minmax(170px, 1fr)); }
+.emp-etape h3:not(.premier) { margin-top: 28px; }
+.emp-etape .e-personnes { margin-top: 18px; gap: 20px; }
+/* « Vous » et « La seconde personne » : un intertitre, pas une carte dans la
+   carte. Un filet sépare les deux personnes. */
+.emp-etape .e-personne { padding: 0; border: 0; border-radius: 0; background: none; }
+.emp-etape .e-personne + .e-personne { padding-top: 20px; border-top: 1px solid var(--border); }
+.emp-etape .e-personne h4 {
+  margin: 0 0 10px; font-size: 15px; font-weight: 600; letter-spacing: 0;
+  text-transform: none; color: var(--text);
+}
+.row-trois { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.row-quatre { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-/* Le résultat a ses onglets : ils suivent tout de suite les chiffres. */
+/* L'unité dans le champ. --n est la longueur de l'unité, posée par
+   app/emprunt_etapes.js : le texte saisi s'arrête avant elle. */
+.champ-unite { position: relative; display: block; }
+.champ-unite input {
+  width: 100%; padding-right: calc(var(--n, 3) * 7px + 22px);
+  -moz-appearance: textfield; appearance: textfield;
+}
+.champ-unite input::-webkit-outer-spin-button,
+.champ-unite input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.champ-unite .unite {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--muted); pointer-events: none; white-space: nowrap;
+}
+
 .emp-resultat .onglets-internes { margin-top: 0; }
 
 .emp-nav { display: flex; justify-content: space-between; gap: 12px; margin: 16px 0 0; }
-/* Seul, le bouton suivant reste à droite : c'est là qu'on le cherche. */
+/* Seul, le bouton qui fait avancer reste à droite : c'est là qu'on le cherche. */
 .emp-nav .btn:only-child, .emp-nav .btn[hidden] + .btn { margin-left: auto; }
 
+/* ---------- Le panneau de résultat ---------- */
+.emp-bilan {
+  position: sticky; top: calc(var(--h-top) + 14px);
+  padding: 16px 20px 18px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-m); box-shadow: var(--ombre-m);
+  /* Jamais plus haut que l'écran : un panneau fixe dont le bas ne se voit pas
+     ne sert à rien. Mesuré à 637 px de haut. */
+  max-height: calc(100vh - var(--h-top) - 28px); overflow-y: auto; scrollbar-width: thin;
+}
+.bil-nom { margin: 0; font-size: 13.5px; color: var(--muted); }
+.bil-prix {
+  margin: 0 0 5px; font-family: var(--serif); font-size: 40px; line-height: 1.05;
+  letter-spacing: -.5px; font-variant-numeric: tabular-nums; color: var(--text);
+}
+.bil-pourquoi, .bil-vide { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.bil-vide { margin-top: 8px; font-size: 14px; }
+
+.bil-bloc { margin-top: 14px; }
+.bil-titre { margin: 0 0 6px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.bil-barre { display: flex; gap: 2px; height: 12px; }
+.bil-seg { min-width: 6px; flex-basis: 0; transition: flex-grow .25s ease; }
+.bil-seg:first-child { border-radius: 4px 0 0 4px; }
+.bil-seg:last-child { border-radius: 0 4px 4px 0; }
+.bil-seg:only-child { border-radius: 4px; }
+
+/* Les couleurs disent le rôle : le logement est l'encre du site, ce qui
+   s'ajoute au prix est en ambre, ce qu'on apporte en turquoise, ce que la
+   banque prête en bleu. La même teinte sert la pastille de la légende. */
+.bil-seg.prix, .bil-pastille.prix { background: var(--text-2); }
+.bil-seg.frais, .bil-pastille.frais { background: var(--warn); }
+.bil-seg.apport, .bil-pastille.apport { background: var(--accent-2); }
+.bil-seg.pret, .bil-pastille.pret { background: var(--accent); }
+.bil-seg.charges { background: var(--muted); }
+.bil-seg.reste { background: var(--border); }
+
+.bil-legende {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px;
+  margin: 7px 0 0; font-size: 13.5px;
+}
+.bil-legende dt { display: flex; align-items: center; gap: 8px; color: var(--text-2); min-width: 0; }
+.bil-legende dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); font-weight: 500; }
+.bil-pastille { flex: none; width: 9px; height: 9px; border-radius: 2px; }
+
+.bil-mois { padding-top: 13px; border-top: 1px solid var(--border); }
+.bil-mensualite { margin: 0 0 7px; font-size: 14px; color: var(--text-2); }
+.bil-mensualite strong {
+  font-family: var(--serif); font-weight: 400; font-size: 27px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.bil-jauge { position: relative; height: 10px; }
+.bil-trait {
+  position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px;
+  background: var(--text); border-radius: 1px;
+}
+/* La marge de droite laisse passer la bulle de l'assistant, posée en bas à
+   droite de l'écran : elle recouvrait la fin des lignes. */
+.bil-note { margin: 7px 34px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.bil-pastille.reste { background: var(--border-fort); }
+.bil-pastille.charges { background: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) { .bil-seg { transition: none; } }
+
+/* ---------- Écrans plus étroits ----------
+   Sous 1100 px, une colonne latérale ouverte par exemple, le panneau passe
+   au-dessus de l'étape et s'étale : le prix, puis ses trois blocs côte à côte. */
+@media (max-width: 1100px) {
+  .emp-corps { grid-template-columns: 1fr; gap: 16px; }
+  .emp-bilan {
+    position: static; order: -1; box-shadow: var(--ombre-s);
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 26px;
+    padding: 16px 20px 18px;
+  }
+  .emp-bilan > .bil-nom, .emp-bilan > .bil-prix, .emp-bilan > .bil-pourquoi, .emp-bilan > .bil-vide { grid-column: 1 / -1; }
+  .bil-prix { font-size: 38px; }
+  .bil-bloc { margin-top: 14px; }
+  .bil-mois { padding-top: 0; border-top: 0; }
+}
 @media (max-width: 1000px) {
-  .emp-frise, .emp-kpis { grid-template-columns: 1fr 1fr; }
-  .emp-kpis .kpi:nth-child(odd) { border-left: 0; }
-  .emp-kpis .kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
   .row-trois, .row-quatre { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 }
-@media (max-width: 520px) {
-  .emp-frise, .emp-kpis, .row-trois, .row-quatre { grid-template-columns: 1fr; }
-  .emp-kpis .kpi { border-left: 0; }
-  .emp-kpis .kpi + .kpi { border-top: 1px solid var(--border); }
-  .emp-txt i { white-space: normal; }
+@media (max-width: 720px) {
+  .emp-bilan { grid-template-columns: 1fr; }
+  .bil-mois { padding-top: 14px; border-top: 1px solid var(--border); }
+  .emp-frise { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
+  .emp-frise li:nth-child(2n)::after { display: none; }
+  .row-trois, .row-quatre { grid-template-columns: 1fr; }
 }

@@ -12,7 +12,7 @@
   function eur(n, dec) {
     return Number(n).toLocaleString("fr-FR", {
       minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0
-    }) + " EUR";
+    }) + " €";
   }
   function pct(n) { return (n * 100).toFixed(1).replace(".", ",") + " %"; }
   function el(tag, cls, txt) {
@@ -1569,19 +1569,9 @@
     majEtranger(o);
     var P = window.SIM.params();
 
-    // Les quatre chiffres
-    var k = $("#e-kpis");
-    k.innerHTML = "";
-    [["Mensualité maximale", eur(plan.mensualiteMax), false],
-     ["Capital empruntable", eur(plan.capital), false],
-     ["Prix d'achat possible, frais payés", eur(plan.prix), true],
-     ["Reste à vivre après la mensualité", eur(plan.resteAVivre), false]
-    ].forEach(function (x) {
-      var d = el("div", "kpi" + (x[2] ? " hl" : ""));
-      d.appendChild(el("div", "k", x[0]));
-      d.appendChild(el("div", "v", x[1]));
-      k.appendChild(d);
-    });
+    // Le plan part vers app/emprunt_bilan.js, qui dessine le panneau de résultat,
+    // et vers app/emprunt_etapes.js, qui résume les étapes dans la frise.
+    document.dispatchEvent(new CustomEvent("emprunt:plan", { detail: { o: o, plan: plan } }));
 
     var z = $("#e-plan");
     z.innerHTML = "";

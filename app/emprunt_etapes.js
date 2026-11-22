@@ -23,6 +23,7 @@
   var CLE = "luxguide.emprunt.etape.v1";
   var etapes = Array.prototype.slice.call(racine.querySelectorAll(".emp-etape"));
   var courant = 0;
+  var dernierPrix = 0;
 
   function el(t, c, txt) {
     var n = document.createElement(t);
@@ -34,8 +35,7 @@
     var c = document.getElementById(id);
     return c ? Math.max(0, Number(c.value) || 0) : 0;
   }
-  // Même écriture que les montants du simulateur : « 5 282 EUR ».
-  function eur(n) { return Math.round(n).toLocaleString("fr-FR") + " EUR"; }
+  function eur(n) { return Math.round(n).toLocaleString("fr-FR") + " €"; }
 
   // ---------- Ce que chaque étape résume ----------
 
@@ -60,10 +60,28 @@
       return (quoi[s] || "") + ", " + String(val("e-taux")).replace(".", ",") + " % sur " + val("e-duree") + " ans";
     },
     resultat: function () {
-      var v = racine.querySelector("#e-kpis .kpi.hl .v");
-      return v && v.textContent ? "Prix possible : " + v.textContent : "";
+      return dernierPrix > 0 ? "Prix possible : " + eur(dernierPrix) : "";
     }
   };
+
+  // ---------- L'unité dans le champ ----------
+  // « 5000 » ne dit pas si c'est par mois ou par an. L'unité s'écrit dans le
+  // champ, à droite, et l'intitulé n'a plus à la porter entre parenthèses.
+  var UNITES = {
+    "e-net1": "€ par mois", "e-net2": "€ par mois", "e-age1": "ans", "e-age2": "ans",
+    "e-loyers": "€ par mois", "e-variables": "€ par mois", "e-autres": "€ par mois",
+    "e-charges": "€ par mois", "e-reste": "mois", "e-charges2": "€ par mois",
+    "e-apport": "€", "e-taux": "%", "e-duree": "ans"
+  };
+  Object.keys(UNITES).forEach(function (id) {
+    var c = document.getElementById(id);
+    if (!c || c.parentNode.classList.contains("champ-unite")) return;
+    var cadre = el("span", "champ-unite");
+    c.parentNode.insertBefore(cadre, c);
+    cadre.appendChild(c);
+    cadre.appendChild(el("span", "unite", UNITES[id]));
+    cadre.style.setProperty("--n", String(UNITES[id].length));
+  });
 
   // ---------- La frise et les boutons ----------
 
@@ -108,10 +126,11 @@
     });
     avant.hidden = courant === 0;
     apres.hidden = courant === etapes.length - 1;
-    if (courant > 0) avant.textContent = "← " + etapes[courant - 1].getAttribute("data-titre");
+    if (courant > 0) avant.textContent = "Revenir à : " + etapes[courant - 1].getAttribute("data-titre");
     if (courant < etapes.length - 1) {
       var suivante = etapes[courant + 1];
-      apres.textContent = (suivante.getAttribute("data-etape") === "resultat" ? "Voir le résultat" : suivante.getAttribute("data-titre")) + " →";
+      apres.textContent = suivante.getAttribute("data-etape") === "resultat"
+        ? "Voir le détail du résultat" : "Continuer : " + suivante.getAttribute("data-titre");
     }
     try { localStorage.setItem(CLE, etapes[courant].getAttribute("data-etape")); } catch (e) { /* stockage bloqué */ }
     // Un geste ramène la frise en haut de l'écran : l'étape suivante se lit
@@ -119,12 +138,12 @@
     if (parGeste && frise.getBoundingClientRect().top < 0) frise.scrollIntoView({ block: "start" });
   }
 
-  // ui.js réécrit les quatre chiffres à chaque saisie : c'est le signal que le
-  // calcul vient de tourner, et que les résumés sont à relire.
-  var chiffres = document.getElementById("e-kpis");
-  if (chiffres && window.MutationObserver) {
-    new MutationObserver(resumer).observe(chiffres, { childList: true });
-  }
+  // ui.js envoie le plan à chaque calcul : c'est le moment de relire les
+  // résumés, le prix compris.
+  document.addEventListener("emprunt:plan", function (e) {
+    dernierPrix = e.detail.plan.prix || 0;
+    resumer();
+  });
   racine.addEventListener("input", resumer);
   racine.addEventListener("change", resumer);
 

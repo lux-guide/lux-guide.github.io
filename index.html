@@ -6,7 +6,7 @@
 <title>Vivre au Luxembourg</title>
 <link rel="stylesheet" href="app/styles.css?v=45">
 <link rel="stylesheet" href="app/guide.css?v=3">
-<link rel="stylesheet" href="app/simulateur.css?v=1">
+<link rel="stylesheet" href="app/simulateur.css?v=2">
 <link rel="stylesheet" href="app/entete.css?v=1">
 </head>
 <body>
@@ -176,7 +176,7 @@
     <div class="card">
       <div class="row row-champs">
         <div>
-          <label for="s-brut">Brut annuel (EUR)</label>
+          <label for="s-brut">Brut annuel, en euros</label>
           <input type="number" id="s-brut" value="80000" min="0" step="1000">
         </div>
         <div>
@@ -249,7 +249,10 @@
       <!-- Quatre etapes. app/emprunt_etapes.js ecrit la frise et les boutons
            depuis les sections ci-dessous : en ajouter une se fait ici seulement. -->
       <ol class="emp-frise" id="emp-frise" aria-label="Étapes de la capacité d'emprunt"></ol>
-      <div class="kpis emp-kpis" id="e-kpis"></div>
+      <!-- Deux colonnes : l'etape a gauche, le resultat a droite, fixe. Le
+           resultat est ecrit par app/emprunt_bilan.js a chaque calcul. -->
+      <div class="emp-corps">
+      <div class="emp-gauche">
 
       <section class="card emp-etape" data-etape="emprunteurs" data-titre="Emprunteurs">
         <h3 class="premier">Qui achète</h3>
@@ -387,7 +390,7 @@
             <p class="aide-champ">Fixe la part du prix que le prêt peut couvrir : 100, 90 ou 80 %.</p>
           </div>
           <div>
-            <label for="e-apport">Fonds propres (EUR)</label>
+            <label for="e-apport">Fonds propres</label>
             <input type="number" id="e-apport" value="50000" min="0" step="5000">
             <p class="aide-champ">Épargne, donation, vente d'un bien. Les frais d'acte se paient avec, jamais avec le prêt.</p>
           </div>
@@ -400,12 +403,12 @@
         <h3>Prêt, et ce que la banque retient</h3>
         <div class="row row-quatre avec-aides">
           <div>
-            <label for="e-taux">Taux annuel (%)</label>
+            <label for="e-taux">Taux annuel</label>
             <input type="number" id="e-taux" value="3.9" min="0" step="0.1">
             <p class="aide-champ">Taux fixes affichés en septembre 2026 : 3,77 à 4,16 %.</p>
           </div>
           <div>
-            <label for="e-duree">Durée (années)</label>
+            <label for="e-duree">Durée</label>
             <input type="number" id="e-duree" value="25" min="5" max="35" step="1">
             <p class="aide-champ">35 ans au plus chez Spuerkeess et la BIL, 30 chez BGL et Raiffeisen.</p>
           </div>
@@ -461,6 +464,9 @@
       </section>
 
       <div class="emp-nav" id="emp-nav"></div>
+      </div>
+      <aside class="emp-bilan" id="e-bilan" aria-label="Résultat" aria-live="polite"></aside>
+      </div>
     </div>
 
     <!-- Quelle classe d'impot : un arbre de decision, pas un calcul -->
@@ -1040,10 +1046,12 @@
 <script src="comparateur/contrats_kb.js?v=39"></script>
 <script src="comparateur/mrh_kb.js?v=39"></script>
 <script src="comparateur/offres_kb.js?v=39"></script>
-<script src="app/chat.js?v=39"></script>
+<script src="app/chat.js?v=40"></script>
 <script src="app/avantages.js?v=2"></script>
-<script src="app/ui.js?v=45"></script>
-<script src="app/emprunt_etapes.js?v=1"></script>
+<!-- Avant ui.js : ils ecoutent le plan que ui.js envoie des son premier calcul. -->
+<script src="app/emprunt_etapes.js?v=2"></script>
+<script src="app/emprunt_bilan.js?v=1"></script>
+<script src="app/ui.js?v=46"></script>
 <script src="app/lignes.js?v=2"></script>
 <script src="app/cartes.js?v=14"></script>
 <script src="app/jeux.js?v=2"></script>
