@@ -177,21 +177,33 @@
   // Leudelange » est l'arrêt « Leudelange, Foyer ». Sans cela la saisie partait
   // au géocodeur, qui posait le point à la gare de Leudelange, à 1,5 km, et les
   // lignes de l'arrêt cherché manquaient. Un seul arrêt doit porter tous les
-  // mots ; s'il y en a plusieurs (« Leudelange »), c'est une adresse.
+  // mots ; s'il y en a plusieurs (« Leudelange »), c'est une adresse. Un arrêt
+  // qui porte exactement les mots saisis passe devant ceux qui en ont d'autres :
+  // « Cloche d'Or Gasperich » est « Gasperich, Cloche d'Or », pas l'arrêt
+  // provisoire « Gasperich, prov. Cloche d'Or Quai 4 ».
   function arretExact(q) {
     var S = window.LIGNES.stops, nq = norm(q);
     if (nq.length < 4) return null;
-    var mots = nq.split(" "), trouves = [];
+    var mots = nq.split(" "), cle = mots.slice().sort().join(" "), tous = [], justes = [];
     for (var id in S) {
       var n = norm(S[id][0]);
       if (n === nq) return { id: id, n: S[id][0], ll: [S[id][1], S[id][2]] };
       var noms = " " + n + " ";
-      if (mots.every(function (m) { return noms.indexOf(" " + m + " ") >= 0; })) trouves.push(id);
+      if (!mots.every(function (m) { return noms.indexOf(" " + m + " ") >= 0; })) continue;
+      tous.push(id);
+      if (n.split(" ").sort().join(" ") === cle) justes.push(id);
     }
     // Un même nom peut porter plusieurs quais : ils comptent pour un arrêt.
-    if (!trouves.length || trouves.some(function (id) { return S[id][0] !== S[trouves[0]][0]; })) return null;
-    var s = S[trouves[0]];
-    return { id: trouves[0], n: s[0], ll: [s[1], s[2]] };
+    function unNom(ids) {
+      return ids.length && !ids.some(function (id) { return S[id][0] !== S[ids[0]][0]; }) ? ids[0] : null;
+    }
+    // Le guide sert à vivre au Luxembourg : à mots égaux, un arrêt du pays
+    // passe devant un arrêt frontalier (« Foyer » : Leudelange, pas Yutz).
+    function auPays(ids) { return ids.filter(function (id) { return S[id][3]; }); }
+    var pris = unNom(justes) || unNom(tous) || unNom(auPays(justes)) || unNom(auPays(tous));
+    if (!pris) return null;
+    var s = S[pris];
+    return { id: pris, n: s[0], ll: [s[1], s[2]] };
   }
 
   // Géocodage : géoportail luxembourgeois d'abord, OpenStreetMap en secours.
@@ -222,7 +234,14 @@
     var rayon = +$("#lg-rayon").value, tmax = +$("#lg-tmax").value * 60;
     var nmax = +$("#lg-nmax").value, hors = $("#lg-hors").checked;
 
-    var dest = arretsProches(cur.ll, rayon);
+    var dest = arretsProches(cur.ll, rayon), loin = false;
+    // Un nom de ville pose le point au centre de la commune, parfois loin de
+    // tout arrêt (« Ettelbruck ») : la carte restait vide. On prend alors
+    // l'arrêt le plus proche, et le résumé dit à quelle distance il est.
+    if (!dest.length && !cur.stop) {
+      dest = arretsProches(cur.ll, 1e9).slice(0, 1);
+      loin = true;
+    }
     if (cur.stop && !dest.some(function (s) { return s.id === cur.stop; })) {
       dest.unshift({ id: cur.stop, d: 0, n: cur.label });
     }
@@ -251,7 +270,7 @@
         if (!L0.stops[sid] || t < L0.stops[sid]) L0.stops[sid] = t;
       }
     });
-    return { dest: dest, atteints: atteints, lignes: lignes, rayon: rayon };
+    return { dest: dest, atteints: atteints, lignes: lignes, rayon: rayon, loin: loin };
   }
 
   // Pour un logement, l'arrêt le plus intéressant parmi ceux d'où l'on rejoint
@@ -325,13 +344,30 @@
         html: '<div style="background:#0e7a5f;color:#fff;border-radius:50%;width:26px;height:26px;' +
               'line-height:26px;text-align:center;font-weight:700;font-size:13px;border:2px solid #fff;' +
               'box-shadow:0 1px 5px rgba(0,0,0,.4)">D</div>',
-        iconSize: [26, 26], iconAnchor: [13, 13]
+        // Le « D » flotte au-dessus de son point, pour laisser voir l'arrêt
+        // qui s'y trouve quand on a cherché un arrêt par son nom.
+        iconSize: [26, 26], iconAnchor: [13, 36]
       })
     }).addTo(coucheDest).bindPopup(esc(cur.label));
     L.circle(cur.ll, { radius: X.rayon, color: "#0e7a5f", weight: 1, fillOpacity: .05 }).addTo(coucheDest);
 
     var listeLignes = Object.keys(X.lignes).map(function (k) { return X.lignes[k]; })
       .sort(function (a, b) { return Object.keys(b.stops).length - Object.keys(a.stops).length; });
+
+    // Les arrêts d'arrivée, ceux du cercle : la carte ne montrait que les
+    // arrêts de départ, et l'arrêt devant la destination restait invisible,
+    // caché sous le « D » quand on l'avait cherché par son nom. Un anneau vert,
+    // sous le « D », avec les lignes qui s'y arrêtent.
+    X.dest.forEach(function (s0) {
+      var s = S[s0.id];
+      var noms = listeLignes.filter(function (L0) {
+        return L0.pats.some(function (pi) { return window.LIGNES.patterns[pi][3].indexOf(s0.id) >= 0; });
+      }).map(function (L0) { return L0.line; });
+      L.circleMarker([s[1], s[2]], {
+        radius: 7, color: "#0e7a5f", weight: 3, fillColor: "#fff", fillOpacity: 1
+      }).addTo(coucheDest).bindTooltip("Arrêt d'arrivée : " + esc(s[0]) +
+        (noms.length ? "<br>" + noms.map(badge).join(" ") : "<br>aucune ligne retenue"));
+    });
 
     listeLignes.forEach(function (L0) {
       var g = L.layerGroup();
@@ -380,11 +416,16 @@
     var n15 = arrets.filter(function (r) { return r.best <= 900; }).length;
     var n30 = arrets.filter(function (r) { return r.best <= 1800; }).length;
     var h = '<div class="lg-resume"><strong>' + esc(cur.label) + "</strong><br>" +
-      X.dest.length + " arrêt" + (X.dest.length > 1 ? "s" : "") + " à moins de " + X.rayon + " m : " +
-      X.dest.slice(0, 4).map(function (s) { return esc(s.n); }).join(", ") +
-      (X.dest.length > 4 ? " et " + (X.dest.length - 4) + " autres" : "") + ".<br>" +
-      listeLignes.length + " ligne" + (listeLignes.length > 1 ? "s" : "") + ", " + arrets.length +
-      " arrêts d'où l'on arrive sans changer, dont " + n15 + " en 15 minutes ou moins et " +
+      (X.loin
+        ? "Aucun arrêt à moins de " + X.rayon + " m. Le plus proche, " + esc(X.dest[0].n) + ", est à " +
+          (X.dest[0].d < 1000 ? Math.ceil(X.dest[0].d / 10) * 10 + " m" :
+            String(Math.round(X.dest[0].d / 100) / 10).replace(".", ",") + " km") +
+          " : le résultat part de lui. Une adresse précise donne un meilleur point."
+        : X.dest.length + " arrêt" + (X.dest.length > 1 ? "s" : "") + " à moins de " + X.rayon + " m : " +
+          X.dest.slice(0, 4).map(function (s) { return esc(s.n); }).join(", ") +
+          (X.dest.length > 4 ? " et " + (X.dest.length - 4) + " autre" + (X.dest.length > 5 ? "s" : "") : "") + ".") +
+      "<br>" + listeLignes.length + " ligne" + (listeLignes.length > 1 ? "s" : "") + ", " + arrets.length +
+      " arrêt" + (arrets.length > 1 ? "s" : "") + " d'où l'on arrive sans changer, dont " + n15 + " en 15 minutes ou moins et " +
       n30 + " en 30 minutes ou moins.</div>";
 
     if (vusLog && vusLog.length) {
@@ -417,7 +458,8 @@
     h += '<div class="lg-legende"><span><i style="background:#0e7a5f"></i>15 min ou moins</span>' +
       '<span><i style="background:#c2740b"></i>16 à 30</span>' +
       '<span><i style="background:#c2410c"></i>31 à 45</span>' +
-      '<span><i style="background:#991b1b"></i>plus de 45</span></div>';
+      '<span><i style="background:#991b1b"></i>plus de 45</span>' +
+      '<span><i style="background:#fff;box-shadow:inset 0 0 0 3px #0e7a5f"></i>arrêt d\'arrivée</span></div>';
 
     h += "<h2>Les lignes</h2><table class=\"lg-tbl\"><thead><tr><th></th><th>Ligne</th><th>Vers</th>" +
       '<th class="n">Arrêts</th><th class="n">Arrivées 6h30 à 9h30</th></tr></thead><tbody>';
