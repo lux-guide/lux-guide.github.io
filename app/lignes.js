@@ -173,11 +173,25 @@
     o.sort(function (a, b) { return a.d - b.d; });
     return o;
   }
+  // Un nom d'arrêt se reconnaît quel que soit l'ordre des mots : « Foyer
+  // Leudelange » est l'arrêt « Leudelange, Foyer ». Sans cela la saisie partait
+  // au géocodeur, qui posait le point à la gare de Leudelange, à 1,5 km, et les
+  // lignes de l'arrêt cherché manquaient. Un seul arrêt doit porter tous les
+  // mots ; s'il y en a plusieurs (« Leudelange »), c'est une adresse.
   function arretExact(q) {
     var S = window.LIGNES.stops, nq = norm(q);
     if (nq.length < 4) return null;
-    for (var id in S) if (norm(S[id][0]) === nq) return { id: id, n: S[id][0], ll: [S[id][1], S[id][2]] };
-    return null;
+    var mots = nq.split(" "), trouves = [];
+    for (var id in S) {
+      var n = norm(S[id][0]);
+      if (n === nq) return { id: id, n: S[id][0], ll: [S[id][1], S[id][2]] };
+      var noms = " " + n + " ";
+      if (mots.every(function (m) { return noms.indexOf(" " + m + " ") >= 0; })) trouves.push(id);
+    }
+    // Un même nom peut porter plusieurs quais : ils comptent pour un arrêt.
+    if (!trouves.length || trouves.some(function (id) { return S[id][0] !== S[trouves[0]][0]; })) return null;
+    var s = S[trouves[0]];
+    return { id: trouves[0], n: s[0], ll: [s[1], s[2]] };
   }
 
   // Géocodage : géoportail luxembourgeois d'abord, OpenStreetMap en secours.
